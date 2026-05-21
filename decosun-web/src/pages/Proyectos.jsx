@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom"
 import heroImg from "../assets/images/sucursal-iquique.jpeg"
 import residencialImg from "../assets/images/home-03.jpg"
 import corporativoImg from "../assets/images/corporativo-DUO.jpeg"
@@ -150,12 +151,11 @@ export default function Proyectos() {
             reales de instalación.
           </p>
 
-          <a
-            href="/cotizar"
+          <Link to="/cotizar"
             className="mt-10 rounded-2xl bg-amber-500 px-8 py-4 text-sm font-semibold text-black transition hover:bg-amber-400"
           >
             Solicitar cotización
-          </a>
+          </Link>
         </div>
       </section>
     </main>

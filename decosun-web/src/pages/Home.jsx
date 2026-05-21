@@ -1,3 +1,5 @@
+import { motion } from "framer-motion"
+import { Link } from "react-router-dom"
 import { useEffect, useState } from "react"
 
 import heroLogo from "../assets/images/logo-horizontal.png"
@@ -13,7 +15,6 @@ import hero7 from "../assets/images/screen-02.jpeg"
 import rollerImg from "../assets/images/screen-02.jpeg"
 import toldoImg from "../assets/images/toldo-proyectante-premium.png"
 import duoImg from "../assets/images/duo-03.jpg"
-import blackoutImg from "../assets/images/black-outcalido.jpg"
 import pergolaImg from "../assets/images/pergola-premium.png"
 import redImg from "../assets/images/sucursal-iquique03.jpg"
 
@@ -56,14 +57,17 @@ export default function Home() {
 
   return (
     <main className="bg-white text-slate-950">
+      {/* HERO */}
       <section className="relative min-h-screen overflow-hidden bg-slate-950">
         {heroImages.map((image, index) => (
           <img
             key={image}
             src={image}
             alt="Decosun control solar"
-            className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-[2200ms] ${
-              index === currentHero ? "opacity-75" : "opacity-0"
+            className={`absolute inset-0 h-full w-full object-cover scale-[1.03] transition-all duration-[7000ms] ${
+              index === currentHero
+                ? "opacity-75 scale-100"
+                : "opacity-0 scale-105"
             }`}
           />
         ))}
@@ -72,45 +76,53 @@ export default function Home() {
         <div className="absolute inset-0 bg-black/25" />
 
         <div className="relative z-10 mx-auto flex min-h-screen max-w-7xl items-center px-6 pt-20 lg:px-8">
-          <div className="max-w-3xl lg:ml-4">
+          <motion.div
+  initial={{ opacity: 0, y: 28 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.9, ease: "easeOut" }}
+  className="max-w-3xl lg:ml-4"
+>
             <div className="mb-10 flex justify-center lg:justify-start">
               <img
                 src={heroLogo}
                 alt="Decosun"
-                className="h-32 w-auto lg:h-44"
+                className="h-28 w-auto lg:h-40"
               />
             </div>
 
             <p className="text-sm font-bold uppercase tracking-[0.35em] text-amber-400">
-              Diseño · confort · tecnología
+              Control solar premium · Presencia regional
             </p>
 
             <h1 className="mt-6 text-5xl font-black leading-[1.05] tracking-tight text-white md:text-7xl">
-              Diseño, confort
-              <span className="block text-amber-400">y control solar</span>
-              para tus espacios.
+              Soluciones premium
+              <span className="block text-amber-400">
+                de control solar
+              </span>
+              para proyectos en Chile.
             </h1>
 
-            <p className="mt-6 max-w-xl text-lg leading-8 text-slate-200">
-              Soluciones premium en cortinas roller, toldos, persianas,
-              automatización y proyectos a medida para hogares, oficinas e
-              instituciones.
+            <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-200">
+              DecoSun integra asesoría, fabricación, instalación y
+              soporte técnico a través de sucursales y representantes
+              regionales, entregando productos bien terminados para hogares,
+              empresas e instituciones.
             </p>
 
             <div className="mt-9 flex flex-wrap gap-4">
-              <a
-                href="/cotizar"
-                className="rounded-2xl bg-amber-500 px-7 py-4 text-sm font-bold uppercase tracking-wide text-slate-950 shadow-lg transition hover:-translate-y-0.5 hover:bg-amber-400"
+              <Link
+                to="/cotizar"
+                className="rounded-2xl bg-amber-500 px-7 py-4 text-sm font-bold uppercase tracking-wide text-slate-950 shadow-lg transition duration-300 hover:-translate-y-1 hover:bg-amber-400"
               >
                 Cotizar ahora
-              </a>
+              </Link>
 
-              <a
-                href="/soluciones"
-                className="rounded-2xl border border-white/30 bg-white/10 px-7 py-4 text-sm font-bold uppercase tracking-wide text-white backdrop-blur-md transition hover:bg-white/20"
+              <Link
+                to="/soluciones"
+                className="rounded-2xl border border-white/30 bg-white/10 px-7 py-4 text-sm font-bold uppercase tracking-wide text-white backdrop-blur-md transition duration-300 hover:bg-white/20"
               >
                 Ver soluciones
-              </a>
+              </Link>
             </div>
 
             <div className="mt-12 grid gap-4 sm:grid-cols-4">
@@ -122,110 +134,137 @@ export default function Home() {
               ].map(([title, text]) => (
                 <div
                   key={title}
-                  className="rounded-3xl border border-white/10 bg-white/10 p-4 backdrop-blur-md"
+                  className="rounded-[28px] border border-white/5 bg-white/[0.06] p-5 shadow-xl backdrop-blur-xl transition duration-300 hover:bg-white/[0.08]"
                 >
-                  <p className="text-sm font-bold text-white">{title}</p>
+                  <p className="text-sm font-bold text-white">
+                    {title}
+                  </p>
+
                   <p className="mt-1 text-xs leading-5 text-slate-300">
                     {text}
                   </p>
                 </div>
-              ))}
-            </div>
+                            ))}
+              </div>              
+            </motion.div>
           </div>
-        </div>
-      </section>
+        </section>
 
+      {/* SOLUCIONES */}
       <section className="bg-white px-6 py-20 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="mx-auto max-w-3xl text-center">
             <p className="text-sm font-bold uppercase tracking-[0.3em] text-amber-700">
-              Soluciones que se adaptan a ti
+              Diseño · tecnología · confort
             </p>
+
             <h2 className="mt-4 text-4xl font-black tracking-tight text-slate-950 md:text-5xl">
-              Control solar con diseño y funcionalidad
+              Soluciones diseñadas para habitar mejor los espacios
             </h2>
           </div>
 
           <div className="mt-12 grid gap-7 md:grid-cols-2 lg:grid-cols-4">
             {soluciones.map((item) => (
-              <article
+              <motion.article
+  initial={{ opacity: 0, y: 40 }}
+  whileInView={{ opacity: 1, y: 0 }}
+  viewport={{ once: true }}
+  transition={{ duration: 0.7, ease: "easeOut" }}
                 key={item.title}
-                className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-lg transition hover:-translate-y-1 hover:shadow-2xl"
+                className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-lg transition duration-500 ease-out hover:-translate-y-2 hover:shadow-[0_25px_60px_rgba(0,0,0,0.18)]"
               >
                 <img
                   src={item.image}
                   alt={item.title}
-                  className="h-56 w-full object-cover"
+                  className="h-56 w-full object-cover transition duration-700 group-hover:scale-105"
                 />
+
                 <div className="p-6">
                   <h3 className="text-lg font-black text-slate-950">
                     {item.title}
                   </h3>
+
                   <p className="mt-3 text-sm leading-6 text-slate-600">
                     {item.text}
                   </p>
-                  <a
-                    href="/soluciones"
+
+                  <Link
+                    to="/soluciones"
                     className="mt-5 inline-flex text-sm font-bold uppercase tracking-wide text-amber-700"
                   >
                     Ver más →
-                  </a>
+                  </Link>
                 </div>
-              </article>
+              </motion.article>
             ))}
           </div>
         </div>
       </section>
 
+      {/* ESTADÍSTICAS */}
       <section className="bg-slate-950 px-6 py-20 text-white lg:px-8">
         <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.9fr_1.1fr]">
           <div>
             <p className="text-sm font-bold uppercase tracking-[0.3em] text-amber-400">
-              ¿Por qué Decosun?
-            </p>
-            <h2 className="mt-4 text-4xl font-black tracking-tight md:text-5xl">
-              Experiencia que genera confianza
-            </h2>
-            <p className="mt-5 max-w-xl text-lg leading-8 text-slate-300">
-              Combinamos asesoría, fabricación, instalación y seguimiento para
-              entregar soluciones claras, duraderas y estéticamente cuidadas.
+              Presencia DecoSun
             </p>
 
-            <a
-              href="/nosotros"
-              className="mt-8 inline-flex rounded-2xl bg-amber-500 px-7 py-4 text-sm font-bold uppercase tracking-wide text-slate-950 transition hover:-translate-y-0.5 hover:bg-amber-400"
+            <h2 className="mt-4 text-4xl font-black tracking-tight md:text-5xl">
+              Una red preparada para ejecutar proyectos.
+            </h2>
+
+            <p className="mt-5 max-w-xl text-lg leading-8 text-slate-300">
+              Nuestra presencia se construye mediante sucursales,
+              asesores regionales y soporte técnico coordinado,
+              permitiendo atender proyectos residenciales,
+              corporativos e institucionales en distintas zonas del país.
+            </p>
+
+            <Link
+              to="/nosotros"
+              className="mt-8 inline-flex rounded-2xl bg-amber-500 px-7 py-4 text-sm font-bold uppercase tracking-wide text-slate-950 transition duration-300 hover:-translate-y-1 hover:bg-amber-400"
             >
               Conoce más
-            </a>
+            </Link>
           </div>
 
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {[
               ["+10", "años de experiencia"],
-              ["+5.000", "proyectos ejecutados"],
-              ["+3.000", "clientes satisfechos"],
-              ["Chile", "cobertura en expansión"],
+              ["2", "sucursales activas"],
+              ["3ª", "sucursal en proyección"],
+              ["+10", "zonas con presencia comercial"],
             ].map(([number, label]) => (
-              <div
-                key={label}
-                className="rounded-[28px] border border-white/10 bg-white/10 p-6 text-center backdrop-blur-md"
+              
+                <motion.div
+  key={label}
+  initial={{ opacity: 0, y: 30 }}
+  whileInView={{ opacity: 1, y: 0 }}
+  viewport={{ once: true }}
+  transition={{ duration: 0.7, ease: "easeOut" }}
+                className="rounded-[32px] border border-white/5 bg-white/[0.06] p-7 text-center shadow-2xl backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:bg-white/[0.08]"
               >
-                <p className="text-4xl font-black text-amber-400">{number}</p>
+                <p className="text-5xl font-black tracking-tight text-amber-400">
+                  {number}
+                </p>
+
                 <p className="mt-3 text-sm font-semibold uppercase tracking-wide text-slate-200">
                   {label}
                 </p>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
       </section>
 
+      {/* COTIZADOR */}
       <section className="bg-amber-50 px-6 py-20 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="mx-auto max-w-3xl text-center">
             <p className="text-sm font-bold uppercase tracking-[0.3em] text-amber-700">
               Cotiza en 3 simples pasos
             </p>
+
             <h2 className="mt-4 text-4xl font-black tracking-tight text-slate-950 md:text-5xl">
               Transforma tu espacio hoy
             </h2>
@@ -235,34 +274,39 @@ export default function Home() {
             {[
               ["1", "Mide", "Ingresa las medidas aproximadas de tus espacios."],
               ["2", "Elige", "Selecciona producto, zona y cantidad."],
-              ["3", "Recibe", "Envía tu solicitud y queda registrada en Decosun."],
+              ["3", "Recibe", "Envía tu solicitud y queda registrada en DecoSun."],
             ].map(([num, title, text]) => (
               <div
                 key={title}
-                className="rounded-[30px] border border-amber-100 bg-white p-8 shadow-sm"
+                className="rounded-[30px] border border-amber-100 bg-white p-8 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl"
               >
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-950 text-lg font-black text-white">
                   {num}
                 </div>
+
                 <h3 className="mt-6 text-2xl font-black text-slate-950">
                   {title}
                 </h3>
-                <p className="mt-3 leading-7 text-slate-600">{text}</p>
+
+                <p className="mt-3 leading-7 text-slate-600">
+                  {text}
+                </p>
               </div>
             ))}
           </div>
 
           <div className="mt-10 text-center">
-            <a
-              href="/cotizar"
-              className="inline-flex rounded-2xl bg-slate-950 px-8 py-4 text-sm font-bold uppercase tracking-wide text-white transition hover:-translate-y-0.5"
+            <Link
+              to="/cotizar"
+              className="rounded-2xl bg-amber-500 px-7 py-4 text-sm font-bold uppercase tracking-wide text-slate-950 shadow-lg transition duration-300 hover:-translate-y-1 hover:bg-amber-400"
             >
-              Ir al cotizador
-            </a>
+              Cotizar ahora
+            </Link>
           </div>
         </div>
       </section>
 
+      {/* RED DECOSUN */}
       <section className="px-6 py-20 lg:px-8">
         <div className="mx-auto grid max-w-7xl overflow-hidden rounded-[36px] bg-slate-950 shadow-2xl lg:grid-cols-2">
           <img
@@ -273,30 +317,57 @@ export default function Home() {
 
           <div className="flex flex-col justify-center p-8 lg:p-12">
             <p className="text-sm font-bold uppercase tracking-[0.3em] text-amber-400">
-              Red Decosun
-            </p>
-            <h2 className="mt-4 text-4xl font-black tracking-tight text-white">
-              Una marca preparada para crecer
-            </h2>
-            <p className="mt-5 text-lg leading-8 text-slate-300">
-              Estamos desarrollando una red de representantes comerciales con
-              soporte técnico, plataforma interna, seguimiento de proyectos y
-              visualización de comisiones proyectadas.
+              Red DecoSun
             </p>
 
+            <h2 className="mt-4 text-4xl font-black tracking-tight text-white">
+              Presencia regional con respaldo DecoSun.
+            </h2>
+
+            <p className="mt-5 text-lg leading-8 text-slate-300">
+              DecoSun expande su presencia mediante sucursales y
+              asesores regionales, entregando soporte técnico, garantías,
+              herramientas de venta y productos fabricados con terminaciones
+              profesionales.
+            </p>
+
+            <div className="mt-8 flex flex-wrap gap-3">
+              {[
+                "Arica",
+                "Iquique",
+                "Calama",
+                "Tocopilla",
+                "Antofagasta",
+                "Copiapó",
+                "Vallenar",
+                "La Serena",
+                "V Región",
+                "Santiago",
+                "Temuco",
+              ].map((city) => (
+                <span
+                  key={city}
+                  className="rounded-full border border-white/10 bg-white/10 px-4 py-2 text-sm font-medium text-slate-200 backdrop-blur-md"
+                >
+                  {city}
+                </span>
+              ))}
+            </div>
+
             <div className="mt-8 flex flex-wrap gap-4">
-              <a
-                href="/nosotros"
-                className="rounded-2xl bg-amber-500 px-7 py-4 text-sm font-bold uppercase tracking-wide text-slate-950 transition hover:bg-amber-400"
+              <Link
+                to="/nosotros"
+                className="inline-flex rounded-2xl bg-amber-500 px-7 py-4 text-sm font-bold uppercase tracking-wide text-slate-950 transition duration-300 hover:-translate-y-1 hover:bg-amber-400"
               >
-                Conocer modelo
-              </a>
-              <a
-                href="/cotizar"
-                className="rounded-2xl border border-white/20 px-7 py-4 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-white/10"
+                Conoce más
+              </Link>
+
+              <Link
+                to="/cotizar"
+                className="inline-flex rounded-2xl border border-white/20 px-7 py-4 text-sm font-bold uppercase tracking-wide text-white transition duration-300 hover:bg-white/10"
               >
                 Solicitar cotización
-              </a>
+              </Link>
             </div>
           </div>
         </div>

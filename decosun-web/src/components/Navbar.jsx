@@ -1,67 +1,98 @@
+import { useState } from "react"
 import logo from "../assets/images/logo-horizontal.png"
-import { Link } from "react-router-dom"
+import { Link, NavLink } from "react-router-dom"
 
 export default function Navbar() {
-  return (
-    <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-slate-950/90 backdrop-blur-xl">
-      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6 lg:px-8">
+  const [open, setOpen] = useState(false)
 
-        {/* LOGO */}
-        <Link to="/" className="flex items-center">
-          <img
-            src={logo}
-            alt="Decosun"
-            className="h-16 w-auto lg:h-20"
-          />
+  const linkClass = ({ isActive }) =>
+    `transition duration-300 hover:text-amber-300 ${
+      isActive ? "text-amber-300" : "text-white/85"
+    }`
+
+  function closeMenu() {
+    setOpen(false)
+  }
+
+  return (
+    <header className="fixed left-0 top-0 z-50 w-full px-4">
+      <div className="mx-auto mt-3 flex h-16 max-w-7xl items-center justify-between rounded-full border border-white/10 bg-slate-950/70 px-5 shadow-2xl backdrop-blur-2xl lg:mt-4 lg:h-20 lg:px-8">
+        <Link to="/" onClick={closeMenu} className="flex items-center">
+          <img src={logo} alt="Decosun" className="h-10 w-auto lg:h-16" />
         </Link>
 
-        {/* MENU */}
-        <nav className="hidden items-center gap-6 text-sm font-semibold tracking-wide text-white md:flex">
-          
-          <Link
-            to="/"
-            className="transition duration-300 hover:text-amber-300"
-          >
+        <nav className="hidden items-center gap-7 text-sm font-semibold tracking-wide md:flex">
+          <NavLink to="/" className={linkClass}>
             Inicio
-          </Link>
+          </NavLink>
 
-          <Link
-            to="/soluciones"
-            className="transition duration-300 hover:text-amber-300"
-          >
+          <NavLink to="/soluciones" className={linkClass}>
             Soluciones
-          </Link>
+          </NavLink>
 
-          <Link
-            to="/cotizar"
-            className="transition duration-300 hover:text-amber-300"
-          >
+          <NavLink to="/cotizar" className={linkClass}>
             Cotizador
-          </Link>
+          </NavLink>
 
-          <Link
-            to="/nosotros"
-            className="transition duration-300 hover:text-amber-300"
-          >
+          <NavLink to="/nosotros" className={linkClass}>
             Nosotros
-          </Link>
+          </NavLink>
 
-          <Link
-            to="/proyectos"
-            className="transition duration-300 hover:text-amber-300"
-          >
+          <NavLink to="/proyectos" className={linkClass}>
             Proyectos
-          </Link>
+          </NavLink>
 
           <Link
             to="/cotizar"
-            className="rounded-2xl border border-amber-400/60 bg-amber-500/10 px-5 py-3 text-sm font-bold text-white shadow-lg backdrop-blur transition duration-300 hover:-translate-y-0.5 hover:bg-amber-500 hover:text-black"
+            className="rounded-full border border-amber-400/60 bg-amber-500 px-5 py-3 text-sm font-black uppercase tracking-wide text-slate-950 shadow-lg shadow-amber-500/20 transition duration-300 hover:-translate-y-0.5 hover:bg-amber-400"
           >
-            Cotizar ahora
+            Cotizar
           </Link>
-
         </nav>
+
+        <button
+          type="button"
+          onClick={() => setOpen((prev) => !prev)}
+          className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white md:hidden"
+          aria-label="Abrir menú"
+        >
+          <span className="text-xl leading-none">{open ? "×" : "☰"}</span>
+        </button>
       </div>
+
+      {open && (
+        <div className="mx-auto mt-3 max-w-7xl rounded-[28px] border border-white/10 bg-slate-950/90 p-5 shadow-2xl backdrop-blur-2xl md:hidden">
+          <div className="flex flex-col gap-4 text-sm font-semibold uppercase tracking-wide text-white">
+            <NavLink to="/" onClick={closeMenu} className={linkClass}>
+              Inicio
+            </NavLink>
+
+            <NavLink to="/soluciones" onClick={closeMenu} className={linkClass}>
+              Soluciones
+            </NavLink>
+
+            <NavLink to="/cotizar" onClick={closeMenu} className={linkClass}>
+              Cotizador
+            </NavLink>
+
+            <NavLink to="/nosotros" onClick={closeMenu} className={linkClass}>
+              Nosotros
+            </NavLink>
+
+            <NavLink to="/proyectos" onClick={closeMenu} className={linkClass}>
+              Proyectos
+            </NavLink>
+
+            <Link
+              to="/cotizar"
+              onClick={closeMenu}
+              className="mt-2 rounded-2xl bg-amber-500 px-5 py-3 text-center text-sm font-black uppercase tracking-wide text-slate-950 transition hover:bg-amber-400"
+            >
+              Cotizar ahora
+            </Link>
+          </div>
+        </div>
+      )}
     </header>
   )
 }

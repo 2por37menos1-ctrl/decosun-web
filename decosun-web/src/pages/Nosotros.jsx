@@ -1,4 +1,5 @@
-import React from "react";
+import React from "react"
+import { Link } from "react-router-dom"
 
 export default function Nosotros() {
   const heroImage = "/img/roller-sunscreen-dormitorio.jpg";
@@ -172,19 +173,17 @@ export default function Nosotros() {
       </div>
 
       <div className="mt-8 flex flex-wrap gap-4">
-        <a
-          href="/panel"
+        <Link to="/panel"
           className="rounded-full bg-slate-950 px-7 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
         >
           Acceder al sistema interno
-        </a>
+        </Link>
 
-        <a
-          href="/proyectos"
+        <Link to="/proyectos"
           className="rounded-full border border-slate-300 px-7 py-3 text-sm font-semibold text-slate-900 transition hover:bg-white"
         >
           Ver proyectos recientes
-        </a>
+        </Link>
       </div>
     </div>
   </div>

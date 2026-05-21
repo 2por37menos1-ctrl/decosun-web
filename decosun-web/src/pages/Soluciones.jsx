@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom"
 import screenImg from "../assets/images/screen-02.jpeg"
 import blackoutImg from "../assets/images/black-outcalido.jpg"
 import duoImg from "../assets/images/duo-03.jpg"
@@ -104,19 +105,17 @@ export default function Soluciones() {
             </p>
 
             <div className="mt-9 flex flex-wrap gap-4">
-              <a
-                href="/cotizar"
+              <Link to="/cotizar"
                 className="rounded-2xl bg-amber-500 px-7 py-4 text-sm font-bold uppercase tracking-wide text-slate-950 transition hover:bg-amber-400"
               >
                 Cotizar solución
-              </a>
+              </Link>
 
-              <a
-                href="/nosotros"
+              <Link to="/nosotros"
                 className="rounded-2xl border border-white/20 px-7 py-4 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-white/10"
               >
                 Conocer Decosun
-              </a>
+              </Link>
             </div>
           </div>
 
@@ -181,12 +180,11 @@ export default function Soluciones() {
                   ))}
                 </ul>
 
-                <a
-                  href="/cotizar"
+                <Link to="/cotizar"
                   className="mt-7 inline-flex rounded-2xl bg-slate-950 px-5 py-3 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-amber-500 hover:text-black"
                 >
                   Cotizar
-                </a>
+                </Link>
               </div>
             </article>
           ))}
@@ -259,12 +257,11 @@ export default function Soluciones() {
               proyecto según luz, privacidad, uso del espacio y estética.
             </p>
 
-            <a
-              href="/cotizar"
+            <Link to="/cotizar"
               className="mt-8 inline-flex w-fit rounded-2xl bg-slate-950 px-7 py-4 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-amber-500 hover:text-black"
             >
               Solicitar asesoría
-            </a>
+            </Link>
           </div>
         </div>
       </section>
