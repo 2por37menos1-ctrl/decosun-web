@@ -100,27 +100,50 @@ export default function Cotizar() {
   }
 
   const prices = {
-    iquique: {
-      rollerSimple: 35000,
-      rollerDuo: 60000,
-      rollerDoble: 70000,
-      persianaVertical: 70000,
-      darkBlackout: 45000,
-      motorizacionIndependiente: 130000,
-      motorizacionDual: 130000,
-      motorizacionIntegrada: 130000,
-    },
-    vina: {
-      rollerSimple: 30000,
-      rollerDuo: 50000,
-      rollerDoble: 50000,
-      persianaVertical: 60000,
-      darkBlackout: 40000,
-      motorizacionIndependiente: 100000,
-      motorizacionDual: 100000,
-      motorizacionIntegrada: 100000,
-    },
-  }
+  iquique: {
+    rollerSimple: 35000,
+
+    blackout: 35000,
+    sunscreen: 35000,
+    translucido: 35000,
+
+    rollerCenefa: 35000,
+
+    rollerDuo: 55000,
+
+    rollerDuoTranslucido: 55000,
+    rollerDuoSunOut: 55000,
+
+    dobleCenefa: 55000,
+
+    persianaVertical: 70000,
+    darkBlackout: 45000,
+
+    motorizacionIntegrada: 130000,
+  },
+
+  vina: {
+    rollerSimple: 30000,
+
+    blackout: 30000,
+    sunscreen: 30000,
+    translucido: 30000,
+
+    rollerCenefa: 30000,
+
+    rollerDuo: 50000,
+
+    rollerDuoTranslucido: 50000,
+    rollerDuoSunOut: 50000,
+
+    dobleCenefa: 50000,
+
+    persianaVertical: 60000,
+    darkBlackout: 40000,
+
+    motorizacionIntegrada: 100000,
+  },
+}
 
   const promoCodes = {
     DSNVDM: {
@@ -290,11 +313,23 @@ export default function Cotizar() {
 
       if (!valid) return baseRow
 
-      const area = ancho * alto
       const subtotal = area * price * cantidad
-      const recargo = recargoUnit * cantidad
-      const discount = promo ? Math.round(subtotal * (promo.percent / 100)) : 0
-      const total = subtotal + recargo - discount
+
+const cenefaExtra =
+  item.tipo === "rollerCenefa" ||
+  item.tipo === "dobleCenefa"
+    ? 25000 * cantidad
+    : 0
+
+const recargo = recargoUnit * cantidad
+
+const subtotalConCenefa = subtotal + cenefaExtra
+
+const discount = promo
+  ? Math.round(subtotalConCenefa * (promo.percent / 100))
+  : 0
+
+const total = subtotalConCenefa + recargo - discount
 
       return {
         ...baseRow,
@@ -302,7 +337,7 @@ export default function Cotizar() {
         ancho,
         alto,
         cantidad,
-        subtotal,
+        subtotal: subtotalConCenefa,
         recargo,
         discount,
         total,
@@ -768,23 +803,20 @@ export default function Cotizar() {
                             }
                             className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-slate-400"
                           >
-                            <optgroup label="Productos con cálculo online">
-                              <option value="rollerSimple">Roller simple</option>
-                              <option value="rollerDuo">Roller DÚO</option>
-                              <option value="rollerDoble">Roller doble</option>
-                              <option value="persianaVertical">Persiana vertical</option>
-                              <option value="darkBlackout">Dark Blackout</option>
-                            </optgroup>
+                            <optgroup label="Roller simple">
+  <option value="rollerSimple">Roller simple</option>
+  <option value="blackout">Black out</option>
+  <option value="sunscreen">Sun Screen</option>
+  <option value="translucido">Translúcido</option>
+  <option value="rollerCenefa">Roller / Cenefa</option>
+</optgroup>
 
-                            <optgroup label="Motorización">
-                              <option value="motorizacionIndependiente">
-                                Motorización independiente
-                              </option>
-                              <option value="motorizacionDual">Motorización dual</option>
-                              <option value="motorizacionIntegrada">
-                                Motorización integrada al producto
-                              </option>
-                            </optgroup>
+<optgroup label="Roller DÚO / Doble">
+  <option value="rollerDuo">Roller DÚO</option>
+  <option value="rollerDuoTranslucido">DÚO translúcido</option>
+  <option value="rollerDuoSunOut">DÚO Sun Out</option>
+  <option value="dobleCenefa">Doble / Cenefa</option>
+</optgroup>
 
                             <optgroup label="Solicitar valores a DecoSun">
                               <option value="toldoProyectante">Toldo proyectante</option>
