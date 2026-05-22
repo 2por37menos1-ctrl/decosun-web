@@ -41,6 +41,9 @@ export default function Navbar() {
           <NavLink to="/proyectos" className={linkClass}>
             Proyectos
           </NavLink>
+            <NavLink to="/login" className={linkClass}>
+    Acceso equipo
+  </NavLink>
 
           <Link
             to="/cotizar"

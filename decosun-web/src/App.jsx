@@ -7,6 +7,8 @@ import Soluciones from "./pages/Soluciones"
 import Proyectos from "./pages/Proyectos"
 import Nosotros from "./pages/Nosotros"
 import Cotizar from "./pages/Cotizar"
+import Login from "./pages/Login"
+import Panel from "./pages/Panel"
 
 export default function App() {
   return (
@@ -19,6 +21,8 @@ export default function App() {
           <Route path="/proyectos" element={<Proyectos />} />
           <Route path="/nosotros" element={<Nosotros />} />
           <Route path="/cotizar" element={<Cotizar />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/panel" element={<Panel />} />
         </Routes>
         <Footer />
         <WhatsAppButton />
