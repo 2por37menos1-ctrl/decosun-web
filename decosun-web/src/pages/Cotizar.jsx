@@ -313,6 +313,7 @@ export default function Cotizar() {
 
       if (!valid) return baseRow
 
+      const area = ancho * alto
       const subtotal = area * price * cantidad
 
 const cenefaExtra =
@@ -940,7 +941,7 @@ const total = subtotalConCenefa + recargo - discount
 
                   <div className="mt-2 text-sm text-slate-600">
                     <p>
-                      <strong>N° Cotización:</strong> {quoteNumber}
+                      <strong>N° Cotización:</strong> {quoteNumber} {form.nombre ? `· ${form.nombre}` : ""}
                     </p>
                     <p>
                       <strong>Fecha:</strong>{" "}
