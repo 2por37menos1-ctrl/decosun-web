@@ -102,44 +102,40 @@ export default function Cotizar() {
   const prices = {
   iquique: {
     rollerSimple: 35000,
-
     blackout: 35000,
     sunscreen: 35000,
     translucido: 35000,
-
     rollerCenefa: 35000,
 
-    rollerDuo: 55000,
+    rollerDoble: 70000,
+    rollerDobleCenefa: 70000,
 
-    rollerDuoTranslucido: 55000,
-    rollerDuoSunOut: 55000,
+    rollerDuo: 60000,
+    rollerDuoTranslucido: 60000,
+    rollerDuoSunOut: 60000,
 
-    dobleCenefa: 55000,
-
-    persianaVertical: 70000,
-    darkBlackout: 45000,
+    persianaVertical: 75000,
+    darkBlackout: 55000,
 
     motorizacionIntegrada: 130000,
   },
 
   vina: {
     rollerSimple: 30000,
-
     blackout: 30000,
     sunscreen: 30000,
     translucido: 30000,
-
     rollerCenefa: 30000,
 
-    rollerDuo: 50000,
+    rollerDoble: 55000,
+    rollerDobleCenefa: 55000,
 
+    rollerDuo: 50000,
     rollerDuoTranslucido: 50000,
     rollerDuoSunOut: 50000,
 
-    dobleCenefa: 50000,
-
     persianaVertical: 60000,
-    darkBlackout: 40000,
+    darkBlackout: 55000,
 
     motorizacionIntegrada: 100000,
   },
@@ -318,7 +314,7 @@ export default function Cotizar() {
 
 const cenefaExtra =
   item.tipo === "rollerCenefa" ||
-  item.tipo === "dobleCenefa"
+  item.tipo === "rollerDobleCenefa"
     ? 25000 * cantidad
     : 0
 
@@ -804,19 +800,25 @@ const total = subtotalConCenefa + recargo - discount
                             }
                             className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-slate-400"
                           >
-                            <optgroup label="Roller simple">
+  <optgroup label="Roller simple">
   <option value="rollerSimple">Roller simple</option>
   <option value="blackout">Black out</option>
   <option value="sunscreen">Sun Screen</option>
   <option value="translucido">Translúcido</option>
+  <option value="darkBlackout">Dark Black Out</option>
   <option value="rollerCenefa">Roller / Cenefa</option>
+  <option value="rollerDoble">Roller doble SC + BO</option>
+  <option value="rollerDobleCenefa">Roller doble SC + BO / Cenefa</option>
 </optgroup>
 
-<optgroup label="Roller DÚO / Doble">
-  <option value="rollerDuo">Roller DÚO</option>
+<optgroup label="DÚO">
+  <option value="rollerDuo">DÚO</option>
   <option value="rollerDuoTranslucido">DÚO translúcido</option>
   <option value="rollerDuoSunOut">DÚO Sun Out</option>
-  <option value="dobleCenefa">Doble / Cenefa</option>
+</optgroup>
+
+<optgroup label="Otros productos">
+  <option value="persianaVertical">Persiana vertical</option>
 </optgroup>
 
                             <optgroup label="Solicitar valores a DecoSun">

@@ -18,10 +18,12 @@ export default function Login() {
     })
 
     if (error) {
-      setError(error.message)
-    }
+  setError(error.message)
+  setLoading(false)
+  return
+}
 
-    setLoading(false)
+window.location.href = "/panel"
   }
 
   return (
