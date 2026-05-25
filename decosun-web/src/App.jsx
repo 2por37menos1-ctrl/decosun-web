@@ -10,7 +10,7 @@ import Nosotros from "./pages/Nosotros"
 import Cotizar from "./pages/Cotizar"
 import Login from "./pages/Login"
 import Panel from "./pages/Panel"
-import Agenda from "./pages/Agenda"
+import Agenda from "./pages/agenda"
 
 export default function App() {
   return (
