@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { supabase } from "../lib/supabase"
 
 export default function Agenda() {
   const [form, setForm] = useState({
@@ -18,13 +19,40 @@ export default function Agenda() {
     })
   }
 
-  function handleSubmit(e) {
-    e.preventDefault()
+  async function handleSubmit(e) {
+  e.preventDefault()
 
-    console.log("Solicitud de agenda:", form)
+  const { error } = await supabase.from("agenda").insert([
+    {
+      nombre: form.nombre,
+      telefono: form.telefono,
+      ciudad: form.ciudad,
+      tipo: form.tipo,
+      fecha: form.fecha,
+      horario: form.horario,
+      observaciones: form.observaciones,
+      estado: "Pendiente",
+    },
+  ])
 
-    alert("Solicitud recibida. Pronto nuestro equipo confirmará la visita.")
+  if (error) {
+    console.error("Error al guardar agenda:", error)
+    alert("No se pudo guardar la solicitud. Intenta nuevamente.")
+    return
   }
+
+  alert("Solicitud recibida. Pronto nuestro equipo confirmará la visita.")
+
+  setForm({
+    nombre: "",
+    telefono: "",
+    ciudad: "",
+    tipo: "Visita técnica",
+    fecha: "",
+    horario: "",
+    observaciones: "",
+  })
+}
 
   return (
     <main className="min-h-screen bg-slate-950 text-white">
