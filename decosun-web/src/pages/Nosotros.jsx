@@ -173,7 +173,7 @@ export default function Nosotros() {
       </div>
 
       <div className="mt-8 flex flex-wrap gap-4">
-        <Link to="/panel"
+        <Link to="/login"
           className="rounded-full bg-slate-950 px-7 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
         >
           Acceder al sistema interno
