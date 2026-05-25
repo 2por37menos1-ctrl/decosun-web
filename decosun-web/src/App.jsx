@@ -10,6 +10,7 @@ import Nosotros from "./pages/Nosotros"
 import Cotizar from "./pages/Cotizar"
 import Login from "./pages/Login"
 import Panel from "./pages/Panel"
+import Agenda from "./pages/Agenda"
 
 export default function App() {
   return (
@@ -26,6 +27,7 @@ export default function App() {
             <Route path="/cotizar" element={<Cotizar />} />
             <Route path="/login" element={<Login />} />
             <Route path="/panel" element={<Panel />} />
+            <Route path="/agenda" element={<Agenda />} />
           </Routes>
 
           <Footer />
