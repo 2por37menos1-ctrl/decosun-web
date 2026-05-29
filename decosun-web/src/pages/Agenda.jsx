@@ -235,11 +235,12 @@ export default function Agenda() {
             </div>
 
             <div className="mt-8 rounded-3xl bg-white/10 p-5">
-              <p className="text-sm text-slate-300">
-                Próxima fase: conectar este formulario con Supabase para que las
-                solicitudes aparezcan automáticamente en el panel interno.
-              </p>
-            </div>
+  <p className="text-sm text-slate-300">
+    Al enviar tu solicitud, nuestro equipo recibirá la información en el panel
+    interno de DecoSun y se comunicará contigo para confirmar disponibilidad,
+    horario y detalles de la visita.
+  </p>
+</div>
           </aside>
         </div>
       </section>
