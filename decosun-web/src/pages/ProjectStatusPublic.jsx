@@ -42,10 +42,10 @@ export default function ProjectStatusPublic() {
     setLoading(true)
 
     const { data, error } = await supabase
-      .from("projects")
-      .select("*")
-      .eq("public_token", token)
-      .single()
+  .rpc("get_project_status", {
+    p_token: token,
+  })
+  .single()
 
     if (error) {
       console.error(error)

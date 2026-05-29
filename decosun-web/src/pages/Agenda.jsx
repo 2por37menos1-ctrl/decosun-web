@@ -20,39 +20,39 @@ export default function Agenda() {
   }
 
   async function handleSubmit(e) {
-  e.preventDefault()
+    e.preventDefault()
 
-  const { error } = await supabase.from("agenda").insert([
-    {
-      nombre: form.nombre,
-      telefono: form.telefono,
-      ciudad: form.ciudad,
-      tipo: form.tipo,
-      fecha: form.fecha,
-      horario: form.horario,
-      observaciones: form.observaciones,
-      estado: "Pendiente",
-    },
-  ])
+    const { error } = await supabase.from("agenda").insert([
+      {
+        nombre: form.nombre,
+        telefono: form.telefono,
+        ciudad: form.ciudad,
+        tipo: form.tipo,
+        fecha: form.fecha,
+        horario: form.horario,
+        observaciones: form.observaciones,
+        estado: "Pendiente",
+      },
+    ])
 
-  if (error) {
-    console.error("Error al guardar agenda:", error)
-    alert("No se pudo guardar la solicitud. Intenta nuevamente.")
-    return
+    if (error) {
+      console.error("Error al guardar agenda:", error)
+      alert("No se pudo guardar la solicitud. Intenta nuevamente.")
+      return
+    }
+
+    alert("Solicitud recibida. Pronto nuestro equipo confirmará la visita.")
+
+    setForm({
+      nombre: "",
+      telefono: "",
+      ciudad: "",
+      tipo: "Visita técnica",
+      fecha: "",
+      horario: "",
+      observaciones: "",
+    })
   }
-
-  alert("Solicitud recibida. Pronto nuestro equipo confirmará la visita.")
-
-  setForm({
-    nombre: "",
-    telefono: "",
-    ciudad: "",
-    tipo: "Visita técnica",
-    fecha: "",
-    horario: "",
-    observaciones: "",
-  })
-}
 
   return (
     <main className="min-h-screen bg-slate-950 text-white">
@@ -135,11 +135,11 @@ export default function Agenda() {
                   onChange={handleChange}
                   className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-white outline-none focus:border-amber-300"
                 >
-                  <option>Visita técnica</option>
-                  <option>Medición</option>
-                  <option>Instalación</option>
-                  <option>Mantención</option>
-                  <option>Postventa</option>
+                  <option value="Visita técnica">Visita técnica</option>
+                  <option value="Medición">Medición</option>
+                  <option value="Instalación">Instalación</option>
+                  <option value="Mantención">Mantención</option>
+                  <option value="Postventa">Postventa</option>
                 </select>
               </div>
 
@@ -169,9 +169,9 @@ export default function Agenda() {
                   className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-white outline-none focus:border-amber-300"
                 >
                   <option value="">Seleccionar horario</option>
-                  <option>Mañana</option>
-                  <option>Mediodía</option>
-                  <option>Tarde</option>
+                  <option value="Mañana">Mañana</option>
+                  <option value="Mediodía">Mediodía</option>
+                  <option value="Tarde">Tarde</option>
                 </select>
               </div>
 
@@ -227,7 +227,7 @@ export default function Agenda() {
                     <p className="text-sm text-slate-400">
                       {index === 0
                         ? "Tu solicitud quedará registrada para coordinación."
-                        : "Este estado se actualizará desde el panel DecoSun."}
+                        : "Nuestro equipo actualizará esta etapa a medida que avance tu solicitud."}
                     </p>
                   </div>
                 </div>
@@ -235,12 +235,12 @@ export default function Agenda() {
             </div>
 
             <div className="mt-8 rounded-3xl bg-white/10 p-5">
-  <p className="text-sm text-slate-300">
-    Al enviar tu solicitud, nuestro equipo recibirá la información en el panel
-    interno de DecoSun y se comunicará contigo para confirmar disponibilidad,
-    horario y detalles de la visita.
-  </p>
-</div>
+              <p className="text-sm leading-6 text-slate-300">
+                Al enviar tu solicitud, nuestro equipo recibirá la información
+                en el panel interno de DecoSun y se comunicará contigo para
+                confirmar disponibilidad, horario y detalles de la visita.
+              </p>
+            </div>
           </aside>
         </div>
       </section>

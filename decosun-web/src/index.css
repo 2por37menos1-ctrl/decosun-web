@@ -37,3 +37,7 @@
     display: none !important;
   }
 }
+select option {
+  background-color: #020617;
+  color: white;
+}
