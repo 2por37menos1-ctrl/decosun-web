@@ -2,32 +2,27 @@ export function isGerencia(profile) {
   return profile?.role === "gerencia"
 }
 
-export function isSucursal(profile) {
-  return ["gerente_sucursal", "sucursal"].includes(profile?.role)
+export function isJefaturaRegion(profile) {
+  return profile?.role === "jefatura_region"
 }
 
-export function isVendedor(profile) {
-  return profile?.role === "vendedor"
-}
-
-export function isAsistente(profile) {
-  return profile?.role === "asistente"
+export function isAdministracionRegional(profile) {
+  return profile?.role === "administracion_regional"
 }
 
 export function canViewAgenda(profile) {
   return (
     isGerencia(profile) ||
-    isSucursal(profile) ||
-    isVendedor(profile) ||
-    isAsistente(profile)
+    isJefaturaRegion(profile) ||
+    isAdministracionRegional(profile)
   )
 }
 
 export function canViewPurchases(profile) {
   return (
     isGerencia(profile) ||
-    isSucursal(profile) ||
-    isAsistente(profile)
+    isJefaturaRegion(profile) ||
+    isAdministracionRegional(profile)
   )
 }
 
@@ -44,5 +39,8 @@ export function canViewCommissions(profile) {
 }
 
 export function canEditOperationalCosts(profile) {
-  return isGerencia(profile) || isSucursal(profile)
+  return (
+    isGerencia(profile) ||
+    isJefaturaRegion(profile)
+  )
 }

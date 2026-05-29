@@ -18,7 +18,7 @@ import {
   canViewPurchases,
   canViewTreasury,
   isGerencia,
-  isSucursal,
+  isJefaturaRegion,
 } from "../lib/permissions"
 
 import { useProfile } from "../hooks/useProfile"
@@ -337,7 +337,7 @@ export default function Dashboard() {
   />
 )}
 
-{isSucursal(profile) && profile?.region_code === "iquique" && (
+{isJefaturaRegion(profile) && profile?.region_code === "iquique" && (
   <StatCard
     title={`Mi comisión estimada · ${edgarCommissionLabel}`}
     value={formatMoney(edgarCommission)}
