@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom"
 import bgCotizador from "../assets/images/telas-textura01.jpg"
 import { supabase } from "../lib/supabase"
 import logoSolo from "../assets/images/logo-vertical.png"
@@ -15,10 +14,17 @@ function formatCLP(value) {
 
 const calculableProducts = {
   rollerSimple: "Roller simple",
-  rollerDuo: "Roller DÚO",
-  rollerDoble: "Roller doble",
+  blackout: "Black out",
+  sunscreen: "Sun Screen",
+  translucido: "Translúcido",
+  rollerCenefa: "Roller / Cenefa",
+  rollerDoble: "Roller doble SC + BO",
+  rollerDobleCenefa: "Roller doble SC + BO / Cenefa",
+  rollerDuo: "DÚO",
+  rollerDuoTranslucido: "DÚO translúcido",
+  rollerDuoSunOut: "DÚO Sun Out",
   persianaVertical: "Persiana vertical",
-  darkBlackout: "Dark Blackout",
+  darkBlackout: "Dark Black Out",
 }
 
 const requestOnlyProducts = {
@@ -100,63 +106,51 @@ export default function Cotizar() {
   }
 
   const prices = {
-  iquique: {
-    rollerSimple: 35000,
-    blackout: 35000,
-    sunscreen: 35000,
-    translucido: 35000,
-    rollerCenefa: 35000,
-
-    rollerDoble: 70000,
-    rollerDobleCenefa: 70000,
-
-    rollerDuo: 60000,
-    rollerDuoTranslucido: 60000,
-    rollerDuoSunOut: 60000,
-
-    persianaVertical: 75000,
-    darkBlackout: 55000,
-
-    motorizacionIntegrada: 130000,
-  },
-
-  vina: {
-    rollerSimple: 30000,
-    blackout: 30000,
-    sunscreen: 30000,
-    translucido: 30000,
-    rollerCenefa: 30000,
-
-    rollerDoble: 55000,
-    rollerDobleCenefa: 55000,
-
-    rollerDuo: 50000,
-    rollerDuoTranslucido: 50000,
-    rollerDuoSunOut: 50000,
-
-    persianaVertical: 60000,
-    darkBlackout: 55000,
-
-    motorizacionIntegrada: 100000,
-  },
-}
-
-  const promoCodes = {
-    DSNVDM: {
-      label: "DSNVDM",
-      percent: 10,
+    iquique: {
+      rollerSimple: 35000,
+      blackout: 35000,
+      sunscreen: 35000,
+      translucido: 35000,
+      rollerCenefa: 35000,
+      rollerDoble: 70000,
+      rollerDobleCenefa: 70000,
+      rollerDuo: 60000,
+      rollerDuoTranslucido: 60000,
+      rollerDuoSunOut: 60000,
+      persianaVertical: 75000,
+      darkBlackout: 55000,
+      motorizacionIndependiente: 130000,
+      motorizacionDual: 130000,
+      motorizacionIntegrada: 130000,
     },
-    DSNNT: {
-      label: "DSNNT",
-      percent: 5,
-    },
-    DSNIQQ: {
-      label: "DSNIQQ",
-      percent: 15,
+    vina: {
+      rollerSimple: 30000,
+      blackout: 30000,
+      sunscreen: 30000,
+      translucido: 30000,
+      rollerCenefa: 30000,
+      rollerDoble: 55000,
+      rollerDobleCenefa: 55000,
+      rollerDuo: 50000,
+      rollerDuoTranslucido: 50000,
+      rollerDuoSunOut: 50000,
+      persianaVertical: 60000,
+      darkBlackout: 55000,
+      motorizacionIndependiente: 100000,
+      motorizacionDual: 100000,
+      motorizacionIntegrada: 100000,
     },
   }
 
+  const promoCodes = {
+    DSNVDM: { label: "DSNVDM", percent: 10 },
+    DSNNT: { label: "DSNNT", percent: 5 },
+    DSNIQQ: { label: "DSNIQQ", percent: 15 },
+  }
+
   const [quoteNumber, setQuoteNumber] = useState("COT-PENDIENTE")
+  const [savedProject, setSavedProject] = useState(null)
+  const [saving, setSaving] = useState(false)
 
   const [form, setForm] = useState({
     nombre: "",
@@ -174,6 +168,10 @@ export default function Cotizar() {
 
   function handleFormChange(event) {
     const { name, value } = event.target
+
+    setSavedProject(null)
+    setQuoteNumber("COT-PENDIENTE")
+
     setForm((prev) => ({
       ...prev,
       [name]: name === "promoCode" ? value.toUpperCase() : value,
@@ -181,6 +179,9 @@ export default function Cotizar() {
   }
 
   function handleMeasureChange(id, field, value) {
+    setSavedProject(null)
+    setQuoteNumber("COT-PENDIENTE")
+
     setMeasures((prev) =>
       prev.map((item) => {
         if (item.id !== id) return item
@@ -201,10 +202,15 @@ export default function Cotizar() {
   }
 
   function addMeasureRow(tipo = "rollerSimple") {
+    setSavedProject(null)
+    setQuoteNumber("COT-PENDIENTE")
     setMeasures((prev) => [...prev, createMeasureRow(tipo)])
   }
 
   function removeMeasureRow(id) {
+    setSavedProject(null)
+    setQuoteNumber("COT-PENDIENTE")
+
     setMeasures((prev) => {
       if (prev.length === 1) return prev
       return prev.filter((item) => item.id !== id)
@@ -253,12 +259,13 @@ export default function Cotizar() {
       const category = getProductCategory(item.tipo)
       const cantidad = Number(item.cantidad)
       const price = prices[form.sucursal]?.[item.tipo] ?? 0
+
       const baseRow = {
         index: index + 1,
         valid: false,
         category,
         productKey: item.tipo,
-        productLabel: productLabels[item.tipo],
+        productLabel: productLabels[item.tipo] || item.tipo,
         ubicacion: item.ubicacion,
         ancho: item.ancho,
         alto: item.alto,
@@ -312,21 +319,19 @@ export default function Cotizar() {
       const area = ancho * alto
       const subtotal = area * price * cantidad
 
-const cenefaExtra =
-  item.tipo === "rollerCenefa" ||
-  item.tipo === "rollerDobleCenefa"
-    ? 25000 * cantidad
-    : 0
+      const cenefaExtra =
+        item.tipo === "rollerCenefa" || item.tipo === "rollerDobleCenefa"
+          ? 25000 * cantidad
+          : 0
 
-const recargo = recargoUnit * cantidad
+      const recargo = recargoUnit * cantidad
+      const subtotalConCenefa = subtotal + cenefaExtra
 
-const subtotalConCenefa = subtotal + cenefaExtra
+      const discount = promo
+        ? Math.round(subtotalConCenefa * (promo.percent / 100))
+        : 0
 
-const discount = promo
-  ? Math.round(subtotalConCenefa * (promo.percent / 100))
-  : 0
-
-const total = subtotalConCenefa + recargo - discount
+      const total = subtotalConCenefa + recargo - discount
 
       return {
         ...baseRow,
@@ -342,7 +347,6 @@ const total = subtotalConCenefa + recargo - discount
     })
 
     const validRows = rows.filter((row) => row.valid)
-    const calculableRows = validRows.filter((row) => row.category === "calculable")
     const requestRows = validRows.filter((row) => row.category === "solicitud")
 
     const subtotalGeneral = validRows.reduce((acc, row) => acc + row.subtotal, 0)
@@ -353,7 +357,6 @@ const total = subtotalConCenefa + recargo - discount
     return {
       rows,
       validRows,
-      calculableRows,
       requestRows,
       recargoUnit,
       subtotalGeneral,
@@ -363,16 +366,75 @@ const total = subtotalConCenefa + recargo - discount
       promo,
       hasValidRows: validRows.length > 0,
       hasRequestRows: requestRows.length > 0,
-      hasOnlyRequestRows: validRows.length > 0 && totalGeneral === 0,
     }
   }, [form, measures])
 
+  function buildQuoteDetails(quoteNumberToUse = quoteNumber) {
+    return result.rows
+      .filter((row) => row.valid)
+      .map((row, index) => {
+        const locationText = row.ubicacion ? ` · Ubicación: ${row.ubicacion}` : ""
+        const measureText =
+          row.category === "calculable"
+            ? ` · ${row.ancho}m x ${row.alto}m`
+            : ""
+        const valueText =
+          row.category === "solicitud"
+            ? " · Solicitar valores a DecoSun"
+            : ` · Total: ${formatCLP(row.total)}`
+
+        return `${index + 1}. ${row.productLabel}${measureText} · Cantidad: ${
+          row.cantidad
+        }${locationText}${valueText}`
+      })
+      .join("\n")
+  }
+
+  function buildWhatsappText(quoteNumberToUse = quoteNumber) {
+    if (!result.hasValidRows) {
+      return "Hola Decosun, quiero solicitar una cotización."
+    }
+
+    return [
+      "Hola Decosun, quiero solicitar una cotización.",
+      `Nº Cotización: ${quoteNumberToUse}`,
+      "",
+      `Cliente: ${form.nombre || "-"}`,
+      `Teléfono: ${form.telefono || "-"}`,
+      `Sucursal: ${form.sucursal === "iquique" ? "Iquique" : "Viña del Mar"}`,
+      `Ciudad/Zona: ${zoneLabel}`,
+      `Vendedor asignado: ${vendedor.nombre}`,
+      "",
+      "Productos:",
+      buildQuoteDetails(quoteNumberToUse),
+      "",
+      result.discountGeneral > 0
+        ? `Código aplicado: ${result.promo?.label} (-${formatCLP(
+            result.discountGeneral
+          )})`
+        : "",
+      `Subtotal base: ${formatCLP(result.subtotalGeneral)}`,
+      `Recargo total: ${formatCLP(result.recargoGeneral)}`,
+      `Total estimado: ${formatCLP(result.totalGeneral)}`,
+      result.hasRequestRows
+        ? "Nota: algunos productos requieren evaluación técnica y confirmación de valores."
+        : "",
+    ]
+      .filter(Boolean)
+      .join("\n")
+  }
+
   async function saveQuoteToSupabase() {
+    if (savedProject?.quoteNumber) return savedProject
+
     try {
+      setSaving(true)
+
       const validRows = result.rows.filter((row) => row.valid)
 
       if (validRows.length === 0) {
         alert("Debes ingresar al menos un producto válido.")
+        setSaving(false)
         return false
       }
 
@@ -386,18 +448,18 @@ const total = subtotalConCenefa + recargo - discount
       if (quoteError) {
         console.error(quoteError)
         alert("Error generando correlativo")
+        setSaving(false)
         return false
       }
 
-      setQuoteNumber(realQuoteNumber)
+      const publicToken = crypto.randomUUID()
+      const projectId = crypto.randomUUID()
 
       const summary = validRows
         .map((row) => {
           const locationText = row.ubicacion ? ` · Ubicación: ${row.ubicacion}` : ""
           const measureText =
-            row.category === "calculable"
-              ? ` · ${row.ancho}x${row.alto}`
-              : ""
+            row.category === "calculable" ? ` · ${row.ancho}x${row.alto}` : ""
           const valueText =
             row.category === "solicitud"
               ? " · Solicitar valores a DecoSun"
@@ -409,7 +471,6 @@ const total = subtotalConCenefa + recargo - discount
 
       const region = form.sucursal === "iquique" ? "iquique" : "quinta_region"
       const city = form.zona === "otra" ? form.ciudadExtra : zoneLabel
-      const projectId = crypto.randomUUID()
 
       const { error: projectError } = await supabase.from("projects").insert([
         {
@@ -420,6 +481,7 @@ const total = subtotalConCenefa + recargo - discount
           city: city || null,
           summary,
           sale_value: result.totalGeneral || 0,
+          amount_paid: 0,
           status: "cotizado",
           payment_status: "pendiente",
           payment_type: "pendiente",
@@ -427,12 +489,17 @@ const total = subtotalConCenefa + recargo - discount
           client_type: "Residencial",
           company_name:
             form.sucursal === "iquique" ? "Decosun Spa" : "Decosun Group SpA",
+          source: "cotizador_web",
+          quote_number: realQuoteNumber,
+          public_token: publicToken,
+          client_visible_status: "Cotización recibida",
         },
       ])
 
       if (projectError) {
         console.error(projectError)
         alert("Error guardando proyecto")
+        setSaving(false)
         return false
       }
 
@@ -451,54 +518,52 @@ const total = subtotalConCenefa + recargo - discount
 
       if (measurementError) {
         console.error(measurementError)
-        alert("Proyecto creado, pero hubo error guardando medidas")
-        return false
+        alert("Proyecto creado, pero hubo error guardando medidas.")
       }
 
-      return realQuoteNumber
+      const saved = {
+        projectId,
+        quoteNumber: realQuoteNumber,
+        publicToken,
+      }
+
+      setQuoteNumber(realQuoteNumber)
+      setSavedProject(saved)
+      setSaving(false)
+
+      return saved
     } catch (err) {
       console.error(err)
       alert("Error conectando con Supabase")
+      setSaving(false)
       return false
     }
+  }
+
+  async function handleSaveOnly() {
+    const saved = await saveQuoteToSupabase()
+    if (!saved) return
+
+    alert(`Proyecto guardado en el panel: ${saved.quoteNumber}`)
   }
 
   async function sendQuoteEmail() {
     if (!result.hasValidRows) return
 
-    const savedQuoteNumber = await saveQuoteToSupabase()
-    if (!savedQuoteNumber) return
-
-    const details = result.rows
-      .filter((row) => row.valid)
-      .map((row, index) => {
-        const locationText = row.ubicacion ? ` · Ubicación: ${row.ubicacion}` : ""
-        const measureText =
-          row.category === "calculable"
-            ? ` · ${row.ancho}m x ${row.alto}m`
-            : ""
-        const valueText =
-          row.category === "solicitud"
-            ? " · Solicitar valores a DecoSun"
-            : ` · Total: ${formatCLP(row.total)}`
-
-        return `${index + 1}. ${row.productLabel}${measureText} · Cantidad: ${
-          row.cantidad
-        }${locationText}${valueText}`
-      })
-      .join("\n")
+    const saved = await saveQuoteToSupabase()
+    if (!saved) return
 
     emailjs
       .send(
         emailServiceId,
         emailTemplateId,
         {
-          quoteNumber: savedQuoteNumber,
+          quoteNumber: saved.quoteNumber,
           date: new Date().toLocaleDateString("es-CL"),
           name: form.nombre || "Sin nombre",
           phone: form.telefono || "Sin teléfono",
           city: zoneLabel,
-          details,
+          details: buildQuoteDetails(saved.quoteNumber),
           subtotal: formatCLP(result.subtotalGeneral),
           discount: formatCLP(result.discountGeneral),
           total: formatCLP(result.totalGeneral),
@@ -511,7 +576,7 @@ const total = subtotalConCenefa + recargo - discount
         emailPublicKey
       )
       .then(() => {
-        alert("Cotización enviada a Decosun")
+        alert("Cotización guardada y enviada a Decosun")
       })
       .catch((error) => {
         console.error(error)
@@ -519,53 +584,16 @@ const total = subtotalConCenefa + recargo - discount
       })
   }
 
-  const whatsappText = result.hasValidRows
-    ? [
-        "Hola Decosun, quiero solicitar una cotización.",
-        `Nº Cotización: ${quoteNumber}`,
-        "",
-        `Cliente: ${form.nombre || "-"}`,
-        `Teléfono: ${form.telefono || "-"}`,
-        `Sucursal: ${form.sucursal === "iquique" ? "Iquique" : "Viña del Mar"}`,
-        `Ciudad/Zona: ${zoneLabel}`,
-        `Vendedor asignado: ${vendedor.nombre}`,
-        "",
-        "Productos:",
-        ...result.rows
-          .filter((row) => row.valid)
-          .map((row, index) => {
-            const locationText = row.ubicacion ? ` · Ubicación: ${row.ubicacion}` : ""
-            const measureText =
-              row.category === "calculable"
-                ? ` · ${row.ancho} m x ${row.alto} m`
-                : ""
-            const valueText =
-              row.category === "solicitud"
-                ? " · Solicitar valores a DecoSun"
-                : ` · Total: ${formatCLP(row.total)}`
+  async function sendWhatsapp() {
+    const saved = await saveQuoteToSupabase()
+    if (!saved) return
 
-            return `${index + 1}. ${row.productLabel}${measureText} · Cantidad: ${
-              row.cantidad
-            }${locationText}${valueText}`
-          }),
-        "",
-        result.discountGeneral > 0
-          ? `Código aplicado: ${result.promo?.label} (-${formatCLP(
-              result.discountGeneral
-            )})`
-          : "",
-        `Subtotal base: ${formatCLP(result.subtotalGeneral)}`,
-        `Recargo total: ${formatCLP(result.recargoGeneral)}`,
-        `Total estimado: ${formatCLP(result.totalGeneral)}`,
-        result.hasRequestRows
-          ? "Nota: algunos productos requieren evaluación técnica y confirmación de valores."
-          : "",
-      ]
-        .filter(Boolean)
-        .join("\n")
-    : "Hola Decosun, quiero solicitar una cotización."
+    const whatsappURL = `https://wa.me/${phone}?text=${encodeURIComponent(
+      buildWhatsappText(saved.quoteNumber)
+    )}`
 
-  const whatsappURL = `https://wa.me/${phone}?text=${encodeURIComponent(whatsappText)}`
+    window.open(whatsappURL, "_blank", "noopener,noreferrer")
+  }
 
   return (
     <main className="relative overflow-hidden bg-slate-950">
@@ -586,8 +614,8 @@ const total = subtotalConCenefa + recargo - discount
             Cotizador online · Decosun
           </h1>
           <p className="mt-5 text-lg leading-8 text-slate-200">
-            Ingresa productos, medidas y ubicación. Las motorizaciones se agregan
-            como artículos independientes para mantener una cotización más limpia.
+            Ingresa productos, medidas y ubicación. Al guardar, la cotización
+            crea automáticamente un proyecto en el panel DecoSun.
           </p>
         </div>
 
@@ -700,13 +728,13 @@ const total = subtotalConCenefa + recargo - discount
                   value={form.promoCode}
                   onChange={handleFormChange}
                   type="text"
-                  placeholder=""
                   className="w-full rounded-2xl border border-slate-200 px-4 py-3 uppercase outline-none transition focus:border-slate-400"
                 />
 
                 {form.promoCode && result.promo && (
                   <p className="mt-2 text-sm font-medium text-green-700">
-                    Código aplicado: {result.promo.label} · {result.promo.percent}% de descuento
+                    Código aplicado: {result.promo.label} ·{" "}
+                    {result.promo.percent}% de descuento
                   </p>
                 )}
 
@@ -765,11 +793,13 @@ const total = subtotalConCenefa + recargo - discount
                           <p className="text-base font-semibold text-slate-900">
                             {productLabels[item.tipo]}
                           </p>
+
                           {category === "solicitud" && (
                             <p className="mt-1 text-sm text-amber-700">
                               Este producto requiere evaluación técnica.
                             </p>
                           )}
+
                           {category === "motor" && (
                             <p className="mt-1 text-sm text-slate-600">
                               Artículo independiente, no requiere medidas.
@@ -796,35 +826,69 @@ const total = subtotalConCenefa + recargo - discount
                           <select
                             value={item.tipo}
                             onChange={(event) =>
-                              handleMeasureChange(item.id, "tipo", event.target.value)
+                              handleMeasureChange(
+                                item.id,
+                                "tipo",
+                                event.target.value
+                              )
                             }
                             className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-slate-400"
                           >
-  <optgroup label="Roller simple">
-  <option value="rollerSimple">Roller simple</option>
-  <option value="blackout">Black out</option>
-  <option value="sunscreen">Sun Screen</option>
-  <option value="translucido">Translúcido</option>
-  <option value="darkBlackout">Dark Black Out</option>
-  <option value="rollerCenefa">Roller / Cenefa</option>
-  <option value="rollerDoble">Roller doble SC + BO</option>
-  <option value="rollerDobleCenefa">Roller doble SC + BO / Cenefa</option>
-</optgroup>
+                            <optgroup label="Roller simple">
+                              <option value="rollerSimple">Roller simple</option>
+                              <option value="blackout">Black out</option>
+                              <option value="sunscreen">Sun Screen</option>
+                              <option value="translucido">Translúcido</option>
+                              <option value="darkBlackout">
+                                Dark Black Out
+                              </option>
+                              <option value="rollerCenefa">
+                                Roller / Cenefa
+                              </option>
+                              <option value="rollerDoble">
+                                Roller doble SC + BO
+                              </option>
+                              <option value="rollerDobleCenefa">
+                                Roller doble SC + BO / Cenefa
+                              </option>
+                            </optgroup>
 
-<optgroup label="DÚO">
-  <option value="rollerDuo">DÚO</option>
-  <option value="rollerDuoTranslucido">DÚO translúcido</option>
-  <option value="rollerDuoSunOut">DÚO Sun Out</option>
-</optgroup>
+                            <optgroup label="DÚO">
+                              <option value="rollerDuo">DÚO</option>
+                              <option value="rollerDuoTranslucido">
+                                DÚO translúcido
+                              </option>
+                              <option value="rollerDuoSunOut">
+                                DÚO Sun Out
+                              </option>
+                            </optgroup>
 
-<optgroup label="Otros productos">
-  <option value="persianaVertical">Persiana vertical</option>
-</optgroup>
+                            <optgroup label="Otros productos">
+                              <option value="persianaVertical">
+                                Persiana vertical
+                              </option>
+                            </optgroup>
+
+                            <optgroup label="Motorización">
+                              <option value="motorizacionIndependiente">
+                                Motorización independiente
+                              </option>
+                              <option value="motorizacionDual">
+                                Motorización dual
+                              </option>
+                              <option value="motorizacionIntegrada">
+                                Motorización integrada al producto
+                              </option>
+                            </optgroup>
 
                             <optgroup label="Solicitar valores a DecoSun">
-                              <option value="toldoProyectante">Toldo proyectante</option>
+                              <option value="toldoProyectante">
+                                Toldo proyectante
+                              </option>
                               <option value="toldoVertical">Toldo vertical</option>
-                              <option value="cierreTerraza">Cierre de terraza</option>
+                              <option value="cierreTerraza">
+                                Cierre de terraza
+                              </option>
                               <option value="pergolaBioclimatica">
                                 Pérgola bioclimática
                               </option>
@@ -943,7 +1007,7 @@ const total = subtotalConCenefa + recargo - discount
 
                   <div className="mt-2 text-sm text-slate-600">
                     <p>
-                      <strong>N° Cotización:</strong> {quoteNumber} {form.nombre ? `· ${form.nombre}` : ""}
+                      <strong>N° Cotización:</strong> {quoteNumber}
                     </p>
                     <p>
                       <strong>Fecha:</strong>{" "}
@@ -963,6 +1027,12 @@ const total = subtotalConCenefa + recargo - discount
 
                 <img src={logoSolo} alt="Decosun" className="h-16 w-auto" />
               </div>
+
+              {savedProject?.quoteNumber && (
+                <p className="mt-4 rounded-xl bg-green-100 px-4 py-3 text-sm font-semibold text-green-800 print:hidden">
+                  Proyecto guardado en el panel: {savedProject.quoteNumber}
+                </p>
+              )}
 
               <div className="mt-5 rounded-2xl border border-white/20 bg-white/90 p-4 text-sm text-slate-700 backdrop-blur-md">
                 <p className="font-semibold text-slate-900">Vendedor asignado</p>
@@ -1019,12 +1089,6 @@ const total = subtotalConCenefa + recargo - discount
                               {row.category === "solicitud" && (
                                 <p className="mt-1 text-sm font-medium text-amber-700">
                                   Solicitar valores a DecoSun
-                                </p>
-                              )}
-
-                              {row.discount > 0 && (
-                                <p className="mt-1 text-sm text-green-700">
-                                  Descuento aplicado: -{formatCLP(row.discount)}
                                 </p>
                               )}
                             </div>
@@ -1129,20 +1193,30 @@ const total = subtotalConCenefa + recargo - discount
 
                 <button
                   type="button"
+                  onClick={handleSaveOnly}
+                  disabled={saving}
+                  className="mt-4 inline-flex w-full items-center justify-center rounded-2xl bg-slate-700 px-6 py-3 text-center text-sm font-semibold text-white transition hover:-translate-y-0.5 disabled:opacity-60 print:hidden"
+                >
+                  {saving ? "Guardando..." : "Guardar proyecto en panel"}
+                </button>
+
+                <button
+                  type="button"
                   onClick={sendQuoteEmail}
-                  className="mt-4 inline-flex w-full items-center justify-center rounded-2xl bg-amber-600 px-6 py-3 text-center text-sm font-semibold text-white transition hover:-translate-y-0.5 print:hidden"
+                  disabled={saving}
+                  className="mt-4 inline-flex w-full items-center justify-center rounded-2xl bg-amber-600 px-6 py-3 text-center text-sm font-semibold text-white transition hover:-translate-y-0.5 disabled:opacity-60 print:hidden"
                 >
                   Guardar y enviar copia a Decosun
                 </button>
 
-                <a
-                  href={whatsappURL}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-8 inline-flex w-full items-center justify-center rounded-2xl bg-green-500 px-6 py-3 text-center text-sm font-semibold text-white transition hover:-translate-y-0.5 print:hidden"
+                <button
+                  type="button"
+                  onClick={sendWhatsapp}
+                  disabled={saving}
+                  className="mt-4 inline-flex w-full items-center justify-center rounded-2xl bg-green-500 px-6 py-3 text-center text-sm font-semibold text-white transition hover:-translate-y-0.5 disabled:opacity-60 print:hidden"
                 >
-                  Enviar cotización por WhatsApp
-                </a>
+                  Guardar y enviar por WhatsApp
+                </button>
 
                 <p className="mt-6 text-xs text-slate-500">
                   Esta cotización es referencial y puede ajustarse según condiciones
