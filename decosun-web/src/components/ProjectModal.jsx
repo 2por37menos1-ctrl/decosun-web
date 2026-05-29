@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 import { supabase } from "../lib/supabase"
+import { canViewCommissions } from "../lib/permissions"
 
 const statuses = [
   "cotizado",
@@ -71,7 +72,7 @@ function timeAgo(dateString) {
   return date.toLocaleDateString("es-CL")
 }
 
-export default function ProjectModal({ project, onClose, onSave }) {
+export default function ProjectModal({ project, profile, onClose, onSave }) {
   const [tab, setTab] = useState("general")
   const [form, setForm] = useState(null)
   const [history, setHistory] = useState([])
@@ -157,9 +158,33 @@ export default function ProjectModal({ project, onClose, onSave }) {
   }
 
   function handleSubmit(e) {
-    e.preventDefault()
-    onSave(project.id, form)
+  e.preventDefault()
+
+  const cleanPayload = {
+    ...form,
+
+    key_date: form.key_date || null,
+    sale_date: form.sale_date || null,
+    invoice_date: form.invoice_date || null,
+    closed_date: form.closed_date || null,
+
+    sale_value: Number(form.sale_value || 0),
+    invoice_value: Number(form.invoice_value || 0),
+    amount_paid: Number(form.amount_paid || 0),
+
+    capital_contribution: Number(form.capital_contribution || 0),
+    management_fee_rate: Number(form.management_fee_rate || 0),
+
+    fabric_cost: Number(form.fabric_cost || 0),
+    motor_cost: Number(form.motor_cost || 0),
+    mechanism_cost: Number(form.mechanism_cost || 0),
+    installation_cost: Number(form.installation_cost || 0),
+    transport_cost: Number(form.transport_cost || 0),
+    other_costs: Number(form.other_costs || 0),
   }
+
+  onSave(project.id, cleanPayload)
+}
 
   const balance = useMemo(() => {
     return Number(form?.sale_value || 0) - Number(form?.amount_paid || 0)
@@ -196,8 +221,10 @@ export default function ProjectModal({ project, onClose, onSave }) {
     : ""
 
   const publicStatusURL = form?.public_token
-    ? `/estado/${form.public_token}`
-    : ""
+  ? `/estado/${form.public_token}`
+  : ""
+
+  const canSeeCommissions = canViewCommissions(profile)
 
   if (!project || !form) return null
 
@@ -244,13 +271,15 @@ export default function ProjectModal({ project, onClose, onSave }) {
             Finanzas
           </button>
 
-          <button
-            type="button"
-            className={tab === "comisiones" ? "active" : ""}
-            onClick={() => setTab("comisiones")}
-          >
+          {canSeeCommissions && (
+           <button
+             type="button"
+             className={tab === "comisiones" ? "active" : ""}
+             onClick={() => setTab("comisiones")}
+           >
             Comisiones / Capital
-          </button>
+         </button>
+        )}
 
           <button
             type="button"
@@ -521,7 +550,7 @@ export default function ProjectModal({ project, onClose, onSave }) {
           </div>
         )}
 
-        {tab === "comisiones" && (
+        {tab === "comisiones" && canSeeCommissions && (
           <div className="modal-grid">
             <label>
               % manejo gerencia

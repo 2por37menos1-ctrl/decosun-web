@@ -17,6 +17,8 @@ import {
   canViewAgenda,
   canViewPurchases,
   canViewTreasury,
+  isGerencia,
+  isSucursal,
 } from "../lib/permissions"
 
 import { useProfile } from "../hooks/useProfile"
@@ -126,36 +128,77 @@ export default function Dashboard() {
     0
   )
 
-  const edgarCommissionRate = iquiqueSold >= 10000000 ? 0.2 : 0.15
-  const edgarCommission = iquiqueSold * edgarCommissionRate
+  let edgarCommission = 0
+  let edgarCommissionLabel = "15%"
+
+  if (iquiqueSold >= 10000000) {
+  edgarCommission = 2000000
+  edgarCommissionLabel = "Tope $2.000.000"
+} else {
+  edgarCommission = iquiqueSold * 0.15
+}
 
   async function handleSaveProject(projectId, payload) {
-    const previousProject = projects.find((p) => p.id === projectId)
-
-    const previousPaid = Number(previousProject?.amount_paid || 0)
-    const newPaid = Number(payload.amount_paid || 0)
-    const paymentDifference = newPaid - previousPaid
-
-    const ok = await updateProject(projectId, payload)
-
-    if (!ok) return
-
-    if (paymentDifference > 0) {
-      await createTreasuryIncome(previousProject, paymentDifference)
-
-      await createProjectHistory({
-        projectId,
-        type: "payment",
-        description: `Pago registrado por ${formatMoney(paymentDifference)}`,
-        createdBy: profile?.full_name || "usuario",
-        metadata: {
-          amount: paymentDifference,
-        },
-      })
-    }
-
-    setSelectedProject(null)
+  const cleanDate = (value) => {
+    if (!value) return null
+    if (String(value).trim() === "") return null
+    return value
   }
+
+  const cleanNumber = (value) => {
+    if (value === "" || value === null || value === undefined) return 0
+    return Number(value)
+  }
+
+  const cleanPayload = {
+    ...payload,
+
+    key_date: cleanDate(payload.key_date),
+    sale_date: cleanDate(payload.sale_date),
+    invoice_date: cleanDate(payload.invoice_date),
+    closed_date: cleanDate(payload.closed_date),
+
+    sale_value: cleanNumber(payload.sale_value),
+    invoice_value: cleanNumber(payload.invoice_value),
+    amount_paid: cleanNumber(payload.amount_paid),
+
+    capital_contribution: cleanNumber(payload.capital_contribution),
+    management_fee_rate: cleanNumber(payload.management_fee_rate),
+
+    fabric_cost: cleanNumber(payload.fabric_cost),
+    motor_cost: cleanNumber(payload.motor_cost),
+    mechanism_cost: cleanNumber(payload.mechanism_cost),
+    installation_cost: cleanNumber(payload.installation_cost),
+    transport_cost: cleanNumber(payload.transport_cost),
+    other_costs: cleanNumber(payload.other_costs),
+  }
+
+  const previousProject = projects.find((p) => p.id === projectId)
+
+  const previousPaid = Number(previousProject?.amount_paid || 0)
+  const newPaid = Number(cleanPayload.amount_paid || 0)
+  const paymentDifference = newPaid - previousPaid
+
+  const ok = await updateProject(projectId, cleanPayload)
+
+  if (!ok) return
+
+  if (paymentDifference > 0) {
+    await createTreasuryIncome(previousProject, paymentDifference)
+
+    await createProjectHistory({
+      projectId,
+      type: "payment",
+      description: `Pago registrado por ${formatMoney(paymentDifference)}`,
+      createdBy: profile?.full_name || "usuario",
+      metadata: {
+        amount: paymentDifference,
+      },
+    })
+  }
+
+  setSelectedProject(null)
+}
 
   async function createTreasuryIncome(project, amount) {
     if (!project || amount <= 0) return
@@ -234,7 +277,7 @@ export default function Dashboard() {
             </button>
           )}
 
-          {profile?.role === "gerencia" && (
+          {isGerencia(profile) && (
             <select
               className="region-filter"
               value={regionFilter}
@@ -287,14 +330,19 @@ export default function Dashboard() {
               value={formatMoney(visibleBalance)}
             />
 
-            {profile?.role === "gerencia" && (
-              <StatCard
-                title={`Comisión Edgar ${(edgarCommissionRate * 100).toFixed(
-                  0
-                )}%`}
-                value={formatMoney(edgarCommission)}
-              />
-            )}
+            {isGerencia(profile) && (
+  <StatCard
+    title={`Comisión Edgar · ${edgarCommissionLabel}`}
+    value={formatMoney(edgarCommission)}
+  />
+)}
+
+{isSucursal(profile) && profile?.region_code === "iquique" && (
+  <StatCard
+    title={`Mi comisión estimada · ${edgarCommissionLabel}`}
+    value={formatMoney(edgarCommission)}
+  />
+)}
           </div>
 
           <KanbanBoard
@@ -315,10 +363,11 @@ export default function Dashboard() {
       {view === "treasury" && canViewTreasury(profile) && <Treasury />}
 
       <ProjectModal
-        project={selectedProject}
-        onClose={() => setSelectedProject(null)}
-        onSave={handleSaveProject}
-      />
+  project={selectedProject}
+  profile={profile}
+  onClose={() => setSelectedProject(null)}
+  onSave={handleSaveProject}
+/>
     </DashboardLayout>
   )
 }

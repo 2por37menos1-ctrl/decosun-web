@@ -1,17 +1,17 @@
 export function isGerencia(profile) {
-  return profile?.role === "gerencia";
+  return profile?.role === "gerencia"
 }
 
 export function isSucursal(profile) {
-  return ["gerente_sucursal", "sucursal"].includes(profile?.role);
+  return ["gerente_sucursal", "sucursal"].includes(profile?.role)
 }
 
 export function isVendedor(profile) {
-  return profile?.role === "vendedor";
+  return profile?.role === "vendedor"
 }
 
 export function isAsistente(profile) {
-  return profile?.role === "asistente";
+  return profile?.role === "asistente"
 }
 
 export function canViewAgenda(profile) {
@@ -20,7 +20,7 @@ export function canViewAgenda(profile) {
     isSucursal(profile) ||
     isVendedor(profile) ||
     isAsistente(profile)
-  );
+  )
 }
 
 export function canViewPurchases(profile) {
@@ -28,13 +28,21 @@ export function canViewPurchases(profile) {
     isGerencia(profile) ||
     isSucursal(profile) ||
     isAsistente(profile)
-  );
+  )
 }
 
 export function canViewTreasury(profile) {
-  return isGerencia(profile);
+  return isGerencia(profile)
 }
 
 export function canViewSensitiveFinance(profile) {
-  return isGerencia(profile);
+  return isGerencia(profile)
+}
+
+export function canViewCommissions(profile) {
+  return isGerencia(profile)
+}
+
+export function canEditOperationalCosts(profile) {
+  return isGerencia(profile) || isSucursal(profile)
 }
