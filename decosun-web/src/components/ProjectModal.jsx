@@ -158,33 +158,33 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
   }
 
   function handleSubmit(e) {
-  e.preventDefault()
+    e.preventDefault()
 
-  const cleanPayload = {
-    ...form,
+    const cleanPayload = {
+      ...form,
 
-    key_date: form.key_date || null,
-    sale_date: form.sale_date || null,
-    invoice_date: form.invoice_date || null,
-    closed_date: form.closed_date || null,
+      key_date: form.key_date || null,
+      sale_date: form.sale_date || null,
+      invoice_date: form.invoice_date || null,
+      closed_date: form.closed_date || null,
 
-    sale_value: Number(form.sale_value || 0),
-    invoice_value: Number(form.invoice_value || 0),
-    amount_paid: Number(form.amount_paid || 0),
+      sale_value: Number(form.sale_value || 0),
+      invoice_value: Number(form.invoice_value || 0),
+      amount_paid: Number(form.amount_paid || 0),
 
-    capital_contribution: Number(form.capital_contribution || 0),
-    management_fee_rate: Number(form.management_fee_rate || 0),
+      capital_contribution: Number(form.capital_contribution || 0),
+      management_fee_rate: Number(form.management_fee_rate || 0),
 
-    fabric_cost: Number(form.fabric_cost || 0),
-    motor_cost: Number(form.motor_cost || 0),
-    mechanism_cost: Number(form.mechanism_cost || 0),
-    installation_cost: Number(form.installation_cost || 0),
-    transport_cost: Number(form.transport_cost || 0),
-    other_costs: Number(form.other_costs || 0),
+      fabric_cost: Number(form.fabric_cost || 0),
+      motor_cost: Number(form.motor_cost || 0),
+      mechanism_cost: Number(form.mechanism_cost || 0),
+      installation_cost: Number(form.installation_cost || 0),
+      transport_cost: Number(form.transport_cost || 0),
+      other_costs: Number(form.other_costs || 0),
+    }
+
+    onSave(project.id, cleanPayload)
   }
-
-  onSave(project.id, cleanPayload)
-}
 
   const balance = useMemo(() => {
     return Number(form?.sale_value || 0) - Number(form?.amount_paid || 0)
@@ -221,8 +221,8 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
     : ""
 
   const publicStatusURL = form?.public_token
-  ? `/estado/${form.public_token}`
-  : ""
+    ? `https://decosun.cl/estado/${form.public_token}`
+    : ""
 
   const canSeeCommissions = canViewCommissions(profile)
 
@@ -272,14 +272,14 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
           </button>
 
           {canSeeCommissions && (
-           <button
-             type="button"
-             className={tab === "comisiones" ? "active" : ""}
-             onClick={() => setTab("comisiones")}
-           >
-            Comisiones / Capital
-         </button>
-        )}
+            <button
+              type="button"
+              className={tab === "comisiones" ? "active" : ""}
+              onClick={() => setTab("comisiones")}
+            >
+              Comisiones / Capital
+            </button>
+          )}
 
           <button
             type="button"
@@ -457,9 +457,33 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
             </label>
 
             <div className="balance-box">
-              <span>Estado visible actual</span>
-              <strong>{form.client_visible_status}</strong>
+              <span>Ruta pública de seguimiento</span>
+              <strong>{publicStatusURL || "Sin token público"}</strong>
             </div>
+
+            {publicStatusURL && (
+              <div className="full-field flex flex-wrap gap-3">
+                <a
+                  href={publicStatusURL}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="primary-btn"
+                >
+                  Abrir seguimiento
+                </a>
+
+                <button
+                  type="button"
+                  className="secondary-btn"
+                  onClick={() => {
+                    navigator.clipboard.writeText(publicStatusURL)
+                    alert("Enlace copiado")
+                  }}
+                >
+                  Copiar enlace
+                </button>
+              </div>
+            )}
 
             <div className="balance-box">
               <span>Ruta pública futura</span>
