@@ -27,24 +27,6 @@ export function canViewPurchases(profile) {
 }
 
 export function canViewTreasury(profile) {
-  return isGerencia(profile)
-}
-
-export function canViewSensitiveFinance(profile) {
-  return isGerencia(profile)
-}
-
-export function canViewCommissions(profile) {
-  return isGerencia(profile)
-}
-
-export function canEditOperationalCosts(profile) {
-  return (
-    isGerencia(profile) ||
-    isJefaturaRegion(profile)
-  )
-}
-export function canViewTreasury(profile) {
   return (
     isGerencia(profile) ||
     isAdministracionRegional(profile)
@@ -68,4 +50,19 @@ export function canViewInternalLoans(profile) {
 
 export function canViewBankReconciliation(profile) {
   return isGerencia(profile)
+}
+
+export function canViewSensitiveFinance(profile) {
+  return isGerencia(profile)
+}
+
+export function canViewCommissions(profile) {
+  return isGerencia(profile)
+}
+
+export function canEditOperationalCosts(profile) {
+  return (
+    isGerencia(profile) ||
+    isJefaturaRegion(profile)
+  )
 }
