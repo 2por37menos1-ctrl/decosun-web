@@ -44,3 +44,28 @@ export function canEditOperationalCosts(profile) {
     isJefaturaRegion(profile)
   )
 }
+export function canViewTreasury(profile) {
+  return (
+    isGerencia(profile) ||
+    isAdministracionRegional(profile)
+  )
+}
+
+export function canCreateTreasuryMovement(profile) {
+  return (
+    isGerencia(profile) ||
+    isAdministracionRegional(profile)
+  )
+}
+
+export function canViewTreasuryTotals(profile) {
+  return isGerencia(profile)
+}
+
+export function canViewInternalLoans(profile) {
+  return isGerencia(profile)
+}
+
+export function canViewBankReconciliation(profile) {
+  return isGerencia(profile)
+}

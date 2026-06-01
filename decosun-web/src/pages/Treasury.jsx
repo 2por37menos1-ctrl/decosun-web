@@ -1,6 +1,13 @@
 import { useEffect, useMemo, useState } from "react"
 import { supabase } from "../lib/supabase"
 
+import {
+  canViewTreasuryTotals,
+  canViewInternalLoans,
+} from "../lib/permissions"
+
+import { useProfile } from "../hooks/useProfile"
+
 const companies = ["Decosun Spa", "Decosun Group SpA"]
 
 const categories = [
@@ -76,6 +83,8 @@ export default function Treasury() {
     reason: "",
     notes: "",
   })
+
+  const { profile } = useProfile()
 
   useEffect(() => {
     loadMovements()
@@ -407,12 +416,14 @@ export default function Treasury() {
             Movimientos
           </button>
 
-          <button
-            className={view === "loans" ? "primary-btn" : "secondary-btn"}
-            onClick={() => setView("loans")}
-          >
-            Préstamos internos
-          </button>
+          {canViewInternalLoans(profile) && (
+            <button
+              className={view === "loans" ? "primary-btn" : "secondary-btn"}
+              onClick={() => setView("loans")}
+            >
+              Préstamos internos
+            </button>
+          )}
         </div>
       </div>
 
@@ -457,27 +468,29 @@ export default function Treasury() {
         />
       </div>
 
-      <div className="treasury-summary">
-        <div className="stat-card">
-          <span>Ingresos filtrados</span>
-          <h2>{money(totalIncome)}</h2>
-        </div>
+      {canViewTreasuryTotals(profile) && (
+        <div className="treasury-summary">
+          <div className="stat-card">
+            <span>Ingresos filtrados</span>
+            <h2>{money(totalIncome)}</h2>
+          </div>
 
-        <div className="stat-card">
-          <span>Egresos filtrados</span>
-          <h2>{money(totalExpense)}</h2>
-        </div>
+          <div className="stat-card">
+            <span>Egresos filtrados</span>
+            <h2>{money(totalExpense)}</h2>
+          </div>
 
-        <div className="stat-card">
-          <span>Saldo filtrado</span>
-          <h2>{money(balance)}</h2>
-        </div>
+          <div className="stat-card">
+            <span>Saldo filtrado</span>
+            <h2>{money(balance)}</h2>
+          </div>
 
-        <div className="stat-card">
-          <span>Préstamos abiertos</span>
-          <h2>{money(openLoanBalance)}</h2>
+          <div className="stat-card">
+            <span>Préstamos abiertos</span>
+            <h2>{money(openLoanBalance)}</h2>
+          </div>
         </div>
-      </div>
+      )}
 
       {view === "movements" && (
         <>
@@ -603,126 +616,127 @@ export default function Treasury() {
         </>
       )}
 
-      {view === "loans" && (
-        <>
-          <form className="treasury-form" onSubmit={createInternalLoan}>
-            <select
-              value={loanForm.from_company}
-              onChange={(e) => updateLoanField("from_company", e.target.value)}
-            >
-              {companies.map((company) => (
-                <option key={company}>{company}</option>
-              ))}
-            </select>
+      {view === "loans" &&
+        canViewInternalLoans(profile) && (
+          <>
+            <form className="treasury-form" onSubmit={createInternalLoan}>
+              <select
+                value={loanForm.from_company}
+                onChange={(e) => updateLoanField("from_company", e.target.value)}
+              >
+                {companies.map((company) => (
+                  <option key={company}>{company}</option>
+                ))}
+              </select>
 
-            <select
-              value={loanForm.from_bank}
-              onChange={(e) => updateLoanField("from_bank", e.target.value)}
-            >
-              {banks.map((bank) => (
-                <option key={bank}>{bank}</option>
-              ))}
-            </select>
+              <select
+                value={loanForm.from_bank}
+                onChange={(e) => updateLoanField("from_bank", e.target.value)}
+              >
+                {banks.map((bank) => (
+                  <option key={bank}>{bank}</option>
+                ))}
+              </select>
 
-            <select
-              value={loanForm.to_company}
-              onChange={(e) => updateLoanField("to_company", e.target.value)}
-            >
-              {companies.map((company) => (
-                <option key={company}>{company}</option>
-              ))}
-            </select>
+              <select
+                value={loanForm.to_company}
+                onChange={(e) => updateLoanField("to_company", e.target.value)}
+              >
+                {companies.map((company) => (
+                  <option key={company}>{company}</option>
+                ))}
+              </select>
 
-            <select
-              value={loanForm.to_bank}
-              onChange={(e) => updateLoanField("to_bank", e.target.value)}
-            >
-              {banks.map((bank) => (
-                <option key={bank}>{bank}</option>
-              ))}
-            </select>
+              <select
+                value={loanForm.to_bank}
+                onChange={(e) => updateLoanField("to_bank", e.target.value)}
+              >
+                {banks.map((bank) => (
+                  <option key={bank}>{bank}</option>
+                ))}
+              </select>
 
-            <input
-              type="number"
-              placeholder="Monto préstamo"
-              value={loanForm.amount}
-              onChange={(e) => updateLoanField("amount", e.target.value)}
-              required
-            />
+              <input
+                type="number"
+                placeholder="Monto préstamo"
+                value={loanForm.amount}
+                onChange={(e) => updateLoanField("amount", e.target.value)}
+                required
+              />
 
-            <input
-              placeholder="Motivo"
-              value={loanForm.reason}
-              onChange={(e) => updateLoanField("reason", e.target.value)}
-            />
+              <input
+                placeholder="Motivo"
+                value={loanForm.reason}
+                onChange={(e) => updateLoanField("reason", e.target.value)}
+              />
 
-            <input
-              placeholder="Notas"
-              value={loanForm.notes}
-              onChange={(e) => updateLoanField("notes", e.target.value)}
-            />
+              <input
+                placeholder="Notas"
+                value={loanForm.notes}
+                onChange={(e) => updateLoanField("notes", e.target.value)}
+              />
 
-            <button className="primary-btn">Crear préstamo</button>
-          </form>
+              <button className="primary-btn">Crear préstamo</button>
+            </form>
 
-          <div className="treasury-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>Origen</th>
-                  <th>Destino</th>
-                  <th>Monto</th>
-                  <th>Devuelto</th>
-                  <th>Pendiente</th>
-                  <th>Estado</th>
-                  <th>Acción</th>
-                </tr>
-              </thead>
+            <div className="treasury-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Origen</th>
+                    <th>Destino</th>
+                    <th>Monto</th>
+                    <th>Devuelto</th>
+                    <th>Pendiente</th>
+                    <th>Estado</th>
+                    <th>Acción</th>
+                  </tr>
+                </thead>
 
-              <tbody>
-                {loans.map((loan) => {
-                  const pending =
-                    Number(loan.amount || 0) -
-                    Number(loan.returned_amount || 0)
+                <tbody>
+                  {loans.map((loan) => {
+                    const pending =
+                      Number(loan.amount || 0) -
+                      Number(loan.returned_amount || 0)
 
-                  return (
-                    <tr key={loan.id}>
-                      <td>
-                        {loan.from_company}
-                        <br />
-                        <small>{loan.from_bank}</small>
-                      </td>
+                    return (
+                      <tr key={loan.id}>
+                        <td>
+                          {loan.from_company}
+                          <br />
+                          <small>{loan.from_bank}</small>
+                        </td>
 
-                      <td>
-                        {loan.to_company}
-                        <br />
-                        <small>{loan.to_bank}</small>
-                      </td>
+                        <td>
+                          {loan.to_company}
+                          <br />
+                          <small>{loan.to_bank}</small>
+                        </td>
 
-                      <td>{money(loan.amount)}</td>
-                      <td>{money(loan.returned_amount)}</td>
-                      <td>{money(pending)}</td>
-                      <td>{loan.status}</td>
+                        <td>{money(loan.amount)}</td>
+                        <td>{money(loan.returned_amount)}</td>
+                        <td>{money(pending)}</td>
+                        <td>{loan.status}</td>
 
-                      <td>
-                        {loan.status !== "cerrado" && (
-                          <button
-                            type="button"
-                            className="secondary-btn"
-                            onClick={() => registerLoanReturn(loan)}
-                          >
-                            Registrar devolución
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        </>
-      )}
+                        <td>
+                          {loan.status !== "cerrado" && (
+                            <button
+                              type="button"
+                              className="secondary-btn"
+                              onClick={() => registerLoanReturn(loan)}
+                            >
+                              Registrar devolución
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
     </section>
   )
 }
