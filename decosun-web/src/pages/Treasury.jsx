@@ -21,10 +21,13 @@ const categories = [
   "Arriendo",
   "Gastos legales",
   "Préstamos",
+  "Pago por cuenta de otra empresa",
   "Gastos fijos",
   "Gastos variables",
   "Aporte capital",
   "Transferencia entre empresas",
+  "Traspaso entre cuentas",
+
   "Otros",
 ]
 
@@ -50,6 +53,8 @@ export default function Treasury() {
   const [view, setView] = useState("movements")
   const [movements, setMovements] = useState([])
   const [loans, setLoans] = useState([])
+  const [intercompanyPayments, setIntercompanyPayments] = useState([])
+  const [editingMovement, setEditingMovement] = useState(null)
 
   const [filters, setFilters] = useState({
     company_name: "all",
@@ -84,11 +89,30 @@ export default function Treasury() {
     notes: "",
   })
 
+  const [intercompanyForm, setIntercompanyForm] = useState({
+    payer_company: "Decosun Group SpA",
+    payer_bank: "BCI",
+    beneficiary_company: "Decosun Spa",
+    amount: "",
+    reason: "",
+    notes: "",
+  })
+
+  const [transferForm, setTransferForm] = useState({
+    date: new Date().toISOString().slice(0, 10),
+    company_name: "Decosun Group SpA",
+    from_bank: "Mercado Pago",
+    to_bank: "BCI",
+    amount: "",
+    notes: "",
+  })
+
   const { profile } = useProfile()
 
   useEffect(() => {
     loadMovements()
     loadLoans()
+    loadIntercompanyPayments()
   }, [])
 
   async function loadMovements() {
@@ -120,6 +144,20 @@ export default function Treasury() {
     setLoans(data || [])
   }
 
+  async function loadIntercompanyPayments() {
+    const { data, error } = await supabase
+      .from("intercompany_payments")
+      .select("*")
+      .order("created_at", { ascending: false })
+
+    if (error) {
+      console.error(error)
+      return
+    }
+
+    setIntercompanyPayments(data || [])
+  }
+
   function updateField(field, value) {
     setForm((current) => ({
       ...current,
@@ -134,11 +172,102 @@ export default function Treasury() {
     }))
   }
 
+  function updateTransferField(field, value) {
+    setTransferForm((current) => ({
+      ...current,
+      [field]: value,
+    }))
+  }
+
+  function updateIntercompanyField(field, value) {
+    setIntercompanyForm((current) => ({
+      ...current,
+      [field]: value,
+    }))
+  }
+
   function updateFilter(field, value) {
     setFilters((current) => ({
       ...current,
       [field]: value,
     }))
+  }
+
+  async function createIntercompanyPayment(e) {
+    e.preventDefault()
+
+    const amount = Number(intercompanyForm.amount || 0)
+
+    if (amount <= 0) {
+      alert("Ingresa un monto válido.")
+      return
+    }
+
+    if (intercompanyForm.payer_company === intercompanyForm.beneficiary_company) {
+      alert("La empresa que paga y la beneficiada no pueden ser la misma.")
+      return
+    }
+
+    const { data: payment, error: paymentError } = await supabase
+      .from("intercompany_payments")
+      .insert({
+        payer_company: intercompanyForm.payer_company,
+        payer_bank: intercompanyForm.payer_bank,
+        beneficiary_company: intercompanyForm.beneficiary_company,
+        amount,
+        returned_amount: 0,
+        status: "pendiente",
+        reason: intercompanyForm.reason,
+        notes: intercompanyForm.notes,
+      })
+      .select()
+      .single()
+
+    if (paymentError) {
+      console.error(paymentError)
+      alert("No se pudo crear el pago por cuenta de otra empresa.")
+      return
+    }
+
+    const today = new Date().toISOString().slice(0, 10)
+
+    const { error: movementError } = await supabase
+      .from("treasury_movements")
+      .insert({
+        date: today,
+        company_name: intercompanyForm.payer_company,
+        bank: intercompanyForm.payer_bank,
+        description: `Pago por cuenta de ${intercompanyForm.beneficiary_company}`,
+        type: "egreso",
+        amount,
+        category: "Pago por cuenta de otra empresa",
+        subcategory: "Cuenta por cobrar interempresa",
+        branch: "General",
+        person_name: intercompanyForm.beneficiary_company,
+        notes:
+          intercompanyForm.reason ||
+          "Pago realizado por una empresa, correspondiente a otra",
+        source_module: "intercompany_payment",
+        intercompany_payment_id: payment.id,
+        reconciliation_status: "pendiente",
+      })
+
+    if (movementError) {
+      console.error(movementError)
+      alert("Se creó el registro, pero no se pudo crear el movimiento.")
+    }
+
+    setIntercompanyForm({
+      payer_company: "Decosun Group SpA",
+      payer_bank: "BCI",
+      beneficiary_company: "Decosun Spa",
+      amount: "",
+      reason: "",
+      notes: "",
+    })
+
+    loadIntercompanyPayments()
+    loadMovements()
   }
 
   async function saveMovement(e) {
@@ -152,7 +281,22 @@ export default function Treasury() {
       source_module: form.source_module || "manual",
     }
 
-    const { error } = await supabase.from("treasury_movements").insert(payload)
+    let error
+
+    if (editingMovement) {
+      const response = await supabase
+        .from("treasury_movements")
+        .update(payload)
+        .eq("id", editingMovement.id)
+
+      error = response.error
+    } else {
+      const response = await supabase
+        .from("treasury_movements")
+        .insert(payload)
+
+      error = response.error
+    }
 
     if (error) {
       console.error(error)
@@ -175,6 +319,8 @@ export default function Treasury() {
       reconciliation_status: "pendiente",
       source_module: "manual",
     })
+
+    setEditingMovement(null)
 
     loadMovements()
   }
@@ -362,8 +508,134 @@ export default function Treasury() {
     loadMovements()
   }
 
+  async function voidMovement(movement) {
+    const reason = window.prompt(
+      "Motivo de anulación:",
+      "Error digitación"
+    )
+
+    if (!reason) return
+
+    const { error } = await supabase
+      .from("treasury_movements")
+      .update({
+        is_void: true,
+        void_reason: reason,
+      })
+      .eq("id", movement.id)
+
+    if (error) {
+      console.error(error)
+      alert("No se pudo anular.")
+      return
+    }
+
+    loadMovements()
+  }
+
+  async function voidTransfer(movement) {
+    const reason = window.prompt(
+      "Motivo de anulación:",
+      "Error digitación"
+    )
+
+    if (!reason) return
+
+    const { error } = await supabase
+      .from("treasury_movements")
+      .update({
+        is_void: true,
+        void_reason: reason,
+      })
+      .eq("transfer_group_id", movement.transfer_group_id)
+
+    if (error) {
+      console.error(error)
+      alert("No se pudo anular el traspaso.")
+      return
+    }
+
+    loadMovements()
+  }
+
+  async function createBankTransfer(e) {
+    e.preventDefault()
+
+    const amount = Number(transferForm.amount || 0)
+
+    if (amount <= 0) {
+      alert("Ingresa un monto válido.")
+      return
+    }
+
+    if (transferForm.from_bank === transferForm.to_bank) {
+      alert("El banco origen y destino no pueden ser el mismo.")
+      return
+    }
+
+    const transferGroupId = crypto.randomUUID()
+
+    const payload = [
+      {
+        date: transferForm.date,
+        company_name: transferForm.company_name,
+        bank: transferForm.from_bank,
+        description: `Traspaso a ${transferForm.to_bank}`,
+        type: "egreso",
+        amount,
+        category: "Traspaso entre cuentas",
+        subcategory: "Salida traspaso",
+        branch: "General",
+        person_name: "",
+        notes: transferForm.notes,
+        reconciliation_status: "pendiente",
+        source_module: "bank_transfer",
+        transfer_group_id: transferGroupId,
+      },
+      {
+        date: transferForm.date,
+        company_name: transferForm.company_name,
+        bank: transferForm.to_bank,
+        description: `Traspaso desde ${transferForm.from_bank}`,
+        type: "ingreso",
+        amount,
+        category: "Traspaso entre cuentas",
+        subcategory: "Ingreso traspaso",
+        branch: "General",
+        person_name: "",
+        notes: transferForm.notes,
+        reconciliation_status: "pendiente",
+        source_module: "bank_transfer",
+        transfer_group_id: transferGroupId,
+      },
+    ]
+
+    const { error } = await supabase
+      .from("treasury_movements")
+      .insert(payload)
+
+    if (error) {
+      console.error(error)
+      alert("No se pudo crear el traspaso.")
+      return
+    }
+
+    setTransferForm({
+      date: new Date().toISOString().slice(0, 10),
+      company_name: "Decosun Group SpA",
+      from_bank: "Mercado Pago",
+      to_bank: "BCI",
+      amount: "",
+      notes: "",
+    })
+
+    loadMovements()
+  }
+
+
   const filteredMovements = useMemo(() => {
     return movements.filter((movement) => {
+      if (movement.is_void) return false
       const matchesCompany =
         filters.company_name === "all" ||
         movement.company_name === filters.company_name
@@ -414,6 +686,20 @@ export default function Treasury() {
             onClick={() => setView("movements")}
           >
             Movimientos
+          </button>
+
+          <button
+            className={view === "transfers" ? "primary-btn" : "secondary-btn"}
+            onClick={() => setView("transfers")}
+          >
+            Traspasos
+          </button>
+
+          <button
+            className={view === "intercompany" ? "primary-btn" : "secondary-btn"}
+            onClick={() => setView("intercompany")}
+          >
+            Pagos por cuenta
           </button>
 
           {canViewInternalLoans(profile) && (
@@ -579,7 +865,11 @@ export default function Treasury() {
               onChange={(e) => updateField("notes", e.target.value)}
             />
 
-            <button className="primary-btn">Guardar movimiento</button>
+            <button className="primary-btn">
+              {editingMovement
+                ? "Actualizar movimiento"
+                : "Guardar movimiento"}
+            </button>
           </form>
 
           <div className="treasury-table">
@@ -594,6 +884,7 @@ export default function Treasury() {
                   <th>Monto</th>
                   <th>Categoría</th>
                   <th>Conciliación</th>
+                  <th>Acciones</th>
                 </tr>
               </thead>
 
@@ -608,8 +899,248 @@ export default function Treasury() {
                     <td>{money(m.amount)}</td>
                     <td>{m.category}</td>
                     <td>{m.reconciliation_status || "pendiente"}</td>
+                    <td>
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: "8px",
+                        }}
+                      >
+                        <button
+                          type="button"
+                          className="secondary-btn"
+                          onClick={() => {
+                            setEditingMovement(m)
+                            setForm({
+                              ...m,
+                              amount: Number(m.amount || 0),
+                            })
+                          }}
+                        >
+                          Editar
+                        </button>
+
+                        <button
+                          type="button"
+                          className="secondary-btn"
+                          onClick={() => voidMovement(m)}
+                        >
+                          Anular
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+
+      {view === "transfers" && (
+        <>
+          <form className="treasury-form" onSubmit={createBankTransfer}>
+            <input
+              type="date"
+              value={transferForm.date}
+              onChange={(e) => updateTransferField("date", e.target.value)}
+              required
+            />
+
+            <select
+              value={transferForm.company_name}
+              onChange={(e) =>
+                updateTransferField("company_name", e.target.value)
+              }
+            >
+              {companies.map((company) => (
+                <option key={company}>{company}</option>
+              ))}
+            </select>
+
+            <select
+              value={transferForm.from_bank}
+              onChange={(e) => updateTransferField("from_bank", e.target.value)}
+            >
+              {banks.map((bank) => (
+                <option key={bank}>{bank}</option>
+              ))}
+            </select>
+
+            <select
+              value={transferForm.to_bank}
+              onChange={(e) => updateTransferField("to_bank", e.target.value)}
+            >
+              {banks.map((bank) => (
+                <option key={bank}>{bank}</option>
+              ))}
+            </select>
+
+            <input
+              type="number"
+              placeholder="Monto traspaso"
+              value={transferForm.amount}
+              onChange={(e) => updateTransferField("amount", e.target.value)}
+              required
+            />
+
+            <input
+              placeholder="Comentario"
+              value={transferForm.notes}
+              onChange={(e) => updateTransferField("notes", e.target.value)}
+            />
+
+            <button className="primary-btn">Crear traspaso</button>
+          </form>
+
+          <div className="treasury-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Empresa</th>
+                  <th>Origen</th>
+                  <th>Destino</th>
+                  <th>Monto</th>
+                  <th>Comentario</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {filteredMovements
+                  .filter(
+                    (movement) =>
+                      movement.source_module === "bank_transfer" &&
+                      movement.type === "egreso"
+                  )
+                  .map((movement) => (
+                    <tr key={movement.id}>
+                      <td>{movement.date}</td>
+                      <td>{movement.company_name}</td>
+                      <td>{movement.bank}</td>
+                      <td>{movement.description?.replace("Traspaso a ", "")}</td>
+                      <td>{money(movement.amount)}</td>
+                      <td>{movement.notes || "-"}</td>
+
+                      <td>
+                        <button
+                          type="button"
+                          className="secondary-btn"
+                          onClick={() => voidTransfer(movement)}
+                        >
+                          Anular
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+
+      {view === "intercompany" && (
+        <>
+          <form className="treasury-form" onSubmit={createIntercompanyPayment}>
+            <select
+              value={intercompanyForm.payer_company}
+              onChange={(e) =>
+                updateIntercompanyField("payer_company", e.target.value)
+              }
+            >
+              {companies.map((company) => (
+                <option key={company}>{company}</option>
+              ))}
+            </select>
+
+            <select
+              value={intercompanyForm.payer_bank}
+              onChange={(e) =>
+                updateIntercompanyField("payer_bank", e.target.value)
+              }
+            >
+              {banks.map((bank) => (
+                <option key={bank}>{bank}</option>
+              ))}
+            </select>
+
+            <select
+              value={intercompanyForm.beneficiary_company}
+              onChange={(e) =>
+                updateIntercompanyField("beneficiary_company", e.target.value)
+              }
+            >
+              {companies.map((company) => (
+                <option key={company}>{company}</option>
+              ))}
+            </select>
+
+            <input
+              type="number"
+              placeholder="Monto pagado"
+              value={intercompanyForm.amount}
+              onChange={(e) =>
+                updateIntercompanyField("amount", e.target.value)
+              }
+              required
+            />
+
+            <input
+              placeholder="Motivo / proveedor / factura"
+              value={intercompanyForm.reason}
+              onChange={(e) =>
+                updateIntercompanyField("reason", e.target.value)
+              }
+            />
+
+            <input
+              placeholder="Notas"
+              value={intercompanyForm.notes}
+              onChange={(e) =>
+                updateIntercompanyField("notes", e.target.value)
+              }
+            />
+
+            <button className="primary-btn">
+              Registrar pago por cuenta
+            </button>
+          </form>
+
+          <div className="treasury-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Empresa que pagó</th>
+                  <th>Banco</th>
+                  <th>Empresa beneficiada</th>
+                  <th>Monto</th>
+                  <th>Devuelto</th>
+                  <th>Pendiente</th>
+                  <th>Estado</th>
+                  <th>Motivo</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {intercompanyPayments.map((payment) => {
+                  const pending =
+                    Number(payment.amount || 0) -
+                    Number(payment.returned_amount || 0)
+
+                  return (
+                    <tr key={payment.id}>
+                      <td>{payment.payer_company}</td>
+                      <td>{payment.payer_bank}</td>
+                      <td>{payment.beneficiary_company}</td>
+                      <td>{money(payment.amount)}</td>
+                      <td>{money(payment.returned_amount)}</td>
+                      <td>{money(pending)}</td>
+                      <td>{payment.status}</td>
+                      <td>{payment.reason || "-"}</td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>

@@ -77,6 +77,7 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
   const [form, setForm] = useState(null)
   const [history, setHistory] = useState([])
   const [loadingHistory, setLoadingHistory] = useState(false)
+  const [advisors, setAdvisors] = useState([])
 
   useEffect(() => {
     if (!project) return
@@ -90,6 +91,18 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
       contact_phone: project.contact_phone || "",
       client_type: project.client_type || "",
       region_code: project.region_code || "",
+      advisor_id: project.advisor_id || "",
+      advisor_name: project.advisor_name || "",
+      advisor_email: project.advisor_email || "",
+      advisor_region: project.advisor_region || "",
+      advisor_commission_rate:
+        project.advisor_commission_rate || 20,
+      advisor_commission_type:
+        project.advisor_commission_type || "base",
+      advisor_commission_amount:
+        project.advisor_commission_amount || 0,
+      advisor_commission_status:
+        project.advisor_commission_status || "pendiente",
       status: project.status || "cotizado",
       priority: project.priority || "Media",
 
@@ -125,10 +138,15 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
       other_costs: project.other_costs || 0,
 
       summary: project.summary || "",
+
     })
 
     loadProjectHistory(project.id)
   }, [project])
+
+  useEffect(() => {
+    loadAdvisors()
+  }, [])
 
   async function loadProjectHistory(projectId) {
     setLoadingHistory(true)
@@ -149,6 +167,21 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
     setHistory(data || [])
     setLoadingHistory(false)
   }
+  async function loadAdvisors() {
+    const { data, error } = await supabase
+      .from("advisors")
+      .select("*")
+      .eq("active", true)
+      .order("full_name", { ascending: true })
+
+    if (error) {
+      console.error(error)
+      setAdvisors([])
+      return
+    }
+
+    setAdvisors(data || [])
+  }
 
   function updateField(field, value) {
     setForm((current) => ({
@@ -157,11 +190,45 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
     }))
   }
 
+  function handleAdvisorChange(advisorId) {
+    const advisor = advisors.find((item) => item.id === advisorId)
+
+    if (!advisor) {
+      setForm((current) => ({
+        ...current,
+        advisor_id: "",
+        advisor_name: "",
+        advisor_email: "",
+        advisor_region: "",
+        advisor_commission_rate: 20,
+        advisor_commission_type: "base",
+        advisor_commission_amount: 0,
+        advisor_commission_status: "pendiente",
+      }))
+
+      return
+    }
+
+    setForm((current) => ({
+      ...current,
+      advisor_id: advisor.id,
+      advisor_name: advisor.full_name || "",
+      advisor_email: advisor.email || "",
+      advisor_region: advisor.region_label || "",
+      advisor_commission_rate: advisor.commission_rate || 20,
+      advisor_commission_type: "base",
+      advisor_commission_amount: 0,
+      advisor_commission_status: "pendiente",
+    }))
+  }
+
   function handleSubmit(e) {
     e.preventDefault()
 
     const cleanPayload = {
       ...form,
+
+      advisor_id: form.advisor_id || null,
 
       key_date: form.key_date || null,
       sale_date: form.sale_date || null,
@@ -174,6 +241,9 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
 
       capital_contribution: Number(form.capital_contribution || 0),
       management_fee_rate: Number(form.management_fee_rate || 0),
+
+      advisor_commission_rate: Number(form.advisor_commission_rate || 0),
+      advisor_commission_amount: Number(form.advisor_commission_amount || 0),
 
       fabric_cost: Number(form.fabric_cost || 0),
       motor_cost: Number(form.motor_cost || 0),
@@ -253,6 +323,14 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
             onClick={() => setTab("general")}
           >
             General
+          </button>
+
+          <button
+            type="button"
+            className={tab === "asesor" ? "active" : ""}
+            onClick={() => setTab("asesor")}
+          >
+            Asesor comercial
           </button>
 
           <button
@@ -430,6 +508,119 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
           </div>
         )}
 
+        {tab === "asesor" && (
+          <div className="modal-grid">
+            <label>
+              Asesor comercial
+              <select
+                value={form.advisor_id || ""}
+                onChange={(e) => handleAdvisorChange(e.target.value)}
+              >
+                <option value="">Sin asesor asignado</option>
+
+                {advisors.map((advisor) => (
+                  <option key={advisor.id} value={advisor.id}>
+                    {advisor.full_name} · {advisor.region_label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label>
+              Nombre asesor
+              <input
+                value={form.advisor_name}
+                onChange={(e) =>
+                  updateField("advisor_name", e.target.value)
+                }
+              />
+            </label>
+
+            <label>
+              Correo asesor
+              <input
+                value={form.advisor_email}
+                onChange={(e) =>
+                  updateField("advisor_email", e.target.value)
+                }
+              />
+            </label>
+
+            <label>
+              Región asesor
+              <input
+                value={form.advisor_region}
+                onChange={(e) =>
+                  updateField("advisor_region", e.target.value)
+                }
+              />
+            </label>
+
+            <label>
+              % comisión base
+              <input
+                type="number"
+                value={form.advisor_commission_rate}
+                onChange={(e) =>
+                  updateField("advisor_commission_rate", e.target.value)
+                }
+              />
+            </label>
+
+            <label>
+              Tipo comisión
+              <select
+                value={form.advisor_commission_type}
+                onChange={(e) =>
+                  updateField("advisor_commission_type", e.target.value)
+                }
+              >
+                <option value="base">Base</option>
+                <option value="especial">Especial</option>
+                <option value="sin_comision">Sin comisión</option>
+              </select>
+            </label>
+
+            <label>
+              Comisión especial
+              <input
+                type="number"
+                value={form.advisor_commission_amount}
+                onChange={(e) =>
+                  updateField("advisor_commission_amount", e.target.value)
+                }
+              />
+            </label>
+
+            <label>
+              Estado comisión
+              <select
+                value={form.advisor_commission_status}
+                onChange={(e) =>
+                  updateField("advisor_commission_status", e.target.value)
+                }
+              >
+                <option value="pendiente">Pendiente</option>
+                <option value="pagada">Pagada</option>
+              </select>
+            </label>
+
+            <div className="balance-box">
+              <span>Comisión estimada</span>
+              <strong>
+                {money(
+                  form.advisor_commission_type === "sin_comision"
+                    ? 0
+                    : form.advisor_commission_type === "base"
+                      ? Number(form.sale_value || 0) *
+                      (Number(form.advisor_commission_rate || 0) / 100)
+                      : Number(form.advisor_commission_amount || 0)
+                )}
+              </strong>
+            </div>
+          </div>
+        )}
+
         {tab === "cliente" && (
           <div className="modal-grid">
             <label>
@@ -484,11 +675,6 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
                 </button>
               </div>
             )}
-
-            <div className="balance-box">
-              <span>Ruta pública futura</span>
-              <strong>{publicStatusURL || "Sin token público"}</strong>
-            </div>
 
             <label className="full-field">
               Mensaje visible / resumen para cliente

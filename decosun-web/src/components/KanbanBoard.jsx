@@ -26,6 +26,98 @@ function money(value) {
   return `$${Number(value || 0).toLocaleString("es-CL")}`
 }
 
+function cleanPhone(phone) {
+  const onlyNumbers = String(phone || "").replace(/\D/g, "")
+
+  if (!onlyNumbers) return ""
+
+  if (onlyNumbers.startsWith("56")) return onlyNumbers
+
+  if (onlyNumbers.startsWith("9")) return `56${onlyNumbers}`
+
+  return onlyNumbers
+}
+
+function getProjectAddress(project) {
+  return [
+    project.address,
+    project.city,
+    project.region_code,
+    "Chile",
+  ]
+    .filter(Boolean)
+    .join(", ")
+}
+
+function openMaps(project) {
+  const address = getProjectAddress(project)
+
+  if (!address.trim()) {
+    alert("Este proyecto no tiene dirección o ciudad registrada.")
+    return
+  }
+
+  window.open(
+    `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+      address
+    )}`,
+    "_blank"
+  )
+}
+
+function openWhatsApp(project) {
+  const phone = cleanPhone(project.contact_phone)
+
+  if (!phone) {
+    alert("Este proyecto no tiene teléfono registrado.")
+    return
+  }
+
+  const message = encodeURIComponent(
+    `Hola ${project.contact_name || ""}, soy de DecoSun. Le escribo por el proyecto ${
+      project.title || ""
+    }.`
+  )
+
+  window.open(`https://wa.me/${phone}?text=${message}`, "_blank")
+}
+
+function openCall(project) {
+  const phone = cleanPhone(project.contact_phone)
+
+  if (!phone) {
+    alert("Este proyecto no tiene teléfono registrado.")
+    return
+  }
+
+  window.location.href = `tel:+${phone}`
+}
+
+function openCalendar(project) {
+  const title = encodeURIComponent(
+    `Visita DecoSun - ${project.contact_name || project.title || "Cliente"}`
+  )
+
+  const location = encodeURIComponent(getProjectAddress(project))
+
+  const details = encodeURIComponent(
+    [
+      `Cliente: ${project.contact_name || ""}`,
+      `Proyecto: ${project.title || ""}`,
+      `Ciudad: ${project.city || ""}`,
+      `Teléfono: ${project.contact_phone || ""}`,
+      `Estado: ${publicStatusMap[project.status] || ""}`,
+      "",
+      "Evento creado desde el panel DecoSun.",
+    ].join("\n")
+  )
+
+  window.open(
+    `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}&location=${location}`,
+    "_blank"
+  )
+}
+
 export default function KanbanBoard({
   projects,
   onStatusChange,
@@ -134,6 +226,52 @@ export default function KanbanBoard({
                     <div className="card-balance">
                       <small>Saldo</small>
                       <strong>{money(balance)}</strong>
+                    </div>
+
+                    <div className="card-actions">
+                      <button
+                        type="button"
+                        title="Abrir en Google Maps"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          openMaps(project)
+                        }}
+                      >
+                        📍
+                      </button>
+
+                      <button
+                        type="button"
+                        title="Agendar en Google Calendar"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          openCalendar(project)
+                        }}
+                      >
+                        📅
+                      </button>
+
+                      <button
+                        type="button"
+                        title="Llamar"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          openCall(project)
+                        }}
+                      >
+                        📞
+                      </button>
+
+                      <button
+                        type="button"
+                        title="Abrir WhatsApp"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          openWhatsApp(project)
+                        }}
+                      >
+                        💬
+                      </button>
                     </div>
 
                     <div className="card-footer">
