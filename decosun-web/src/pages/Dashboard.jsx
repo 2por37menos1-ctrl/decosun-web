@@ -531,28 +531,34 @@ export default function Dashboard() {
           <div className="stats-grid">
             <StatCard title="Proyectos" value={filteredProjects.length} />
 
-            {isGerencia(profile) && (
+            {(isGerencia(profile) || isJefaturaRegion(profile)) && (
               <>
                 <StatCard
-                  title="Venta comprometida"
+                  title={
+                    isGerencia(profile)
+                      ? "Venta comprometida"
+                      : "Ventas sucursal"
+                  }
                   value={formatMoney(visibleTotalSold)}
                 />
 
                 <StatCard
-                  title="Pagado"
+                  title="Pagado / recibido"
                   value={formatMoney(visibleTotalPaid)}
                 />
 
                 <StatCard
-                  title="Saldo pendiente"
+                  title="Saldo por cobrar"
                   value={formatMoney(visibleBalance)}
                 />
-
-                <StatCard
-                  title={`Comisión Edgar · ${edgarCommissionLabel}`}
-                  value={formatMoney(edgarCommission)}
-                />
               </>
+            )}
+
+            {isGerencia(profile) && (
+              <StatCard
+                title={`Comisión Edgar · ${edgarCommissionLabel}`}
+                value={formatMoney(edgarCommission)}
+              />
             )}
 
             {isJefaturaRegion(profile) && profile?.region_code === "iquique" && (
