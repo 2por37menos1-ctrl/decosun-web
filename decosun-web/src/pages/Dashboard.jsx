@@ -445,9 +445,10 @@ export default function Dashboard() {
     <DashboardLayout>
       <div className="dashboard-header">
         <div>
-          <h1>Bienvenido {profile?.full_name}</h1>
+          <h1>Panel de Gestión</h1>
+
           <p>
-            {profile?.role} · {profile?.region_code}
+            {profile?.full_name}
           </p>
         </div>
 
@@ -530,26 +531,28 @@ export default function Dashboard() {
           <div className="stats-grid">
             <StatCard title="Proyectos" value={filteredProjects.length} />
 
-            <StatCard
-              title="Venta comprometida"
-              value={formatMoney(visibleTotalSold)}
-            />
-
-            <StatCard
-              title="Pagado"
-              value={formatMoney(visibleTotalPaid)}
-            />
-
-            <StatCard
-              title="Saldo pendiente"
-              value={formatMoney(visibleBalance)}
-            />
-
             {isGerencia(profile) && (
-              <StatCard
-                title={`Comisión Edgar · ${edgarCommissionLabel}`}
-                value={formatMoney(edgarCommission)}
-              />
+              <>
+                <StatCard
+                  title="Venta comprometida"
+                  value={formatMoney(visibleTotalSold)}
+                />
+
+                <StatCard
+                  title="Pagado"
+                  value={formatMoney(visibleTotalPaid)}
+                />
+
+                <StatCard
+                  title="Saldo pendiente"
+                  value={formatMoney(visibleBalance)}
+                />
+
+                <StatCard
+                  title={`Comisión Edgar · ${edgarCommissionLabel}`}
+                  value={formatMoney(edgarCommission)}
+                />
+              </>
             )}
 
             {isJefaturaRegion(profile) && profile?.region_code === "iquique" && (
@@ -560,154 +563,158 @@ export default function Dashboard() {
             )}
           </div>
 
-          <section className="executive-grid executive-grid-premium">
-  <div className="executive-card">
-    <div className="executive-card-header">
-      <h3>Ventas por región</h3>
-      <span>{formatMoney(visibleTotalSold)}</span>
-    </div>
+          {isGerencia(profile) && (
+            <>
+              <section className="executive-grid executive-grid-premium">
+                <div className="executive-card">
+                  <div className="executive-card-header">
+                    <h3>Ventas por región</h3>
+                    <span>{formatMoney(visibleTotalSold)}</span>
+                  </div>
 
-    <div className="donut-layout">
-      <DonutChart
-        items={regionSalesStats}
-        total={visibleTotalSold}
-      />
+                  <div className="donut-layout">
+                    <DonutChart
+                      items={regionSalesStats}
+                      total={visibleTotalSold}
+                    />
 
-      <div className="donut-legend">
-        {regionSalesStats.map((item, index) => {
-          const percentage =
-            visibleTotalSold > 0
-              ? (item.sales / visibleTotalSold) * 100
-              : 0
+                    <div className="donut-legend">
+                      {regionSalesStats.map((item, index) => {
+                        const percentage =
+                          visibleTotalSold > 0
+                            ? (item.sales / visibleTotalSold) * 100
+                            : 0
 
-          return (
-            <div className="legend-row" key={item.region}>
-              <span
-                className="legend-dot"
-                style={{
-                  background: `hsl(${210 + index * 35}, 65%, 38%)`,
-                }}
-              />
+                        return (
+                          <div className="legend-row" key={item.region}>
+                            <span
+                              className="legend-dot"
+                              style={{
+                                background: `hsl(${210 + index * 35}, 65%, 38%)`,
+                              }}
+                            />
 
-              <div>
-                <strong>{item.region}</strong>
-                <small>
-                  {formatMoney(item.sales)} · {percentage.toFixed(1)}%
-                </small>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  </div>
+                            <div>
+                              <strong>{item.region}</strong>
+                              <small>
+                                {formatMoney(item.sales)} · {percentage.toFixed(1)}%
+                              </small>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
 
-  <div className="executive-card">
-    <div className="executive-card-header">
-      <h3>Avance de cobro</h3>
-      <span>{formatMoney(visibleTotalPaid)}</span>
-    </div>
+                <div className="executive-card">
+                  <div className="executive-card-header">
+                    <h3>Avance de cobro</h3>
+                    <span>{formatMoney(visibleTotalPaid)}</span>
+                  </div>
 
-    <GaugeChart percentage={paymentProgress} />
+                  <GaugeChart percentage={paymentProgress} />
 
-    <div className="gauge-footer">
-      <div>
-        <span>Comprometido</span>
-        <strong>{formatMoney(visibleTotalSold)}</strong>
-      </div>
+                  <div className="gauge-footer">
+                    <div>
+                      <span>Comprometido</span>
+                      <strong>{formatMoney(visibleTotalSold)}</strong>
+                    </div>
 
-      <div>
-        <span>Pendiente</span>
-        <strong>{formatMoney(visibleBalance)}</strong>
-      </div>
-    </div>
-  </div>
+                    <div>
+                      <span>Pendiente</span>
+                      <strong>{formatMoney(visibleBalance)}</strong>
+                    </div>
+                  </div>
+                </div>
 
-  <div className="executive-card executive-card-wide">
-    <div className="executive-card-header">
-      <h3>Embudo comercial</h3>
-      <span>{filteredProjects.length} proyectos</span>
-    </div>
+                <div className="executive-card executive-card-wide">
+                  <div className="executive-card-header">
+                    <h3>Embudo comercial</h3>
+                    <span>{filteredProjects.length} proyectos</span>
+                  </div>
 
-    <div className="funnel-list">
-      {statusStats.map((item) => (
-        <div className="funnel-row" key={item.label}>
-          <div className="funnel-label">
-            <span>{item.label}</span>
-            <strong>{item.count}</strong>
-          </div>
+                  <div className="funnel-list">
+                    {statusStats.map((item) => (
+                      <div className="funnel-row" key={item.label}>
+                        <div className="funnel-label">
+                          <span>{item.label}</span>
+                          <strong>{item.count}</strong>
+                        </div>
 
-          <div className="funnel-track">
-            <div
-              className="funnel-bar"
-              style={{ width: `${item.percentage}%` }}
-            />
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
-</section>
+                        <div className="funnel-track">
+                          <div
+                            className="funnel-bar"
+                            style={{ width: `${item.percentage}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
 
-          <section className="treasury-table">
-            <div className="dashboard-header">
-              <div>
-                <h2>Equipo Comercial</h2>
-                <p>
-                  Ventas y comisiones por asesor.
-                </p>
-              </div>
-            </div>
+              <section className="treasury-table">
+                <div className="dashboard-header">
+                  <div>
+                    <h2>Equipo Comercial</h2>
+                    <p>
+                      Ventas y comisiones por asesor.
+                    </p>
+                  </div>
+                </div>
 
-            <div className="stats-grid">
-              <StatCard
-                title="Ventas comerciales"
-                value={formatMoney(commercialTotals.totalSales)}
-              />
+                <div className="stats-grid">
+                  <StatCard
+                    title="Ventas comerciales"
+                    value={formatMoney(commercialTotals.totalSales)}
+                  />
 
-              <StatCard
-                title="Comisiones estimadas"
-                value={formatMoney(commercialTotals.totalCommissions)}
-              />
+                  <StatCard
+                    title="Comisiones estimadas"
+                    value={formatMoney(commercialTotals.totalCommissions)}
+                  />
 
-              <StatCard
-                title="Asesores activos"
-                value={commercialTotals.activeAdvisors}
-              />
+                  <StatCard
+                    title="Asesores activos"
+                    value={commercialTotals.activeAdvisors}
+                  />
 
-              <StatCard
-                title="Proyectos sin asesor"
-                value={commercialTotals.withoutAdvisorProjects}
-              />
-            </div>
+                  <StatCard
+                    title="Proyectos sin asesor"
+                    value={commercialTotals.withoutAdvisorProjects}
+                  />
+                </div>
 
-            <table>
-              <thead>
-                <tr>
-                  <th>Asesor</th>
-                  <th>Proyectos</th>
-                  <th>Ventas</th>
-                  <th>Comisión estimada</th>
-                </tr>
-              </thead>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Asesor</th>
+                      <th>Proyectos</th>
+                      <th>Ventas</th>
+                      <th>Comisión estimada</th>
+                    </tr>
+                  </thead>
 
-              <tbody>
-                {advisorStats.map((advisor) => (
-                  <tr key={advisor.advisor}>
-                    <td>{advisor.advisor}</td>
+                  <tbody>
+                    {advisorStats.map((advisor) => (
+                      <tr key={advisor.advisor}>
+                        <td>{advisor.advisor}</td>
 
-                    <td>{advisor.projects}</td>
+                        <td>{advisor.projects}</td>
 
-                    <td>{formatMoney(advisor.sales)}</td>
+                        <td>{formatMoney(advisor.sales)}</td>
 
-                    <td>
-                      {formatMoney(advisor.commission)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </section>
+                        <td>
+                          {formatMoney(advisor.commission)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </section>
+            </>
+          )}
 
           <KanbanBoard
             projects={filteredProjects}

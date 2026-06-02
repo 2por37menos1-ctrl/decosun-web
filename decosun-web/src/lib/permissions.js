@@ -27,17 +27,11 @@ export function canViewPurchases(profile) {
 }
 
 export function canViewTreasury(profile) {
-  return (
-    isGerencia(profile) ||
-    isAdministracionRegional(profile)
-  )
+  return isGerencia(profile)
 }
 
 export function canCreateTreasuryMovement(profile) {
-  return (
-    isGerencia(profile) ||
-    isAdministracionRegional(profile)
-  )
+  return isGerencia(profile)
 }
 
 export function canViewTreasuryTotals(profile) {
