@@ -39,16 +39,16 @@ export default function Navbar() {
           </NavLink>
 
           <NavLink to="/proyectos" className={linkClass}>
-  Proyectos
-</NavLink>
+            Proyectos
+          </NavLink>
 
-<NavLink to="/agenda" className={linkClass}>
-  Agenda
-</NavLink>
+          <NavLink to="/agenda" className={linkClass}>
+            Agenda
+          </NavLink>
 
-<NavLink to="/login" className={linkClass}>
-  Acceso equipo
-</NavLink>
+          <NavLink to="/login" className={linkClass}>
+            Acceso equipo
+          </NavLink>
 
           <Link
             to="/cotizar"
@@ -64,7 +64,9 @@ export default function Navbar() {
           className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white md:hidden"
           aria-label="Abrir menú"
         >
-          <span className="text-xl leading-none">{open ? "×" : "☰"}</span>
+          <span className="text-xl leading-none">
+            {open ? "×" : "☰"}
+          </span>
         </button>
       </div>
 
@@ -75,20 +77,52 @@ export default function Navbar() {
               Inicio
             </NavLink>
 
-            <NavLink to="/soluciones" onClick={closeMenu} className={linkClass}>
+            <NavLink
+              to="/soluciones"
+              onClick={closeMenu}
+              className={linkClass}
+            >
               Soluciones
             </NavLink>
 
-            <NavLink to="/cotizar" onClick={closeMenu} className={linkClass}>
+            <NavLink
+              to="/cotizar"
+              onClick={closeMenu}
+              className={linkClass}
+            >
               Cotizador
             </NavLink>
 
-            <NavLink to="/nosotros" onClick={closeMenu} className={linkClass}>
+            <NavLink
+              to="/nosotros"
+              onClick={closeMenu}
+              className={linkClass}
+            >
               Nosotros
             </NavLink>
 
-            <NavLink to="/proyectos" onClick={closeMenu} className={linkClass}>
+            <NavLink
+              to="/proyectos"
+              onClick={closeMenu}
+              className={linkClass}
+            >
               Proyectos
+            </NavLink>
+
+            <NavLink
+              to="/agenda"
+              onClick={closeMenu}
+              className={linkClass}
+            >
+              Agenda
+            </NavLink>
+
+            <NavLink
+              to="/login"
+              onClick={closeMenu}
+              className={linkClass}
+            >
+              Acceso equipo
             </NavLink>
 
             <Link
