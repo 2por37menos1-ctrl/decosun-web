@@ -64,11 +64,10 @@ export default function Home() {
             key={image}
             src={image}
             alt="Decosun control solar"
-            className={`absolute inset-0 h-full w-full object-cover scale-[1.03] transition-all duration-[7000ms] ${
-              index === currentHero
-                ? "opacity-75 scale-100"
-                : "opacity-0 scale-105"
-            }`}
+            className={`absolute inset-0 h-full w-full object-cover scale-[1.03] transition-all duration-[7000ms] ${index === currentHero
+              ? "opacity-75 scale-100"
+              : "opacity-0 scale-105"
+              }`}
           />
         ))}
 
@@ -77,11 +76,11 @@ export default function Home() {
 
         <div className="relative z-10 mx-auto flex min-h-screen max-w-7xl items-center px-6 pt-20 lg:px-8">
           <motion.div
-  initial={{ opacity: 0, y: 28 }}
-  animate={{ opacity: 1, y: 0 }}
-  transition={{ duration: 0.9, ease: "easeOut" }}
-  className="max-w-3xl lg:ml-4"
->
+            initial={{ opacity: 0, y: 28 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.9, ease: "easeOut" }}
+            className="max-w-3xl lg:ml-4"
+          >
             <div className="mb-10 flex justify-center lg:justify-start">
               <img
                 src={heroLogo}
@@ -144,11 +143,11 @@ export default function Home() {
                     {text}
                   </p>
                 </div>
-                            ))}
-              </div>              
-            </motion.div>
-          </div>
-        </section>
+              ))}
+            </div>
+          </motion.div>
+        </div>
+      </section>
 
       {/* SOLUCIONES */}
       <section className="bg-white px-6 py-20 lg:px-8">
@@ -166,10 +165,10 @@ export default function Home() {
           <div className="mt-12 grid gap-7 md:grid-cols-2 lg:grid-cols-4">
             {soluciones.map((item) => (
               <motion.article
-  initial={{ opacity: 0, y: 40 }}
-  whileInView={{ opacity: 1, y: 0 }}
-  viewport={{ once: true }}
-  transition={{ duration: 0.7, ease: "easeOut" }}
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.7, ease: "easeOut" }}
                 key={item.title}
                 className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-lg transition duration-500 ease-out hover:-translate-y-2 hover:shadow-[0_25px_60px_rgba(0,0,0,0.18)]"
               >
@@ -235,13 +234,13 @@ export default function Home() {
               ["3ª", "sucursal en proyección"],
               ["+10", "zonas con presencia comercial"],
             ].map(([number, label]) => (
-              
-                <motion.div
-  key={label}
-  initial={{ opacity: 0, y: 30 }}
-  whileInView={{ opacity: 1, y: 0 }}
-  viewport={{ once: true }}
-  transition={{ duration: 0.7, ease: "easeOut" }}
+
+              <motion.div
+                key={label}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.7, ease: "easeOut" }}
                 className="rounded-[32px] border border-white/5 bg-white/[0.06] p-7 text-center shadow-2xl backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:bg-white/[0.08]"
               >
                 <p className="text-5xl font-black tracking-tight text-amber-400">
@@ -262,19 +261,37 @@ export default function Home() {
         <div className="mx-auto max-w-7xl">
           <div className="mx-auto max-w-3xl text-center">
             <p className="text-sm font-bold uppercase tracking-[0.3em] text-amber-700">
-              Cotiza en 3 simples pasos
+              Nuestro proceso
             </p>
 
             <h2 className="mt-4 text-4xl font-black tracking-tight text-slate-950 md:text-5xl">
-              Transforma tu espacio hoy
+              Transformamos tu proyecto de principio a fin
             </h2>
+
+            <p className="mx-auto mt-5 max-w-3xl text-lg leading-8 text-slate-600">
+              Desde la primera visita hasta la instalación final, acompañamos cada etapa
+              para entregar soluciones de control solar bien ejecutadas, con respaldo y
+              atención profesional.
+            </p>
           </div>
 
           <div className="mt-12 grid gap-6 md:grid-cols-3">
             {[
-              ["1", "Mide", "Ingresa las medidas aproximadas de tus espacios."],
-              ["2", "Elige", "Selecciona producto, zona y cantidad."],
-              ["3", "Recibe", "Envía tu solicitud y queda registrada en DecoSun."],
+              [
+                "1",
+                "Agenda una visita",
+                "Coordinamos una evaluación comercial o técnica según las necesidades de tu espacio.",
+              ],
+              [
+                "2",
+                "Recibe tu propuesta",
+                "Diseñamos una solución personalizada y preparamos una cotización clara y profesional.",
+              ],
+              [
+                "3",
+                "Fabricamos e instalamos",
+                "Nuestro equipo produce, instala y entrega un proyecto terminado con respaldo DecoSun.",
+              ],
             ].map(([num, title, text]) => (
               <div
                 key={title}
