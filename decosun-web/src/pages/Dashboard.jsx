@@ -36,6 +36,7 @@ const saleStatuses = [
 
 const statusOptions = [
   { value: "all", label: "Todos los estados" },
+  { value: "agendado", label: "Agendado" },
   { value: "cotizado", label: "Cotizado" },
   { value: "seguimiento", label: "Seguimiento" },
   { value: "aceptado", label: "Aceptado" },

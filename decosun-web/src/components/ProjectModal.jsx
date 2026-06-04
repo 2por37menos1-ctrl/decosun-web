@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabase"
 import { canViewCommissions } from "../lib/permissions"
 
 const statuses = [
+  "agendado",
   "cotizado",
   "seguimiento",
   "aceptado",

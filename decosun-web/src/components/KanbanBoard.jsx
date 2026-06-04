@@ -1,4 +1,5 @@
 const columns = [
+  { id: "agendado", label: "Agendado", color: "#0ea5e9" },
   { id: "cotizado", label: "Cotizado", color: "#6b7280" },
   { id: "seguimiento", label: "Seguimiento", color: "#f59e0b" },
   { id: "aceptado", label: "Aceptado", color: "#10b981" },
@@ -11,6 +12,7 @@ const columns = [
 ]
 
 const publicStatusMap = {
+  agendado: "Visita coordinada",
   cotizado: "Cotización enviada",
   seguimiento: "En seguimiento",
   aceptado: "Pedido confirmado",
@@ -74,8 +76,7 @@ function openWhatsApp(project) {
   }
 
   const message = encodeURIComponent(
-    `Hola ${project.contact_name || ""}, soy de DecoSun. Le escribo por el proyecto ${
-      project.title || ""
+    `Hola ${project.contact_name || ""}, soy de DecoSun. Le escribo por el proyecto ${project.title || ""
     }.`
   )
 
