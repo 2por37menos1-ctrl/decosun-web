@@ -2,6 +2,8 @@ import { motion } from "framer-motion"
 import { Link } from "react-router-dom"
 import { useEffect, useState } from "react"
 
+import { supabase } from "../lib/supabase"
+
 import heroLogo from "../assets/images/logo-horizontal.png"
 
 import hero1 from "../assets/images/home-03.jpg"
@@ -22,6 +24,13 @@ export default function Home() {
   const heroImages = [hero1, hero2, hero3, hero4, hero5, hero6, hero7]
   const [currentHero, setCurrentHero] = useState(0)
 
+  const [activity, setActivity] = useState({
+    active_projects: 0,
+    active_regions: 0,
+    closed_last_30_days: 0,
+    scheduled_visits: 0,
+  })
+
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentHero((prev) =>
@@ -31,6 +40,24 @@ export default function Home() {
 
     return () => clearInterval(interval)
   }, [heroImages.length])
+
+  useEffect(() => {
+    loadActivity()
+  }, [])
+
+  async function loadActivity() {
+    const { data, error } = await supabase
+      .from("public_site_activity")
+      .select("*")
+      .single()
+
+    if (error) {
+      console.error(error)
+      return
+    }
+
+    setActivity(data)
+  }
 
   const soluciones = [
     {
@@ -64,10 +91,9 @@ export default function Home() {
             key={image}
             src={image}
             alt="Decosun control solar"
-            className={`absolute inset-0 h-full w-full object-cover scale-[1.03] transition-all duration-[7000ms] ${index === currentHero
-              ? "opacity-75 scale-100"
-              : "opacity-0 scale-105"
-              }`}
+            className={`absolute inset-0 h-full w-full object-cover scale-[1.03] transition-all duration-[7000ms] ${
+              index === currentHero ? "opacity-75 scale-100" : "opacity-0 scale-105"
+            }`}
           />
         ))}
 
@@ -234,7 +260,6 @@ export default function Home() {
               ["3ª", "sucursal en proyección"],
               ["+10", "zonas con presencia comercial"],
             ].map(([number, label]) => (
-
               <motion.div
                 key={label}
                 initial={{ opacity: 0, y: 30 }}
@@ -253,6 +278,57 @@ export default function Home() {
               </motion.div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* DECOSUN EN MOVIMIENTO */}
+      <section className="bg-white px-6 py-20 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="mx-auto max-w-3xl text-center">
+            <p className="text-sm font-bold uppercase tracking-[0.3em] text-amber-700">
+              DecoSun en movimiento
+            </p>
+
+            <h2 className="mt-4 text-4xl font-black tracking-tight text-slate-950 md:text-5xl">
+              Actividad real de nuestra red comercial
+            </h2>
+
+            <p className="mx-auto mt-5 max-w-3xl text-lg leading-8 text-slate-600">
+              Nuestro equipo trabaja diariamente en distintas regiones del país,
+              coordinando visitas, fabricación e instalación de proyectos con respaldo técnico DecoSun.
+            </p>
+          </div>
+
+          <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            {[
+              [activity.active_projects, "proyectos activos"],
+              [activity.active_regions, "regiones activas"],
+              [activity.closed_last_30_days, "proyectos finalizados"],
+              [activity.scheduled_visits, "visitas programadas"],
+            ].map(([number, label]) => (
+              <motion.div
+                key={label}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.7, ease: "easeOut" }}
+                className="rounded-[32px] border border-slate-200 bg-white p-8 text-center shadow-lg transition duration-300 hover:-translate-y-1 hover:shadow-xl"
+              >
+                <p className="text-5xl font-black tracking-tight text-amber-600">
+                  {number}
+                </p>
+
+                <p className="mt-3 text-sm font-semibold uppercase tracking-wide text-slate-700">
+                  {label}
+                </p>
+              </motion.div>
+            ))}
+          </div>
+
+          <p className="mx-auto mt-8 max-w-3xl text-center text-sm leading-6 text-slate-500">
+            Información resumida desde nuestro sistema interno de gestión. No se muestran datos de clientes,
+            valores comerciales ni información privada de proyectos.
+          </p>
         </div>
       </section>
 
