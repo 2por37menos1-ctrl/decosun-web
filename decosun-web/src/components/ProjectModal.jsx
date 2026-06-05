@@ -108,7 +108,6 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
   const canEditInternal = isGerencia || isJefatura || isAdminRegional
   const canSeeAdvisorTab = !isAdvisor
   const canSeeFinance = !isAdvisor
-  const canSeeProduction = !isAdvisor
   const canSeeCosts = isGerencia || isJefatura
   const canSeeCommissions = canViewCommissions(profile)
 
@@ -388,12 +387,17 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
 
     const message = encodeURIComponent(
       [
-        `Hola ${form.contact_name || ""}, le compartimos una actualización de su proyecto DecoSun.`,
+        `Hola ${form.contact_name || ""}.`,
+        "",
+        `Queremos informarle que su proyecto DecoSun ha sido actualizado.`,
         "",
         `Estado actual: ${form.client_visible_status || "En revisión"}.`,
-        publicStatusURL ? `Puede revisar el seguimiento aquí: ${publicStatusURL}` : "",
         "",
-        "Quedamos atentos ante cualquier consulta.",
+        publicStatusURL
+          ? `Puede revisar el avance aquí:\n${publicStatusURL}`
+          : "",
+        "",
+        "Muchas gracias por confiar en DecoSun.",
       ]
         .filter(Boolean)
         .join("\n")
@@ -508,16 +512,6 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
               onClick={() => setTab("comisiones")}
             >
               Comisiones / Capital
-            </button>
-          )}
-
-          {canSeeProduction && (
-            <button
-              type="button"
-              className={tab === "produccion" ? "active" : ""}
-              onClick={() => setTab("produccion")}
-            >
-              Producción
             </button>
           )}
 
@@ -1018,56 +1012,6 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
                 rows="4"
                 value={form.capital_notes}
                 onChange={(e) => updateField("capital_notes", e.target.value)}
-              />
-            </label>
-          </div>
-        )}
-
-        {tab === "produccion" && canSeeProduction && (
-          <div className="modal-grid">
-            <label>
-              Técnico asignado
-              <input
-                value={form.technician_assigned}
-                onChange={(e) =>
-                  updateField("technician_assigned", e.target.value)
-                }
-              />
-            </label>
-
-            <label>
-              Fecha clave
-              <input
-                type="date"
-                value={form.key_date || ""}
-                onChange={(e) => updateField("key_date", e.target.value)}
-              />
-            </label>
-
-            <label>
-              Fecha venta / OC
-              <input
-                type="date"
-                value={form.sale_date || ""}
-                onChange={(e) => updateField("sale_date", e.target.value)}
-              />
-            </label>
-
-            <label>
-              Fecha factura
-              <input
-                type="date"
-                value={form.invoice_date || ""}
-                onChange={(e) => updateField("invoice_date", e.target.value)}
-              />
-            </label>
-
-            <label>
-              Fecha cierre
-              <input
-                type="date"
-                value={form.closed_date || ""}
-                onChange={(e) => updateField("closed_date", e.target.value)}
               />
             </label>
           </div>

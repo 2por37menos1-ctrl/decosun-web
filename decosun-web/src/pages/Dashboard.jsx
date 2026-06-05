@@ -512,7 +512,7 @@ export default function Dashboard() {
           {isAdvisor && (
             <button
               className="secondary-btn"
-              onClick={() => window.open("/academia", "_blank")}
+              onClick={() => window.open("/panel/academia", "_blank")}
             >
               Academia DecoSun
             </button>
@@ -776,7 +776,11 @@ export default function Dashboard() {
             projects={filteredProjects}
             onStatusChange={updateProjectStatus}
             onProjectClick={setSelectedProject}
-            onDeleteProject={deleteProject}
+            onDeleteProject={
+              profile?.role === "asesor_comercial"
+                ? null
+                : deleteProject
+            }
           />
         </>
       )}
