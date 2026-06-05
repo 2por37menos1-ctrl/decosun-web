@@ -28,33 +28,53 @@ const publicStatuses = [
   "Finalizado",
 ]
 
+const regionOptions = [
+  { value: "", label: "Sin región" },
+  { value: "iquique", label: "Iquique" },
+  { value: "quinta_region", label: "Quinta Región" },
+  { value: "quinta_region_interior", label: "Quinta Región Interior" },
+  { value: "santiago", label: "Santiago" },
+  { value: "atacama", label: "Atacama" },
+  { value: "iv_region_coquimbo", label: "IV Región Coquimbo" },
+  { value: "la_serena", label: "La Serena" },
+]
+
 function money(value) {
   return `$${Number(value || 0).toLocaleString("es-CL")}`
+}
+
+function cleanPhone(phone) {
+  const onlyNumbers = String(phone || "").replace(/\D/g, "")
+
+  if (!onlyNumbers) return ""
+  if (onlyNumbers.startsWith("56")) return onlyNumbers
+  if (onlyNumbers.startsWith("9")) return `56${onlyNumbers}`
+
+  return onlyNumbers
+}
+
+function getProjectAddress(form) {
+  return [form?.address, form?.city, form?.region_code, "Chile"]
+    .filter(Boolean)
+    .join(", ")
 }
 
 function getHistoryIcon(type) {
   switch (type) {
     case "status_change":
       return "🟢"
-
     case "payment":
       return "💰"
-
     case "technician_change":
       return "👷"
-
     case "priority_change":
       return "⚡"
-
     case "client_status":
       return "📣"
-
     case "sale_value":
       return "📄"
-
     case "project_deleted":
       return "🗑️"
-
     default:
       return "📝"
   }
@@ -80,6 +100,18 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
   const [loadingHistory, setLoadingHistory] = useState(false)
   const [advisors, setAdvisors] = useState([])
 
+  const isAdvisor = profile?.role === "asesor_comercial"
+  const isGerencia = profile?.role === "gerencia"
+  const isJefatura = profile?.role === "jefatura_region"
+  const isAdminRegional = profile?.role === "administracion_regional"
+
+  const canEditInternal = isGerencia || isJefatura || isAdminRegional
+  const canSeeAdvisorTab = !isAdvisor
+  const canSeeFinance = !isAdvisor
+  const canSeeProduction = !isAdvisor
+  const canSeeCosts = isGerencia || isJefatura
+  const canSeeCommissions = canViewCommissions(profile)
+
   useEffect(() => {
     if (!project) return
 
@@ -88,22 +120,21 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
     setForm({
       title: project.title || "",
       city: project.city || "",
+      address: project.address || "",
       contact_name: project.contact_name || "",
       contact_phone: project.contact_phone || "",
       client_type: project.client_type || "",
       region_code: project.region_code || "",
+
       advisor_id: project.advisor_id || "",
       advisor_name: project.advisor_name || "",
       advisor_email: project.advisor_email || "",
       advisor_region: project.advisor_region || "",
-      advisor_commission_rate:
-        project.advisor_commission_rate || 20,
-      advisor_commission_type:
-        project.advisor_commission_type || "base",
-      advisor_commission_amount:
-        project.advisor_commission_amount || 0,
-      advisor_commission_status:
-        project.advisor_commission_status || "pendiente",
+      advisor_commission_rate: project.advisor_commission_rate || 20,
+      advisor_commission_type: project.advisor_commission_type || "base",
+      advisor_commission_amount: project.advisor_commission_amount || 0,
+      advisor_commission_status: project.advisor_commission_status || "pendiente",
+
       status: project.status || "cotizado",
       priority: project.priority || "Media",
 
@@ -125,6 +156,8 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
       sale_date: project.sale_date || "",
       invoice_date: project.invoice_date || "",
       closed_date: project.closed_date || "",
+      visit_date: project.visit_date || "",
+      visit_time: project.visit_time || "",
 
       capital_contribution: project.capital_contribution || 0,
       capital_partner: project.capital_partner || "",
@@ -139,7 +172,6 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
       other_costs: project.other_costs || 0,
 
       summary: project.summary || "",
-
     })
 
     loadProjectHistory(project.id)
@@ -168,6 +200,7 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
     setHistory(data || [])
     setLoadingHistory(false)
   }
+
   async function loadAdvisors() {
     const { data, error } = await supabase
       .from("advisors")
@@ -215,7 +248,7 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
       advisor_id: advisor.id,
       advisor_name: advisor.full_name || "",
       advisor_email: advisor.email || "",
-      advisor_region: advisor.region_label || "",
+      advisor_region: advisor.region_label || advisor.region_code || "",
       advisor_commission_rate: advisor.commission_rate || 20,
       advisor_commission_type: "base",
       advisor_commission_amount: 0,
@@ -226,6 +259,22 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
   function handleSubmit(e) {
     e.preventDefault()
 
+    const baseSafePayload = {
+      contact_name: form.contact_name || "",
+      contact_phone: form.contact_phone || "",
+      city: form.city || "",
+      address: form.address || "",
+      visit_date: form.visit_date || null,
+      visit_time: form.visit_time || null,
+      client_visible_status: form.client_visible_status || "Cotización recibida",
+      summary: form.summary || "",
+    }
+
+    if (isAdvisor) {
+      onSave(project.id, baseSafePayload)
+      return
+    }
+
     const cleanPayload = {
       ...form,
 
@@ -235,6 +284,8 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
       sale_date: form.sale_date || null,
       invoice_date: form.invoice_date || null,
       closed_date: form.closed_date || null,
+      visit_date: form.visit_date || null,
+      visit_time: form.visit_time || null,
 
       sale_value: Number(form.sale_value || 0),
       invoice_value: Number(form.invoice_value || 0),
@@ -255,6 +306,100 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
     }
 
     onSave(project.id, cleanPayload)
+  }
+
+  function openMaps() {
+    const address = getProjectAddress(form)
+
+    if (!address.trim()) {
+      alert("Este proyecto no tiene dirección registrada.")
+      return
+    }
+
+    window.open(
+      `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+        address
+      )}`,
+      "_blank"
+    )
+  }
+
+  function openCall() {
+    const phone = cleanPhone(form.contact_phone)
+
+    if (!phone) {
+      alert("Este proyecto no tiene teléfono registrado.")
+      return
+    }
+
+    window.location.href = `tel:+${phone}`
+  }
+
+  function openWhatsApp() {
+    const phone = cleanPhone(form.contact_phone)
+
+    if (!phone) {
+      alert("Este proyecto no tiene teléfono registrado.")
+      return
+    }
+
+    const message = encodeURIComponent(
+      `Hola ${form.contact_name || ""}, soy de DecoSun. Le escribo por su proyecto ${form.title || ""
+      }.`
+    )
+
+    window.open(`https://wa.me/${phone}?text=${message}`, "_blank")
+  }
+
+  function openCalendar() {
+    const title = encodeURIComponent(
+      `Visita DecoSun - ${form.contact_name || form.title || "Cliente"}`
+    )
+
+    const location = encodeURIComponent(getProjectAddress(form))
+
+    const details = encodeURIComponent(
+      [
+        `Cliente: ${form.contact_name || ""}`,
+        `Proyecto: ${form.title || ""}`,
+        `Ciudad: ${form.city || ""}`,
+        `Dirección: ${form.address || ""}`,
+        `Teléfono: ${form.contact_phone || ""}`,
+        `Fecha visita: ${form.visit_date || "Sin fecha"}`,
+        `Hora visita: ${form.visit_time || "Sin hora"}`,
+        "",
+        "Evento creado desde el panel DecoSun.",
+      ].join("\n")
+    )
+
+    window.open(
+      `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}&location=${location}`,
+      "_blank"
+    )
+  }
+
+  function sendClientUpdateWhatsApp() {
+    const phone = cleanPhone(form.contact_phone)
+
+    if (!phone) {
+      alert("Este proyecto no tiene teléfono registrado.")
+      return
+    }
+
+    const message = encodeURIComponent(
+      [
+        `Hola ${form.contact_name || ""}, le compartimos una actualización de su proyecto DecoSun.`,
+        "",
+        `Estado actual: ${form.client_visible_status || "En revisión"}.`,
+        publicStatusURL ? `Puede revisar el seguimiento aquí: ${publicStatusURL}` : "",
+        "",
+        "Quedamos atentos ante cualquier consulta.",
+      ]
+        .filter(Boolean)
+        .join("\n")
+    )
+
+    window.open(`https://wa.me/${phone}?text=${message}`, "_blank")
   }
 
   const balance = useMemo(() => {
@@ -287,15 +432,9 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
     Number(form?.sale_value || 0) *
     (Number(form?.management_fee_rate || 0) / 100)
 
-  const whatsappURL = form?.contact_phone
-    ? `https://wa.me/${String(form.contact_phone).replace(/\D/g, "")}`
-    : ""
-
   const publicStatusURL = form?.public_token
     ? `https://decosun.cl/estado/${form.public_token}`
     : ""
-
-  const canSeeCommissions = canViewCommissions(profile)
 
   if (!project || !form) return null
 
@@ -328,11 +467,21 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
 
           <button
             type="button"
-            className={tab === "asesor" ? "active" : ""}
-            onClick={() => setTab("asesor")}
+            className={tab === "visita" ? "active" : ""}
+            onClick={() => setTab("visita")}
           >
-            Asesor comercial
+            Visita
           </button>
+
+          {canSeeAdvisorTab && (
+            <button
+              type="button"
+              className={tab === "asesor" ? "active" : ""}
+              onClick={() => setTab("asesor")}
+            >
+              Asesor comercial
+            </button>
+          )}
 
           <button
             type="button"
@@ -342,13 +491,15 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
             Vista cliente
           </button>
 
-          <button
-            type="button"
-            className={tab === "finanzas" ? "active" : ""}
-            onClick={() => setTab("finanzas")}
-          >
-            Finanzas
-          </button>
+          {canSeeFinance && (
+            <button
+              type="button"
+              className={tab === "finanzas" ? "active" : ""}
+              onClick={() => setTab("finanzas")}
+            >
+              Finanzas
+            </button>
+          )}
 
           {canSeeCommissions && (
             <button
@@ -360,21 +511,25 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
             </button>
           )}
 
-          <button
-            type="button"
-            className={tab === "produccion" ? "active" : ""}
-            onClick={() => setTab("produccion")}
-          >
-            Producción
-          </button>
+          {canSeeProduction && (
+            <button
+              type="button"
+              className={tab === "produccion" ? "active" : ""}
+              onClick={() => setTab("produccion")}
+            >
+              Producción
+            </button>
+          )}
 
-          <button
-            type="button"
-            className={tab === "costos" ? "active" : ""}
-            onClick={() => setTab("costos")}
-          >
-            Costos
-          </button>
+          {canSeeCosts && (
+            <button
+              type="button"
+              className={tab === "costos" ? "active" : ""}
+              onClick={() => setTab("costos")}
+            >
+              Costos
+            </button>
+          )}
 
           <button
             type="button"
@@ -391,6 +546,7 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
               Cliente / Proyecto
               <input
                 value={form.title}
+                disabled={isAdvisor}
                 onChange={(e) => updateField("title", e.target.value)}
               />
             </label>
@@ -399,6 +555,7 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
               N° cotización
               <input
                 value={form.quote_number}
+                disabled={isAdvisor}
                 onChange={(e) => updateField("quote_number", e.target.value)}
               />
             </label>
@@ -407,6 +564,7 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
               Origen
               <input
                 value={form.source}
+                disabled={isAdvisor}
                 onChange={(e) => updateField("source", e.target.value)}
               />
             </label>
@@ -423,11 +581,14 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
               Región
               <select
                 value={form.region_code}
+                disabled={!canEditInternal}
                 onChange={(e) => updateField("region_code", e.target.value)}
               >
-                <option value="">Sin región</option>
-                <option value="iquique">Iquique</option>
-                <option value="quinta_region">Quinta Región</option>
+                {regionOptions.map((region) => (
+                  <option key={region.value} value={region.value}>
+                    {region.label}
+                  </option>
+                ))}
               </select>
             </label>
 
@@ -447,10 +608,20 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
               />
             </label>
 
+            <label className="full-field">
+              Dirección
+              <input
+                value={form.address}
+                onChange={(e) => updateField("address", e.target.value)}
+                placeholder="Dirección de visita o instalación"
+              />
+            </label>
+
             <label>
               Tipo cliente
               <select
                 value={form.client_type}
+                disabled={isAdvisor}
                 onChange={(e) => updateField("client_type", e.target.value)}
               >
                 <option value="">Sin tipo</option>
@@ -461,41 +632,34 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
               </select>
             </label>
 
-            <label>
-              Estado interno
-              <select
-                value={form.status}
-                onChange={(e) => updateField("status", e.target.value)}
-              >
-                {statuses.map((status) => (
-                  <option key={status} value={status}>
-                    {status}
-                  </option>
-                ))}
-              </select>
-            </label>
+            {!isAdvisor && (
+              <>
+                <label>
+                  Estado interno
+                  <select
+                    value={form.status}
+                    onChange={(e) => updateField("status", e.target.value)}
+                  >
+                    {statuses.map((status) => (
+                      <option key={status} value={status}>
+                        {status}
+                      </option>
+                    ))}
+                  </select>
+                </label>
 
-            <label>
-              Prioridad
-              <select
-                value={form.priority}
-                onChange={(e) => updateField("priority", e.target.value)}
-              >
-                <option>Alta</option>
-                <option>Media</option>
-                <option>Baja</option>
-              </select>
-            </label>
-
-            {whatsappURL && (
-              <a
-                href={whatsappURL}
-                target="_blank"
-                rel="noreferrer"
-                className="secondary-btn"
-              >
-                Abrir WhatsApp cliente
-              </a>
+                <label>
+                  Prioridad
+                  <select
+                    value={form.priority}
+                    onChange={(e) => updateField("priority", e.target.value)}
+                  >
+                    <option>Alta</option>
+                    <option>Media</option>
+                    <option>Baja</option>
+                  </select>
+                </label>
+              </>
             )}
 
             <label className="full-field">
@@ -509,7 +673,56 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
           </div>
         )}
 
-        {tab === "asesor" && (
+        {tab === "visita" && (
+          <div className="modal-grid">
+            <label>
+              Fecha visita
+              <input
+                type="date"
+                value={form.visit_date || ""}
+                onChange={(e) => updateField("visit_date", e.target.value)}
+              />
+            </label>
+
+            <label>
+              Hora visita
+              <input
+                type="time"
+                value={form.visit_time || ""}
+                onChange={(e) => updateField("visit_time", e.target.value)}
+              />
+            </label>
+
+            <label className="full-field">
+              Dirección visita
+              <input
+                value={form.address}
+                onChange={(e) => updateField("address", e.target.value)}
+                placeholder="Dirección para Maps"
+              />
+            </label>
+
+            <div className="full-field flex flex-wrap gap-3">
+              <button type="button" className="secondary-btn" onClick={openMaps}>
+                📍 Maps
+              </button>
+
+              <button type="button" className="secondary-btn" onClick={openCalendar}>
+                📅 Calendar
+              </button>
+
+              <button type="button" className="secondary-btn" onClick={openCall}>
+                📞 Llamar
+              </button>
+
+              <button type="button" className="secondary-btn" onClick={openWhatsApp}>
+                💬 WhatsApp
+              </button>
+            </div>
+          </div>
+        )}
+
+        {tab === "asesor" && canSeeAdvisorTab && (
           <div className="modal-grid">
             <label>
               Asesor comercial
@@ -521,7 +734,7 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
 
                 {advisors.map((advisor) => (
                   <option key={advisor.id} value={advisor.id}>
-                    {advisor.full_name} · {advisor.region_label}
+                    {advisor.full_name} · {advisor.region_label || advisor.region_code}
                   </option>
                 ))}
               </select>
@@ -531,9 +744,7 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
               Nombre asesor
               <input
                 value={form.advisor_name}
-                onChange={(e) =>
-                  updateField("advisor_name", e.target.value)
-                }
+                onChange={(e) => updateField("advisor_name", e.target.value)}
               />
             </label>
 
@@ -541,9 +752,7 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
               Correo asesor
               <input
                 value={form.advisor_email}
-                onChange={(e) =>
-                  updateField("advisor_email", e.target.value)
-                }
+                onChange={(e) => updateField("advisor_email", e.target.value)}
               />
             </label>
 
@@ -551,74 +760,76 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
               Región asesor
               <input
                 value={form.advisor_region}
-                onChange={(e) =>
-                  updateField("advisor_region", e.target.value)
-                }
+                onChange={(e) => updateField("advisor_region", e.target.value)}
               />
             </label>
 
-            <label>
-              % comisión base
-              <input
-                type="number"
-                value={form.advisor_commission_rate}
-                onChange={(e) =>
-                  updateField("advisor_commission_rate", e.target.value)
-                }
-              />
-            </label>
+            {canSeeCommissions && (
+              <>
+                <label>
+                  % comisión base
+                  <input
+                    type="number"
+                    value={form.advisor_commission_rate}
+                    onChange={(e) =>
+                      updateField("advisor_commission_rate", e.target.value)
+                    }
+                  />
+                </label>
 
-            <label>
-              Tipo comisión
-              <select
-                value={form.advisor_commission_type}
-                onChange={(e) =>
-                  updateField("advisor_commission_type", e.target.value)
-                }
-              >
-                <option value="base">Base</option>
-                <option value="especial">Especial</option>
-                <option value="sin_comision">Sin comisión</option>
-              </select>
-            </label>
+                <label>
+                  Tipo comisión
+                  <select
+                    value={form.advisor_commission_type}
+                    onChange={(e) =>
+                      updateField("advisor_commission_type", e.target.value)
+                    }
+                  >
+                    <option value="base">Base</option>
+                    <option value="especial">Especial</option>
+                    <option value="sin_comision">Sin comisión</option>
+                  </select>
+                </label>
 
-            <label>
-              Comisión especial
-              <input
-                type="number"
-                value={form.advisor_commission_amount}
-                onChange={(e) =>
-                  updateField("advisor_commission_amount", e.target.value)
-                }
-              />
-            </label>
+                <label>
+                  Comisión especial
+                  <input
+                    type="number"
+                    value={form.advisor_commission_amount}
+                    onChange={(e) =>
+                      updateField("advisor_commission_amount", e.target.value)
+                    }
+                  />
+                </label>
 
-            <label>
-              Estado comisión
-              <select
-                value={form.advisor_commission_status}
-                onChange={(e) =>
-                  updateField("advisor_commission_status", e.target.value)
-                }
-              >
-                <option value="pendiente">Pendiente</option>
-                <option value="pagada">Pagada</option>
-              </select>
-            </label>
+                <label>
+                  Estado comisión
+                  <select
+                    value={form.advisor_commission_status}
+                    onChange={(e) =>
+                      updateField("advisor_commission_status", e.target.value)
+                    }
+                  >
+                    <option value="pendiente">Pendiente</option>
+                    <option value="pagada">Pagada</option>
+                  </select>
+                </label>
 
-            <div className="balance-box">
-              <span>Comisión estimada</span>
-              <strong>
-                {money(
-                  form.advisor_commission_type === "sin_comision"
-                    ? 0
-                    : form.advisor_commission_type === "base"
-                      ? Number(form.sale_value || 0) *
-                      (Number(form.advisor_commission_rate || 0) / 100)
-                      : Number(form.advisor_commission_amount || 0)
-                )}
-              </strong>
-            </div>
+                <div className="balance-box">
+                  <span>Comisión estimada</span>
+                  <strong>
+                    {money(
+                      form.advisor_commission_type === "sin_comision"
+                        ? 0
+                        : form.advisor_commission_type === "base"
+                          ? Number(form.sale_value || 0) *
+                          (Number(form.advisor_commission_rate || 0) / 100)
+                          : Number(form.advisor_commission_amount || 0)
+                    )}
+                  </strong>
+                </div>
+              </>
+            )}
           </div>
         )}
 
@@ -640,18 +851,15 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
               </select>
             </label>
 
-            <label>
-              Token público
-              <input
-                value={form.public_token}
-                onChange={(e) => updateField("public_token", e.target.value)}
-              />
-            </label>
-
-            <div className="balance-box">
-              <span>Ruta pública de seguimiento</span>
-              <strong>{publicStatusURL || "Sin token público"}</strong>
-            </div>
+            {!isAdvisor && (
+              <label>
+                Token público
+                <input
+                  value={form.public_token}
+                  onChange={(e) => updateField("public_token", e.target.value)}
+                />
+              </label>
+            )}
 
             {publicStatusURL && (
               <div className="full-field flex flex-wrap gap-3">
@@ -674,6 +882,14 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
                 >
                   Copiar enlace
                 </button>
+
+                <button
+                  type="button"
+                  className="secondary-btn"
+                  onClick={sendClientUpdateWhatsApp}
+                >
+                  Enviar actualización por WhatsApp
+                </button>
               </div>
             )}
 
@@ -688,7 +904,7 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
           </div>
         )}
 
-        {tab === "finanzas" && (
+        {tab === "finanzas" && canSeeFinance && (
           <div className="modal-grid">
             <label>
               Valor venta / OC
@@ -726,9 +942,7 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
               Estado pago
               <select
                 value={form.payment_status}
-                onChange={(e) =>
-                  updateField("payment_status", e.target.value)
-                }
+                onChange={(e) => updateField("payment_status", e.target.value)}
               >
                 <option value="pendiente">Pendiente</option>
                 <option value="abonado">Abonado</option>
@@ -794,9 +1008,7 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
               Origen capital
               <input
                 value={form.capital_partner}
-                onChange={(e) =>
-                  updateField("capital_partner", e.target.value)
-                }
+                onChange={(e) => updateField("capital_partner", e.target.value)}
               />
             </label>
 
@@ -811,7 +1023,7 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
           </div>
         )}
 
-        {tab === "produccion" && (
+        {tab === "produccion" && canSeeProduction && (
           <div className="modal-grid">
             <label>
               Técnico asignado
@@ -861,7 +1073,7 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
           </div>
         )}
 
-        {tab === "costos" && (
+        {tab === "costos" && canSeeCosts && (
           <div className="modal-grid">
             <label>
               Tela
@@ -947,11 +1159,7 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
                       alignItems: "flex-start",
                     }}
                   >
-                    <div
-                      style={{
-                        fontSize: "24px",
-                      }}
-                    >
+                    <div style={{ fontSize: "24px" }}>
                       {getHistoryIcon(item.event_type || item.type)}
                     </div>
 

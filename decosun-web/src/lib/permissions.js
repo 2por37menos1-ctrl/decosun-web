@@ -10,11 +10,16 @@ export function isAdministracionRegional(profile) {
   return profile?.role === "administracion_regional"
 }
 
+export function isAsesorComercial(profile) {
+  return profile?.role === "asesor_comercial"
+}
+
 export function canViewAgenda(profile) {
   return (
     isGerencia(profile) ||
     isJefaturaRegion(profile) ||
-    isAdministracionRegional(profile)
+    isAdministracionRegional(profile) ||
+    isAsesorComercial(profile)
   )
 }
 
@@ -58,5 +63,18 @@ export function canEditOperationalCosts(profile) {
   return (
     isGerencia(profile) ||
     isJefaturaRegion(profile)
+  )
+}
+
+export function canViewOwnSales(profile) {
+  return isAsesorComercial(profile)
+}
+
+export function canAccessAcademy(profile) {
+  return (
+    isGerencia(profile) ||
+    isJefaturaRegion(profile) ||
+    isAdministracionRegional(profile) ||
+    isAsesorComercial(profile)
   )
 }

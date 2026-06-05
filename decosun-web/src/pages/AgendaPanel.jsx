@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 import { supabase } from "../lib/supabase"
+import { useProfile } from "../hooks/useProfile"
 
 const estadosAgenda = [
   "Pendiente",
@@ -14,23 +15,52 @@ const estadosAgenda = [
 ]
 
 export default function AgendaPanel() {
+  const { profile, loading: profileLoading } = useProfile()
+
   const [agenda, setAgenda] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [estadoFilter, setEstadoFilter] = useState("all")
 
   useEffect(() => {
+    if (profileLoading) return
+
+    if (!profile) {
+      setAgenda([])
+      setLoading(false)
+      return
+    }
+
     fetchAgenda()
-  }, [])
+  }, [profileLoading, profile?.id, profile?.role, profile?.region_code, profile?.advisor_id])
 
   async function fetchAgenda() {
+    if (!profile) return
+
     setLoading(true)
 
-    const { data, error } = await supabase
+    let query = supabase
       .from("agenda")
       .select("*")
       .is("deleted_at", null)
       .order("created_at", { ascending: false })
+
+    if (profile.role === "asesor_comercial") {
+      if (!profile.advisor_id) {
+        setAgenda([])
+        setLoading(false)
+        return
+      }
+
+      query = query.eq("advisor_id", profile.advisor_id)
+    } else if (
+      profile.role !== "gerencia" &&
+      profile.region_code
+    ) {
+      query = query.eq("region_code", profile.region_code)
+    }
+
+    const { data, error } = await query
 
     if (error) {
       console.error(error)
@@ -111,13 +141,22 @@ export default function AgendaPanel() {
           status: "agendado",
           payment_status: "pendiente",
           payment_type: "pendiente",
-          region_code: item.region_code || "quinta_region",
+          region_code: item.region_code || profile?.region_code || "quinta_region",
           address: item.address || "",
           client_type: "Residencial",
           company_name: "Decosun Group SpA",
           source: "agenda",
           client_visible_status: "Visita coordinada",
           public_token: crypto.randomUUID(),
+
+          advisor_id: item.advisor_id || profile?.advisor_id || null,
+          advisor_name: item.advisor_name || profile?.full_name || "",
+          advisor_email: item.advisor_email || profile?.email || "",
+          advisor_region: item.advisor_region || profile?.region_code || "",
+          advisor_commission_rate: 20,
+          advisor_commission_type: "base",
+          advisor_commission_amount: 0,
+          advisor_commission_status: "pendiente",
         },
       ])
 
@@ -170,7 +209,7 @@ export default function AgendaPanel() {
     })
   }, [agenda, searchTerm, estadoFilter])
 
-  if (loading) {
+  if (loading || profileLoading) {
     return (
       <div className="p-10 text-white bg-slate-950 min-h-screen">
         Cargando agenda...
@@ -219,6 +258,7 @@ export default function AgendaPanel() {
           className="rounded-2xl border border-white/10 bg-slate-900 px-5 py-3 text-white outline-none focus:border-amber-300"
         >
           <option value="all">Todos los estados</option>
+
           {estadosAgenda.map((estado) => (
             <option key={estado} value={estado}>
               {estado}
@@ -265,6 +305,12 @@ export default function AgendaPanel() {
                       {item.fecha || "Sin fecha"} ·{" "}
                       {item.horario || "Sin horario"}
                     </p>
+
+                    {item.address && (
+                      <p className="text-slate-400">
+                        {item.address}
+                      </p>
+                    )}
 
                     {item.observaciones && (
                       <p className="mt-4 max-w-3xl rounded-2xl bg-white/[0.04] p-4 text-sm text-slate-300">

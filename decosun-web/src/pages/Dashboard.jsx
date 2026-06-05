@@ -19,6 +19,7 @@ import {
   canViewTreasury,
   isGerencia,
   isJefaturaRegion,
+  isAsesorComercial,
 } from "../lib/permissions"
 
 import { useProfile } from "../hooks/useProfile"
@@ -151,6 +152,7 @@ export default function Dashboard() {
   const [statusFilter, setStatusFilter] = useState("all")
 
   const { profile, loading: profileLoading } = useProfile()
+  const isAdvisor = isAsesorComercial(profile)
 
   const {
     projects,
@@ -208,6 +210,25 @@ export default function Dashboard() {
   )
 
   const visibleBalance = visibleTotalSold - visibleTotalPaid
+
+  const advisorCommission = visibleSalesProjects.reduce(
+    (acc, project) => {
+      const saleValue = Number(project.sale_value || 0)
+
+      const commission =
+        saleValue *
+        (Number(project.advisor_commission_rate || 20) / 100)
+
+      return acc + commission
+    },
+    0
+  )
+
+  const advisorPendingVisits = filteredProjects.filter(
+    (project) =>
+      project.status === "agendado" ||
+      project.status === "medicion"
+  ).length
 
   const advisorStats = useMemo(() => {
     const map = {}
@@ -488,6 +509,15 @@ export default function Dashboard() {
             </button>
           )}
 
+          {isAdvisor && (
+            <button
+              className="secondary-btn"
+              onClick={() => window.open("/academia", "_blank")}
+            >
+              Academia DecoSun
+            </button>
+          )}
+
           {isGerencia(profile) && (
             <select
               className="region-filter"
@@ -531,6 +561,25 @@ export default function Dashboard() {
 
           <div className="stats-grid">
             <StatCard title="Proyectos" value={filteredProjects.length} />
+
+            {isAdvisor && (
+              <>
+                <StatCard
+                  title="Mis ventas"
+                  value={formatMoney(visibleTotalSold)}
+                />
+
+                <StatCard
+                  title="Mi comisión"
+                  value={formatMoney(advisorCommission)}
+                />
+
+                <StatCard
+                  title="Visitas pendientes"
+                  value={advisorPendingVisits}
+                />
+              </>
+            )}
 
             {(isGerencia(profile) || isJefaturaRegion(profile)) && (
               <>

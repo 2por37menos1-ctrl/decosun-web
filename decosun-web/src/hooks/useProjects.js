@@ -7,10 +7,13 @@ export function useProjects(profile) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (!profile) return
     loadProjects()
-  }, [profile?.role, profile?.region_code])
+  }, [profile?.id, profile?.role, profile?.region_code, profile?.advisor_id])
 
   async function loadProjects() {
+    if (!profile) return
+
     setLoading(true)
 
     let query = supabase
@@ -19,9 +22,17 @@ export function useProjects(profile) {
       .is("deleted_at", null)
       .order("created_at", { ascending: false })
 
-    if (
-      profile?.role !== "gerencia" &&
-      profile?.region_code
+    if (profile.role === "asesor_comercial") {
+      if (!profile.advisor_id) {
+        setProjects([])
+        setLoading(false)
+        return
+      }
+
+      query = query.eq("advisor_id", profile.advisor_id)
+    } else if (
+      profile.role !== "gerencia" &&
+      profile.region_code
     ) {
       query = query.eq("region_code", profile.region_code)
     }
@@ -40,9 +51,7 @@ export function useProjects(profile) {
   }
 
   async function updateProjectStatus(projectId, newStatus) {
-    const previousProject = projects.find(
-      (p) => p.id === projectId
-    )
+    const previousProject = projects.find((p) => p.id === projectId)
 
     const { error } = await supabase
       .from("projects")
@@ -58,9 +67,7 @@ export function useProjects(profile) {
     await createProjectHistory({
       projectId,
       type: "status_change",
-      description: `Estado cambiado de ${
-        previousProject?.status || "-"
-      } a ${newStatus}`,
+      description: `Estado cambiado de ${previousProject?.status || "-"} a ${newStatus}`,
       createdBy: "sistema",
       metadata: {
         from: previousProject?.status,
@@ -80,157 +87,134 @@ export function useProjects(profile) {
   }
 
   async function updateProject(projectId, payload) {
-  const previousProject = projects.find(
-    (p) => p.id === projectId
-  )
+    const previousProject = projects.find((p) => p.id === projectId)
 
-  const { data, error } = await supabase
-    .from("projects")
-    .update(payload)
-    .eq("id", projectId)
-    .select()
-    .single()
+    const { data, error } = await supabase
+      .from("projects")
+      .update(payload)
+      .eq("id", projectId)
+      .select()
+      .single()
 
-  if (error) {
-    console.error(error)
-    alert("No se pudo guardar el proyecto.")
-    return false
-  }
+    if (error) {
+      console.error(error)
+      alert("No se pudo guardar el proyecto.")
+      return false
+    }
 
-  const historyEvents = []
+    const historyEvents = []
 
-  // Estado interno
-  if (
-    payload.status &&
-    payload.status !== previousProject?.status
-  ) {
-    historyEvents.push({
-      type: "status_change",
-      description: `Estado cambiado de ${
-        previousProject?.status || "-"
-      } a ${payload.status}`,
-      metadata: {
-        from: previousProject?.status,
-        to: payload.status,
-      },
-    })
-  }
+    if (payload.status && payload.status !== previousProject?.status) {
+      historyEvents.push({
+        type: "status_change",
+        description: `Estado cambiado de ${previousProject?.status || "-"} a ${payload.status}`,
+        metadata: {
+          from: previousProject?.status,
+          to: payload.status,
+        },
+      })
+    }
 
-  // Estado cliente
-  if (
-    payload.client_visible_status &&
-    payload.client_visible_status !==
-      previousProject?.client_visible_status
-  ) {
-    historyEvents.push({
-      type: "client_status",
-      description: `Estado cliente actualizado: ${payload.client_visible_status}`,
-      metadata: {
-        previous:
-          previousProject?.client_visible_status,
-        new: payload.client_visible_status,
-      },
-    })
-  }
+    if (
+      payload.client_visible_status &&
+      payload.client_visible_status !== previousProject?.client_visible_status
+    ) {
+      historyEvents.push({
+        type: "client_status",
+        description: `Estado cliente actualizado: ${payload.client_visible_status}`,
+        metadata: {
+          previous: previousProject?.client_visible_status,
+          new: payload.client_visible_status,
+        },
+      })
+    }
 
-  // Pago
-  if (
-    Number(payload.amount_paid || 0) !==
-    Number(previousProject?.amount_paid || 0)
-  ) {
-    const difference =
-      Number(payload.amount_paid || 0) -
+    if (
+      Number(payload.amount_paid || 0) !==
       Number(previousProject?.amount_paid || 0)
+    ) {
+      const difference =
+        Number(payload.amount_paid || 0) -
+        Number(previousProject?.amount_paid || 0)
 
-    historyEvents.push({
-      type: "payment",
-      description: `Pago registrado por ${difference.toLocaleString(
-        "es-CL"
-      )}`,
-      metadata: {
-        previous: previousProject?.amount_paid,
-        new: payload.amount_paid,
-        difference,
-      },
-    })
-  }
+      historyEvents.push({
+        type: "payment",
+        description: `Pago registrado por ${difference.toLocaleString("es-CL")}`,
+        metadata: {
+          previous: previousProject?.amount_paid,
+          new: payload.amount_paid,
+          difference,
+        },
+      })
+    }
 
-  // Venta
-  if (
-    Number(payload.sale_value || 0) !==
-    Number(previousProject?.sale_value || 0)
-  ) {
-    historyEvents.push({
-      type: "sale_value",
-      description: `Valor proyecto actualizado`,
-      metadata: {
-        previous: previousProject?.sale_value,
-        new: payload.sale_value,
-      },
-    })
-  }
+    if (
+      Number(payload.sale_value || 0) !==
+      Number(previousProject?.sale_value || 0)
+    ) {
+      historyEvents.push({
+        type: "sale_value",
+        description: "Valor proyecto actualizado",
+        metadata: {
+          previous: previousProject?.sale_value,
+          new: payload.sale_value,
+        },
+      })
+    }
 
-  // Prioridad
-  if (
-    payload.priority &&
-    payload.priority !== previousProject?.priority
-  ) {
-    historyEvents.push({
-      type: "priority_change",
-      description: `Prioridad cambiada a ${payload.priority}`,
-      metadata: {
-        previous: previousProject?.priority,
-        new: payload.priority,
-      },
-    })
-  }
+    if (payload.priority && payload.priority !== previousProject?.priority) {
+      historyEvents.push({
+        type: "priority_change",
+        description: `Prioridad cambiada a ${payload.priority}`,
+        metadata: {
+          previous: previousProject?.priority,
+          new: payload.priority,
+        },
+      })
+    }
 
-  // Técnico
-  if (
-    payload.technician_assigned &&
-    payload.technician_assigned !==
-      previousProject?.technician_assigned
-  ) {
-    historyEvents.push({
-      type: "technician_change",
-      description: `Técnico asignado: ${payload.technician_assigned}`,
-      metadata: {
-        previous:
-          previousProject?.technician_assigned,
-        new: payload.technician_assigned,
-      },
-    })
-  }
+    if (
+      payload.technician_assigned &&
+      payload.technician_assigned !== previousProject?.technician_assigned
+    ) {
+      historyEvents.push({
+        type: "technician_change",
+        description: `Técnico asignado: ${payload.technician_assigned}`,
+        metadata: {
+          previous: previousProject?.technician_assigned,
+          new: payload.technician_assigned,
+        },
+      })
+    }
 
-  // Registro genérico
-if (Object.keys(payload).length > 0) {
-  historyEvents.push({
-    type: "project_updated",
-    description: "Proyecto actualizado",
-    metadata: {
-      updated_fields: Object.keys(payload),
-    },
-  })
-}
+    if (Object.keys(payload).length > 0) {
+      historyEvents.push({
+        type: "project_updated",
+        description: "Proyecto actualizado",
+        metadata: {
+          updated_fields: Object.keys(payload),
+        },
+      })
+    }
 
-  for (const event of historyEvents) {
-    await createProjectHistory({
-      projectId,
-      type: event.type,
-      description: event.description,
-      createdBy: "sistema",
-      metadata: event.metadata,
-    })
-  }
+    for (const event of historyEvents) {
+      await createProjectHistory({
+        projectId,
+        type: event.type,
+        description: event.description,
+        createdBy: "sistema",
+        metadata: event.metadata,
+      })
+    }
 
-  setProjects((current) =>
-    current.map((project) =>
-      project.id === projectId ? data : project
+    setProjects((current) =>
+      current.map((project) =>
+        project.id === projectId ? data : project
+      )
     )
-  )
 
-  return true
-}
+    return true
+  }
 
   async function deleteProject(projectId) {
     const confirmDelete = window.confirm(
@@ -239,9 +223,7 @@ if (Object.keys(payload).length > 0) {
 
     if (!confirmDelete) return false
 
-    const previousProject = projects.find(
-      (p) => p.id === projectId
-    )
+    const previousProject = projects.find((p) => p.id === projectId)
 
     const { error } = await supabase
       .from("projects")
@@ -259,9 +241,7 @@ if (Object.keys(payload).length > 0) {
     await createProjectHistory({
       projectId,
       type: "project_deleted",
-      description: `Proyecto borrado: ${
-        previousProject?.title || projectId
-      }`,
+      description: `Proyecto borrado: ${previousProject?.title || projectId}`,
       createdBy: "sistema",
       metadata: {
         deleted_at: new Date().toISOString(),
