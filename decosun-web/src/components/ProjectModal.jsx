@@ -407,7 +407,10 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
   }
 
   const balance = useMemo(() => {
-    return Number(form?.sale_value || 0) - Number(form?.amount_paid || 0)
+    return Math.max(
+      Number(form?.sale_value || 0) - Number(form?.amount_paid || 0),
+      0
+    )
   }, [form?.sale_value, form?.amount_paid])
 
   const totalCosts = useMemo(() => {
@@ -436,8 +439,72 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
     Number(form?.sale_value || 0) *
     (Number(form?.management_fee_rate || 0) / 100)
 
+  function savePaymentAmount(amount, status, type) {
+    const saleValue = Number(form.sale_value || 0)
+    const paymentAmount = Number(amount || 0)
+
+    if (saleValue <= 0) {
+      alert("Primero ingresa el valor del proyecto.")
+      return
+    }
+
+    if (paymentAmount < 0) {
+      alert("El abono no puede ser negativo.")
+      return
+    }
+
+    if (paymentAmount > saleValue) {
+      alert("El abono no puede superar el valor del proyecto.")
+      return
+    }
+
+    setForm((current) => ({
+      ...current,
+      amount_paid: paymentAmount,
+      payment_status: status,
+      payment_type: type,
+    }))
+
+    onSave(project.id, {
+      ...form,
+      amount_paid: paymentAmount,
+      payment_status: status,
+      payment_type: type,
+
+      key_date: form.key_date || null,
+      sale_date: form.sale_date || null,
+      invoice_date: form.invoice_date || null,
+      closed_date: form.closed_date || null,
+      visit_date: form.visit_date || null,
+      visit_time: form.visit_time || null,
+    })
+  }
+
+  function registerInitialPayment() {
+    const saleValue = Number(form.sale_value || 0)
+    const initialPayment = Math.round(saleValue * 0.5)
+
+    savePaymentAmount(initialPayment, "abonado", "abono_50")
+  }
+
+  function registerManualPayment() {
+    savePaymentAmount(
+      Number(form.amount_paid || 0),
+      Number(form.amount_paid || 0) >= Number(form.sale_value || 0)
+        ? "pagado"
+        : "abonado",
+      "abono_manual"
+    )
+  }
+
+  function registerFinalPayment() {
+    const saleValue = Number(form.sale_value || 0)
+
+    savePaymentAmount(saleValue, "pagado", "pagado_total")
+  }
+
   const publicStatusURL = form?.public_token
-    ? `https://decosun.cl/estado/${form.public_token}`
+    ? `${window.location.origin}/estado/${form.public_token}`
     : ""
 
   if (!project || !form) return null
@@ -901,7 +968,7 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
         {tab === "finanzas" && canSeeFinance && (
           <div className="modal-grid">
             <label>
-              Valor venta / OC
+              Valor aceptado / OC
               <input
                 type="number"
                 value={form.sale_value}
@@ -909,17 +976,13 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
               />
             </label>
 
-            <label>
-              Valor factura
-              <input
-                type="number"
-                value={form.invoice_value}
-                onChange={(e) => updateField("invoice_value", e.target.value)}
-              />
-            </label>
+            <div className="balance-box">
+              <span>Abono sugerido 50%</span>
+              <strong>{money(Number(form.sale_value || 0) * 0.5)}</strong>
+            </div>
 
             <label>
-              Pagado
+              Abono real recibido
               <input
                 type="number"
                 value={form.amount_paid}
@@ -928,7 +991,7 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
             </label>
 
             <div className="balance-box">
-              <span>Saldo pendiente operacional</span>
+              <span>Saldo pendiente</span>
               <strong>{money(balance)}</strong>
             </div>
 
@@ -940,22 +1003,8 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
               >
                 <option value="pendiente">Pendiente</option>
                 <option value="abonado">Abonado</option>
-                <option value="facturado">Facturado</option>
                 <option value="pagado">Pagado</option>
-              </select>
-            </label>
-
-            <label>
-              Tipo pago
-              <select
-                value={form.payment_type}
-                onChange={(e) => updateField("payment_type", e.target.value)}
-              >
-                <option value="pendiente">Pendiente</option>
-                <option value="abono_saldo">Abono + saldo</option>
-                <option value="contado">Contado</option>
                 <option value="orden_compra">Orden de compra</option>
-                <option value="factura_30">Factura 30 días</option>
               </select>
             </label>
 
@@ -966,6 +1015,32 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
                 onChange={(e) => updateField("payment_bank", e.target.value)}
               />
             </label>
+
+            <div className="full-field flex flex-wrap gap-3">
+              <button
+                type="button"
+                className="secondary-btn"
+                onClick={registerInitialPayment}
+              >
+                Registrar abono 50%
+              </button>
+
+              <button
+                type="button"
+                className="secondary-btn"
+                onClick={registerManualPayment}
+              >
+                Guardar abono manual
+              </button>
+
+              <button
+                type="button"
+                className="primary-btn"
+                onClick={registerFinalPayment}
+              >
+                Registrar saldo final
+              </button>
+            </div>
           </div>
         )}
 

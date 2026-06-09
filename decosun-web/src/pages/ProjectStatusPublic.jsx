@@ -42,10 +42,10 @@ export default function ProjectStatusPublic() {
     setLoading(true)
 
     const { data, error } = await supabase
-  .rpc("get_project_status", {
-    p_token: token,
-  })
-  .single()
+      .rpc("get_project_status", {
+        p_token: token,
+      })
+      .single()
 
     if (error) {
       console.error(error)
@@ -53,6 +53,7 @@ export default function ProjectStatusPublic() {
       setLoading(false)
       return
     }
+    console.log("PROJECT STATUS:", data)
 
     setProject(data)
     setLoading(false)
@@ -76,6 +77,9 @@ export default function ProjectStatusPublic() {
 
   const currentStatus = project.client_visible_status || "Cotización recibida"
   const progress = progressMap[currentStatus] || 10
+  const saleValue = Number(project.sale_value || 0)
+  const amountPaid = Number(project.amount_paid || 0)
+  const balance = Math.max(saleValue - amountPaid, 0)
 
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-20 text-white">
@@ -130,103 +134,110 @@ export default function ProjectStatusPublic() {
             </div>
           </div>
 
-          <div className="mt-8 grid gap-6 md:grid-cols-3">
-            <div className="rounded-2xl bg-white/[0.04] p-5">
-              <p className="text-sm text-slate-400">Nº Cotización</p>
-              <h3 className="mt-2 text-xl font-semibold">
-                {project.quote_number || "-"}
-              </h3>
+          <div>
+            <div className="mt-8 grid gap-6 md:grid-cols-4">
+              <div className="rounded-2xl bg-white/[0.04] p-5">
+                <p className="text-sm text-slate-400">Nº Cotización</p>
+                <h3 className="mt-2 text-xl font-semibold">
+                  {project.quote_number || "-"}
+                </h3>
+              </div>
+
+              <div className="rounded-2xl bg-white/[0.04] p-5">
+                <p className="text-sm text-slate-400">Valor proyecto</p>
+                <h3 className="mt-2 text-xl font-semibold">
+                  {formatCLP(saleValue)}
+                </h3>
+              </div>
+
+              <div className="rounded-2xl bg-white/[0.04] p-5">
+                <p className="text-sm text-slate-400">Abonado</p>
+                <h3 className="mt-2 text-xl font-semibold">
+                  {formatCLP(amountPaid)}
+                </h3>
+              </div>
+
+              <div className="rounded-2xl bg-white/[0.04] p-5">
+                <p className="text-sm text-slate-400">Saldo pendiente</p>
+                <h3 className="mt-2 text-xl font-semibold">
+                  {formatCLP(balance)}
+                </h3>
+              </div>
             </div>
 
-            <div className="rounded-2xl bg-white/[0.04] p-5">
-              <p className="text-sm text-slate-400">Valor proyecto</p>
-              <h3 className="mt-2 text-xl font-semibold">
-                {formatCLP(project.sale_value)}
+            <div className="mt-10">
+              <h3 className="mb-6 text-2xl font-bold">
+                Seguimiento
               </h3>
-            </div>
 
-            <div className="rounded-2xl bg-white/[0.04] p-5">
-              <p className="text-sm text-slate-400">Estado de pago</p>
-              <h3 className="mt-2 text-xl font-semibold capitalize">
-                {project.payment_status || "pendiente"}
-              </h3>
-            </div>
-          </div>
+              <div className="space-y-4">
+                {timeline.map((step, index) => {
+                  const completed = progress >= timelineProgress[index]
+                  const isCurrent =
+                    step === currentStatus ||
+                    (!completed &&
+                      progress < timelineProgress[index] &&
+                      progress >= (timelineProgress[index - 1] || 0))
 
-          <div className="mt-10">
-            <h3 className="mb-6 text-2xl font-bold">
-              Seguimiento
-            </h3>
-
-            <div className="space-y-4">
-              {timeline.map((step, index) => {
-                const completed = progress >= timelineProgress[index]
-                const isCurrent =
-                  step === currentStatus ||
-                  (!completed &&
-                    progress < timelineProgress[index] &&
-                    progress >= (timelineProgress[index - 1] || 0))
-
-                return (
-                  <div
-                    key={step}
-                    className={`flex items-center gap-4 rounded-2xl p-4 ${
-                      completed
+                  return (
+                    <div
+                      key={step}
+                      className={`flex items-center gap-4 rounded-2xl p-4 ${completed
                         ? "bg-white/[0.06]"
                         : isCurrent
-                        ? "bg-amber-300/10"
-                        : "bg-white/[0.03]"
-                    }`}
-                  >
-                    <div
-                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full font-bold ${
-                        completed
+                          ? "bg-amber-300/10"
+                          : "bg-white/[0.03]"
+                        }`}
+                    >
+                      <div
+                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full font-bold ${completed
                           ? "bg-amber-300 text-slate-950"
                           : isCurrent
-                          ? "border border-amber-300 text-amber-300"
-                          : "bg-white/10 text-slate-400"
-                      }`}
-                    >
-                      {completed ? "✓" : index + 1}
-                    </div>
+                            ? "border border-amber-300 text-amber-300"
+                            : "bg-white/10 text-slate-400"
+                          }`}
+                      >
+                        {completed ? "✓" : index + 1}
+                      </div>
 
-                    <div>
-                      <p className="font-semibold">
-                        {step}
-                      </p>
+                      <div>
+                        <p className="font-semibold">
+                          {step}
+                        </p>
 
-                      <p className="text-sm text-slate-400">
-                        {completed
-                          ? "Etapa completada o en curso."
-                          : isCurrent
-                          ? "Etapa actual del proyecto."
-                          : "Próxima etapa."}
-                      </p>
+                        <p className="text-sm text-slate-400">
+                          {completed
+                            ? "Etapa completada o en curso."
+                            : isCurrent
+                              ? "Etapa actual del proyecto."
+                              : "Próxima etapa."}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                )
-              })}
+                  )
+                })}
+              </div>
+            </div>
+
+            <div className="mt-10 rounded-2xl bg-white/[0.04] p-6">
+              <p className="mb-2 text-slate-400">Observaciones</p>
+              <p className="leading-7 text-slate-200">
+                {project.summary ||
+                  "Su proyecto se encuentra en proceso. Para más información contacte a DecoSun."}
+              </p>
+            </div>
+
+            <div className="mt-8 rounded-2xl border border-amber-300/20 bg-amber-300/10 p-5">
+              <p className="text-sm leading-7 text-amber-100">
+                Si necesita actualizar información, coordinar una visita o hacer
+                una consulta adicional, comuníquese con su asesor DecoSun.
+              </p>
             </div>
           </div>
 
-          <div className="mt-10 rounded-2xl bg-white/[0.04] p-6">
-            <p className="mb-2 text-slate-400">Observaciones</p>
-            <p className="leading-7 text-slate-200">
-              {project.summary ||
-                "Su proyecto se encuentra en proceso. Para más información contacte a DecoSun."}
-            </p>
+          <div className="mt-8 text-center text-slate-400">
+            DecoSun · Decoración y Control Solar
           </div>
-
-          <div className="mt-8 rounded-2xl border border-amber-300/20 bg-amber-300/10 p-5">
-            <p className="text-sm leading-7 text-amber-100">
-              Si necesita actualizar información, coordinar una visita o hacer
-              una consulta adicional, comuníquese con su asesor DecoSun.
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-8 text-center text-slate-400">
-          DecoSun · Decoración y Control Solar
         </div>
       </div>
     </main>

@@ -512,7 +512,7 @@ export default function Dashboard() {
           {isAdvisor && (
             <button
               className="secondary-btn"
-              onClick={() => window.open("/panel/academia", "_blank")}
+              onClick={() => window.open("/Academy", "_blank")}
             >
               Academia DecoSun
             </button>
