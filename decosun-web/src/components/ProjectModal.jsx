@@ -503,6 +503,90 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
     savePaymentAmount(saleValue, "pagado", "pagado_total")
   }
 
+  function calculateAdvisorCommission() {
+    if (form.advisor_commission_type === "sin_comision") return 0
+
+    if (form.advisor_commission_type === "especial") {
+      return Number(form.advisor_commission_amount || 0)
+    }
+
+    return Math.round(
+      Number(form.sale_value || 0) *
+      (Number(form.advisor_commission_rate || 0) / 100)
+    )
+  }
+
+  async function registerCommissionInTreasury() {
+    const commissionAmount = calculateAdvisorCommission()
+
+    if (!form.advisor_name) {
+      alert("Primero asigna un asesor comercial.")
+      return
+    }
+
+    if (commissionAmount <= 0) {
+      alert("La comisión calculada debe ser mayor a cero.")
+      return
+    }
+
+    const confirmRegister = window.confirm(
+      `¿Registrar comisión de ${form.advisor_name} por ${money(
+        commissionAmount
+      )} en Tesorería?`
+    )
+
+    if (!confirmRegister) return
+
+    const { error: movementError } = await supabase
+      .from("treasury_movements")
+      .insert({
+        date: new Date().toISOString().slice(0, 10),
+        company_name: form.region_code === "iquique" ? "Decosun Spa" : "Decosun Group SpA",
+        bank: form.payment_bank || "BCI",
+        description: `Comisión asesor - ${form.title || "Proyecto"}`,
+        type: "egreso",
+        amount: commissionAmount,
+        category: "Comisión",
+        subcategory: "Comisión asesor comercial",
+        branch: form.region_code === "iquique" ? "Iquique" : "Viña del Mar",
+        person_name: form.advisor_name,
+        notes: `Proyecto: ${form.quote_number || project.id}`,
+        source_module: "project_commission",
+        project_id: project.id,
+        reconciliation_status: "pendiente",
+      })
+
+    if (movementError) {
+      console.error(movementError)
+      alert("No se pudo registrar la comisión en Tesorería.")
+      return
+    }
+
+    const { error: projectError } = await supabase
+      .from("projects")
+      .update({
+        commission_registered: true,
+        advisor_commission_status: "registrada",
+        advisor_commission_amount: commissionAmount,
+      })
+      .eq("id", project.id)
+
+    if (projectError) {
+      console.error(projectError)
+      alert("La comisión se registró en Tesorería, pero no se pudo marcar el proyecto.")
+      return
+    }
+
+    setForm((current) => ({
+      ...current,
+      commission_registered: true,
+      advisor_commission_status: "registrada",
+      advisor_commission_amount: commissionAmount,
+    }))
+
+    alert("Comisión registrada en Tesorería.")
+  }
+
   const publicStatusURL = form?.public_token
     ? `${window.location.origin}/estado/${form.public_token}`
     : ""

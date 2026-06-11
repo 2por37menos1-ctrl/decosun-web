@@ -32,11 +32,23 @@ export function canViewPurchases(profile) {
 }
 
 export function canViewTreasury(profile) {
-  return isGerencia(profile)
+  return (
+    isGerencia(profile) ||
+    (
+      isAdministracionRegional(profile) &&
+      profile?.region_code === "quinta_region"
+    )
+  )
 }
 
 export function canCreateTreasuryMovement(profile) {
-  return isGerencia(profile)
+  return (
+    isGerencia(profile) ||
+    (
+      isAdministracionRegional(profile) &&
+      profile?.region_code === "quinta_region"
+    )
+  )
 }
 
 export function canViewTreasuryTotals(profile) {
