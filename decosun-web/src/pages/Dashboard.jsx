@@ -6,6 +6,10 @@ import StatCard from "../components/StatCard"
 import KanbanBoard from "../components/KanbanBoard"
 import ProjectModal from "../components/ProjectModal"
 
+import CommercialFollowUp from "../components/CommercialFollowUp"
+import CommercialArchived from "../components/CommercialArchived"
+import CommercialInsights from "../components/CommercialInsights"
+
 import AgendaPanel from "./AgendaPanel"
 import PurchaseRequests from "./PurchaseRequests"
 import Treasury from "./Treasury"
@@ -24,6 +28,7 @@ import {
 
 import { useProfile } from "../hooks/useProfile"
 import { useProjects } from "../hooks/useProjects"
+import { useArchivedProjects } from "../hooks/useArchivedProjects"
 
 const saleStatuses = [
   "aceptado",
@@ -145,7 +150,8 @@ function GaugeChart({ percentage }) {
 }
 
 export default function Dashboard() {
-  const [view, setView] = useState("dashboard")
+  const [view, setView] = useState("inicio")
+  const [commercialView, setCommercialView] = useState("pipeline")
   const [selectedProject, setSelectedProject] = useState(null)
   const [regionFilter, setRegionFilter] = useState("all")
   const [searchTerm, setSearchTerm] = useState("")
@@ -156,11 +162,18 @@ export default function Dashboard() {
 
   const {
     projects,
-    loading: projectsLoading,
+    loading,
+    reloadProjects,
     updateProjectStatus,
     updateProject,
-    deleteProject,
+    archiveProject,
   } = useProjects(profile)
+
+  const {
+    archivedProjects,
+    loadingArchived,
+    reloadArchivedProjects,
+  } = useArchivedProjects(profile)
 
   const availableProjects = useMemo(() => {
     if (profile?.role !== "gerencia") return projects
@@ -459,7 +472,7 @@ export default function Dashboard() {
     }
   }
 
-  if (profileLoading || projectsLoading) {
+  if (profileLoading || loading) {
     return <div className="loading-screen">Cargando DecoSun...</div>
   }
 
@@ -476,10 +489,17 @@ export default function Dashboard() {
 
         <div className="view-actions">
           <button
-            className={view === "dashboard" ? "primary-btn" : "secondary-btn"}
-            onClick={() => setView("dashboard")}
+            className={view === "inicio" ? "primary-btn" : "secondary-btn"}
+            onClick={() => setView("inicio")}
           >
-            Dashboard
+            Inicio
+          </button>
+
+          <button
+            className={view === "comercial" ? "primary-btn" : "secondary-btn"}
+            onClick={() => setView("comercial")}
+          >
+            Comercial
           </button>
 
           {canViewAgenda(profile) && (
@@ -493,19 +513,19 @@ export default function Dashboard() {
 
           {canViewPurchases(profile) && (
             <button
-              className={view === "purchase" ? "primary-btn" : "secondary-btn"}
-              onClick={() => setView("purchase")}
+              className={view === "operaciones" ? "primary-btn" : "secondary-btn"}
+              onClick={() => setView("operaciones")}
             >
-              Mercadería
+              Operaciones
             </button>
           )}
 
           {canViewTreasury(profile) && (
             <button
-              className={view === "treasury" ? "primary-btn" : "secondary-btn"}
-              onClick={() => setView("treasury")}
+              className={view === "finanzas" ? "primary-btn" : "secondary-btn"}
+              onClick={() => setView("finanzas")}
             >
-              Tesorería
+              Finanzas
             </button>
           )}
 
@@ -532,7 +552,84 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {view === "dashboard" && (
+      {view === "comercial" && (
+        <div className="view-actions" style={{ marginBottom: "20px" }}>
+          <button
+            className={
+              commercialView === "pipeline"
+                ? "primary-btn"
+                : "secondary-btn"
+            }
+            onClick={() => setCommercialView("pipeline")}
+          >
+            Pipeline
+          </button>
+
+          <button
+            className={
+              commercialView === "seguimiento"
+                ? "primary-btn"
+                : "secondary-btn"
+            }
+            onClick={() => setCommercialView("seguimiento")}
+          >
+            Seguimiento
+          </button>
+
+          <button
+            className={
+              commercialView === "archivados"
+                ? "primary-btn"
+                : "secondary-btn"
+            }
+            onClick={() => setCommercialView("archivados")}
+          >
+            Archivados
+          </button>
+
+          <button
+            className={
+              commercialView === "inteligencia"
+                ? "primary-btn"
+                : "secondary-btn"
+            }
+            onClick={() => setCommercialView("inteligencia")}
+          >
+            Inteligencia
+          </button>
+        </div>
+      )}
+
+      {view === "comercial" &&
+        commercialView === "seguimiento" && (
+          <CommercialFollowUp
+            projects={filteredProjects}
+            onProjectClick={setSelectedProject}
+            onArchiveProject={
+              profile?.role === "asesor_comercial"
+                ? null
+                : archiveProject
+            }
+          />
+        )}
+
+      {view === "comercial" &&
+        commercialView === "archivados" && (
+          <CommercialArchived
+            projects={archivedProjects}
+            onProjectClick={setSelectedProject}
+          />
+        )}
+
+      {view === "comercial" &&
+        commercialView === "inteligencia" && (
+          <CommercialInsights
+            projects={projects}
+            archivedProjects={archivedProjects}
+          />
+        )}
+
+      {view === "inicio" && (
         <>
           <div className="executive-filters">
             <div className="filter-field wide">
@@ -776,22 +873,70 @@ export default function Dashboard() {
             projects={filteredProjects}
             onStatusChange={updateProjectStatus}
             onProjectClick={setSelectedProject}
-            onDeleteProject={
+            onArchiveProject={
               profile?.role === "asesor_comercial"
                 ? null
-                : deleteProject
+                : archiveProject
             }
           />
         </>
       )}
 
+      {view === "comercial" &&
+        commercialView === "pipeline" && (
+          <>
+            <div className="executive-filters">
+              <div className="filter-field wide">
+                <label>Buscar proyecto</label>
+
+                <input
+                  placeholder="Cliente, ciudad, teléfono o detalle..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+
+              <div className="filter-field">
+                <label>Estado</label>
+
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                >
+                  {statusOptions.map((option) => (
+                    <option
+                      key={option.value}
+                      value={option.value}
+                    >
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <KanbanBoard
+              projects={filteredProjects}
+              onStatusChange={updateProjectStatus}
+              onProjectClick={setSelectedProject}
+              onArchiveProject={
+                profile?.role === "asesor_comercial"
+                  ? null
+                  : archiveProject
+              }
+            />
+          </>
+        )}
+
       {view === "agenda" && canViewAgenda(profile) && <AgendaPanel />}
 
-      {view === "purchase" && canViewPurchases(profile) && (
+      {view === "operaciones" && canViewPurchases(profile) && (
         <PurchaseRequests />
       )}
 
-      {view === "treasury" && canViewTreasury(profile) && <Treasury />}
+      {view === "finanzas" && canViewTreasury(profile) && (
+        <Treasury />
+      )}
 
       <ProjectModal
         project={selectedProject}

@@ -40,6 +40,65 @@ function cleanPhone(phone) {
   return onlyNumbers
 }
 
+function timeAgo(dateString) {
+  if (!dateString) return "Sin fecha"
+
+  const now = new Date()
+  const date = new Date(dateString)
+  const diff = Math.floor((now - date) / 1000)
+
+  if (diff < 60) return "Hace unos segundos"
+  if (diff < 3600) return `Hace ${Math.floor(diff / 60)} min`
+  if (diff < 86400) return `Hace ${Math.floor(diff / 3600)} h`
+  if (diff < 604800) return `Hace ${Math.floor(diff / 86400)} días`
+
+  return date.toLocaleDateString("es-CL")
+}
+
+function getActivityStatus(updatedAt) {
+  if (!updatedAt) {
+    return {
+      label: "Sin actividad registrada",
+      background: "#f1f5f9",
+      color: "#475569",
+    }
+  }
+
+  const now = new Date()
+  const date = new Date(updatedAt)
+  const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24))
+
+  if (diffDays <= 1) {
+    return {
+      label: "Activo hoy",
+      background: "#dcfce7",
+      color: "#166534",
+    }
+  }
+
+  if (diffDays <= 3) {
+    return {
+      label: `Sin movimiento hace ${diffDays} días`,
+      background: "#fef9c3",
+      color: "#854d0e",
+    }
+  }
+
+  if (diffDays <= 7) {
+    return {
+      label: `Sin movimiento hace ${diffDays} días`,
+      background: "#ffedd5",
+      color: "#9a3412",
+    }
+  }
+
+  return {
+    label: `⚠️ Requiere seguimiento · ${diffDays} días`,
+    background: "#fee2e2",
+    color: "#991b1b",
+  }
+}
+
 function getProjectAddress(project) {
   return [
     project.address,
@@ -123,7 +182,7 @@ export default function KanbanBoard({
   projects,
   onStatusChange,
   onProjectClick,
-  onDeleteProject,
+  onArchiveProject,
 }) {
   function handleDragStart(event, projectId) {
     event.dataTransfer.setData("projectId", projectId)
@@ -178,6 +237,8 @@ export default function KanbanBoard({
                   Number(project.sale_value || 0) -
                   Number(project.amount_paid || 0)
 
+                const activityStatus = getActivityStatus(project.updated_at)
+
                 return (
                   <article
                     key={project.id}
@@ -210,6 +271,55 @@ export default function KanbanBoard({
                       {project.client_type && <span>{project.client_type}</span>}
                       {project.priority && <span>{project.priority}</span>}
                       {project.region_code && <span>{project.region_code}</span>}
+                    </div>
+
+                    <div
+                      style={{
+                        marginTop: "8px",
+                        fontSize: "12px",
+                        color: "#64748b",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                      }}
+                    >
+                      <span>🕒</span>
+                      <span>
+                        Ingresado {timeAgo(project.created_at)}
+                      </span>
+                    </div>
+
+                    <div
+                      style={{
+                        marginBottom: "8px",
+                        fontSize: "12px",
+                        color: "#64748b",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                      }}
+                    >
+                      <span>🔄</span>
+                      <span>
+                        Actualizado {timeAgo(project.updated_at)}
+                      </span>
+                    </div>
+
+                    <div
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        padding: "5px 8px",
+                        borderRadius: "999px",
+                        fontSize: "11px",
+                        fontWeight: "700",
+                        background: activityStatus.background,
+                        color: activityStatus.color,
+                        marginBottom: "10px",
+                      }}
+                    >
+                      {activityStatus.label}
                     </div>
 
                     <div className="card-finance">
@@ -284,11 +394,33 @@ export default function KanbanBoard({
                         type="button"
                         onClick={(event) => {
                           event.stopPropagation()
-                          onDeleteProject(project.id)
+
+                          const archive_reason = window.prompt(
+                            "Motivo de archivo: sin_respuesta, precio_elevado, competencia, sin_presupuesto, postergado, fuera_cobertura, duplicado, otro",
+                            "sin_respuesta"
+                          )
+
+                          if (!archive_reason) return
+
+                          const lost_amount = window.prompt(
+                            "Monto de oportunidad perdida",
+                            project.sale_value || 0
+                          )
+
+                          const archive_notes = window.prompt(
+                            "Notas del archivo / seguimiento",
+                            ""
+                          )
+
+                          onArchiveProject(project.id, {
+                            archive_reason,
+                            lost_amount: Number(lost_amount || project.sale_value || 0),
+                            archive_notes,
+                          })
                         }}
-                        className="mt-2 rounded-xl bg-red-600 px-3 py-1 text-xs font-semibold text-white transition hover:bg-red-700"
+                        className="mt-2 rounded-xl bg-amber-600 px-3 py-1 text-xs font-semibold text-white transition hover:bg-amber-700"
                       >
-                        Borrar
+                        Archivar
                       </button>
                     </div>
                   </article>

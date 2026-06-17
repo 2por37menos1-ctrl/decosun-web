@@ -24,7 +24,7 @@ const categories = [
   "Pago por cuenta de otra empresa",
   "Gastos fijos",
   "Gastos variables",
-  "Aporte capital",
+  "Aporte socio",
   "Transferencia entre empresas",
   "Traspaso entre cuentas",
 
@@ -107,6 +107,16 @@ export default function Treasury() {
     notes: "",
   })
 
+  const [companyTransferForm, setCompanyTransferForm] = useState({
+    date: new Date().toISOString().slice(0, 10),
+    from_company: "Decosun Group SpA",
+    from_bank: "BCI",
+    to_company: "Decosun Spa",
+    to_bank: "BCI",
+    amount: "",
+    notes: "",
+  })
+
   const { profile } = useProfile()
 
   useEffect(() => {
@@ -174,6 +184,13 @@ export default function Treasury() {
 
   function updateTransferField(field, value) {
     setTransferForm((current) => ({
+      ...current,
+      [field]: value,
+    }))
+  }
+
+  function updateCompanyTransferField(field, value) {
+    setCompanyTransferForm((current) => ({
       ...current,
       [field]: value,
     }))
@@ -558,6 +575,82 @@ export default function Treasury() {
     loadMovements()
   }
 
+
+
+  async function createCompanyTransfer(e) {
+    e.preventDefault()
+
+    const amount = Number(companyTransferForm.amount || 0)
+
+    if (amount <= 0) {
+      alert("Ingresa un monto válido.")
+      return
+    }
+
+    if (companyTransferForm.from_company === companyTransferForm.to_company) {
+      alert("La empresa origen y destino no pueden ser la misma.")
+      return
+    }
+
+    const transferGroupId = crypto.randomUUID()
+
+    const payload = [
+      {
+        date: companyTransferForm.date,
+        company_name: companyTransferForm.from_company,
+        bank: companyTransferForm.from_bank,
+        description: `Transferencia a ${companyTransferForm.to_company}`,
+        type: "egreso",
+        amount,
+        category: "Transferencia entre empresas",
+        subcategory: "Salida transferencia interempresa",
+        branch: "General",
+        person_name: companyTransferForm.to_company,
+        notes: companyTransferForm.notes,
+        reconciliation_status: "pendiente",
+        source_module: "company_transfer",
+        transfer_group_id: transferGroupId,
+      },
+      {
+        date: companyTransferForm.date,
+        company_name: companyTransferForm.to_company,
+        bank: companyTransferForm.to_bank,
+        description: `Transferencia desde ${companyTransferForm.from_company}`,
+        type: "ingreso",
+        amount,
+        category: "Transferencia entre empresas",
+        subcategory: "Ingreso transferencia interempresa",
+        branch: "General",
+        person_name: companyTransferForm.from_company,
+        notes: companyTransferForm.notes,
+        reconciliation_status: "pendiente",
+        source_module: "company_transfer",
+        transfer_group_id: transferGroupId,
+      },
+    ]
+
+    const { error } = await supabase
+      .from("treasury_movements")
+      .insert(payload)
+
+    if (error) {
+      console.error(error)
+      alert("No se pudo crear la transferencia entre empresas.")
+      return
+    }
+
+    setCompanyTransferForm({
+      date: new Date().toISOString().slice(0, 10),
+      from_company: "Decosun Group SpA",
+      from_bank: "BCI",
+      to_company: "Decosun Spa",
+      to_bank: "BCI",
+      amount: "",
+      notes: "",
+    })
+
+    loadMovements()
+  }
   async function createBankTransfer(e) {
     e.preventDefault()
 
@@ -632,43 +725,84 @@ export default function Treasury() {
     loadMovements()
   }
 
+  const filteredMovements = movements.filter((movement) => {
+    if (movement.is_void) return false
 
-  const filteredMovements = useMemo(() => {
-    return movements.filter((movement) => {
-      if (movement.is_void) return false
-      const matchesCompany =
-        filters.company_name === "all" ||
-        movement.company_name === filters.company_name
+    const matchesCompany =
+      filters.company_name === "all" ||
+      movement.company_name === filters.company_name
 
-      const matchesBank =
-        filters.bank === "all" || movement.bank === filters.bank
+    const matchesBank =
+      filters.bank === "all" ||
+      movement.bank === filters.bank
 
-      const matchesType =
-        filters.type === "all" || movement.type === filters.type
+    const matchesType =
+      filters.type === "all" ||
+      movement.type === filters.type
 
-      const matchesMonth =
-        !filters.month || movement.date?.startsWith(filters.month)
+    const matchesMonth =
+      !filters.month ||
+      movement.date?.startsWith(filters.month)
 
-      return matchesCompany && matchesBank && matchesType && matchesMonth
-    })
-  }, [movements, filters])
+    return (
+      matchesCompany &&
+      matchesBank &&
+      matchesType &&
+      matchesMonth
+    )
+  })
 
-  const totalIncome = filteredMovements
+  const cashIncome = filteredMovements
     .filter((m) => m.type === "ingreso")
     .reduce((acc, m) => acc + Number(m.amount || 0), 0)
 
-  const totalExpense = filteredMovements
+  const cashExpense = filteredMovements
     .filter((m) => m.type === "egreso")
     .reduce((acc, m) => acc + Number(m.amount || 0), 0)
 
-  const balance = totalIncome - totalExpense
+  const cashBalance = cashIncome - cashExpense
 
-  const openLoans = loans.filter((loan) => loan.status !== "cerrado")
+  const operationalIncome = filteredMovements
+    .filter(
+      (m) =>
+        m.type === "ingreso" &&
+        m.category === "Ingreso cliente"
+    )
+    .reduce((acc, m) => acc + Number(m.amount || 0), 0)
+
+  const nonOperationalIncome = filteredMovements
+    .filter(
+      (m) =>
+        m.type === "ingreso" &&
+        m.category !== "Ingreso cliente"
+    )
+    .reduce((acc, m) => acc + Number(m.amount || 0), 0)
+
+  const realExpense = filteredMovements
+    .filter(
+      (m) =>
+        m.type === "egreso" &&
+        ![
+          "Traspaso entre cuentas",
+          "Transferencia entre empresas",
+          "Préstamos",
+        ].includes(m.category)
+    )
+    .reduce((acc, m) => acc + Number(m.amount || 0), 0)
+
+  const operationalResult = operationalIncome - realExpense
+
+  const openLoans = loans.filter(
+    (loan) => loan.status !== "cerrado"
+  )
 
   const openLoanBalance = openLoans.reduce(
     (acc, loan) =>
       acc +
-      (Number(loan.amount || 0) - Number(loan.returned_amount || 0)),
+      (
+        Number(loan.amount || 0) -
+        Number(loan.returned_amount || 0)
+      ),
     0
   )
 
@@ -693,6 +827,13 @@ export default function Treasury() {
             onClick={() => setView("transfers")}
           >
             Traspasos
+          </button>
+
+          <button
+            className={view === "companyTransfer" ? "primary-btn" : "secondary-btn"}
+            onClick={() => setView("companyTransfer")}
+          >
+            Entre empresas
           </button>
 
           <button
@@ -757,18 +898,28 @@ export default function Treasury() {
       {canViewTreasuryTotals(profile) && (
         <div className="treasury-summary">
           <div className="stat-card">
-            <span>Ingresos filtrados</span>
-            <h2>{money(totalIncome)}</h2>
+            <span>Ingresos de caja</span>
+            <h2>{money(cashIncome)}</h2>
           </div>
 
           <div className="stat-card">
-            <span>Egresos filtrados</span>
-            <h2>{money(totalExpense)}</h2>
+            <span>Egresos de caja</span>
+            <h2>{money(cashExpense)}</h2>
           </div>
 
           <div className="stat-card">
-            <span>Saldo filtrado</span>
-            <h2>{money(balance)}</h2>
+            <span>Saldo caja</span>
+            <h2>{money(cashBalance)}</h2>
+          </div>
+
+          <div className="stat-card">
+            <span>Ventas reales</span>
+            <h2>{money(operationalIncome)}</h2>
+          </div>
+
+          <div className="stat-card">
+            <span>Resultado operacional</span>
+            <h2>{money(operationalResult)}</h2>
           </div>
 
           <div className="stat-card">
@@ -1037,6 +1188,87 @@ export default function Treasury() {
               </tbody>
             </table>
           </div>
+        </>
+      )}
+
+      {view === "companyTransfer" && (
+        <>
+          <form className="treasury-form" onSubmit={createCompanyTransfer}>
+            <input
+              type="date"
+              value={companyTransferForm.date}
+              onChange={(e) =>
+                updateCompanyTransferField("date", e.target.value)
+              }
+              required
+            />
+
+            <select
+              value={companyTransferForm.from_company}
+              onChange={(e) =>
+                updateCompanyTransferField("from_company", e.target.value)
+              }
+            >
+              {companies.map((company) => (
+                <option key={company}>{company}</option>
+              ))}
+            </select>
+
+            <select
+              value={companyTransferForm.from_bank}
+              onChange={(e) =>
+                updateCompanyTransferField("from_bank", e.target.value)
+              }
+            >
+              {banks.map((bank) => (
+                <option key={bank}>{bank}</option>
+              ))}
+            </select>
+
+            <select
+              value={companyTransferForm.to_company}
+              onChange={(e) =>
+                updateCompanyTransferField("to_company", e.target.value)
+              }
+            >
+              {companies.map((company) => (
+                <option key={company}>{company}</option>
+              ))}
+            </select>
+
+            <select
+              value={companyTransferForm.to_bank}
+              onChange={(e) =>
+                updateCompanyTransferField("to_bank", e.target.value)
+              }
+            >
+              {banks.map((bank) => (
+                <option key={bank}>{bank}</option>
+              ))}
+            </select>
+
+            <input
+              type="number"
+              placeholder="Monto transferencia"
+              value={companyTransferForm.amount}
+              onChange={(e) =>
+                updateCompanyTransferField("amount", e.target.value)
+              }
+              required
+            />
+
+            <input
+              placeholder="Motivo / comentario"
+              value={companyTransferForm.notes}
+              onChange={(e) =>
+                updateCompanyTransferField("notes", e.target.value)
+              }
+            />
+
+            <button className="primary-btn">
+              Crear transferencia entre empresas
+            </button>
+          </form>
         </>
       )}
 

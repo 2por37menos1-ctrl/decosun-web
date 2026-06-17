@@ -20,6 +20,7 @@ export function useProjects(profile) {
       .from("projects")
       .select("*")
       .is("deleted_at", null)
+      .eq("archived", false)
       .order("created_at", { ascending: false })
 
     if (profile.role === "asesor_comercial") {
@@ -216,36 +217,40 @@ export function useProjects(profile) {
     return true
   }
 
-  async function deleteProject(projectId) {
-    const confirmDelete = window.confirm(
-      "¿Seguro que deseas borrar este proyecto?"
-    )
-
-    if (!confirmDelete) return false
-
+  async function archiveProject(projectId, archiveData = {}) {
     const previousProject = projects.find((p) => p.id === projectId)
+
+    const payload = {
+      archived: true,
+      archive_reason: archiveData.archive_reason || "otro",
+      archive_notes: archiveData.archive_notes || "",
+      archive_date: new Date().toISOString(),
+      lost_amount: Number(
+        archiveData.lost_amount ?? previousProject?.sale_value ?? 0
+      ),
+      lost_to_company: archiveData.lost_to_company || "",
+      follow_up_date: archiveData.follow_up_date || null,
+      archive_status: previousProject?.status || "",
+    }
 
     const { error } = await supabase
       .from("projects")
-      .update({
-        deleted_at: new Date().toISOString(),
-      })
+      .update(payload)
       .eq("id", projectId)
 
     if (error) {
       console.error(error)
-      alert("No se pudo borrar el proyecto.")
+      alert("No se pudo archivar el proyecto.")
       return false
     }
 
     await createProjectHistory({
       projectId,
-      type: "project_deleted",
-      description: `Proyecto borrado: ${previousProject?.title || projectId}`,
+      type: "project_archived",
+      description: `Proyecto archivado: ${previousProject?.title || projectId
+        }`,
       createdBy: "sistema",
-      metadata: {
-        deleted_at: new Date().toISOString(),
-      },
+      metadata: payload,
     })
 
     setProjects((current) =>
@@ -261,6 +266,6 @@ export function useProjects(profile) {
     reloadProjects: loadProjects,
     updateProjectStatus,
     updateProject,
-    deleteProject,
+    archiveProject,
   }
 }
