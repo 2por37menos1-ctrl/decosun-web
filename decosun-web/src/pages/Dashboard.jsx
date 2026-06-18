@@ -9,6 +9,7 @@ import ProjectModal from "../components/ProjectModal"
 import CommercialFollowUp from "../components/CommercialFollowUp"
 import CommercialArchived from "../components/CommercialArchived"
 import CommercialInsights from "../components/CommercialInsights"
+import OperationsPanel from "../components/OperationsPanel"
 
 import AgendaPanel from "./AgendaPanel"
 import PurchaseRequests from "./PurchaseRequests"
@@ -931,7 +932,10 @@ export default function Dashboard() {
       {view === "agenda" && canViewAgenda(profile) && <AgendaPanel />}
 
       {view === "operaciones" && canViewPurchases(profile) && (
-        <PurchaseRequests />
+        <OperationsPanel
+          projects={projects}
+          profile={profile}
+        />
       )}
 
       {view === "finanzas" && canViewTreasury(profile) && (

@@ -54,12 +54,19 @@ export default function Treasury() {
   const [movements, setMovements] = useState([])
   const [loans, setLoans] = useState([])
   const [intercompanyPayments, setIntercompanyPayments] = useState([])
+  const [commitments, setCommitments] = useState([])
+  const [projects, setProjects] = useState([])
+  const [financialGroups, setFinancialGroups] = useState([])
+  const [financialConcepts, setFinancialConcepts] = useState([])
+
   const [editingMovement, setEditingMovement] = useState(null)
 
   const [filters, setFilters] = useState({
     company_name: "all",
     bank: "all",
     type: "all",
+    category: "all",
+    financial_group: "all",
     month: currentMonth(),
   })
 
@@ -123,6 +130,11 @@ export default function Treasury() {
     loadMovements()
     loadLoans()
     loadIntercompanyPayments()
+    loadCommitments()
+    loadProjects()
+    loadFinancialGroups()
+    loadFinancialConcepts()
+
   }, [])
 
   async function loadMovements() {
@@ -166,6 +178,70 @@ export default function Treasury() {
     }
 
     setIntercompanyPayments(data || [])
+  }
+
+  async function loadCommitments() {
+    const { data, error } = await supabase
+      .from("financial_commitments")
+      .select("*")
+
+    if (error) {
+      console.error(error)
+      return
+    }
+
+    setCommitments(data || [])
+  }
+
+  async function loadProjects() {
+    const { data, error } = await supabase
+      .from("projects")
+      .select(`
+      id,
+      status,
+      sale_value,
+      amount_paid
+    `)
+
+    if (error) {
+      console.error(error)
+      return
+    }
+
+    setProjects(data || [])
+  }
+
+  async function loadFinancialGroups() {
+    const { data, error } = await supabase
+      .from("financial_groups")
+      .select("*")
+      .eq("active", true)
+      .order("name", { ascending: true })
+
+    if (error) {
+      console.error(error)
+      return
+    }
+
+    setFinancialGroups(data || [])
+  }
+
+  async function loadFinancialConcepts() {
+    const { data, error } = await supabase
+      .from("financial_concepts")
+      .select(`
+      *,
+      financial_groups(*)
+    `)
+      .eq("active", true)
+      .order("name", { ascending: true })
+
+    if (error) {
+      console.error(error)
+      return
+    }
+
+    setFinancialConcepts(data || [])
   }
 
   function updateField(field, value) {
@@ -725,6 +801,13 @@ export default function Treasury() {
     loadMovements()
   }
 
+  const financialConceptMap = useMemo(() => {
+    return financialConcepts.reduce((acc, concept) => {
+      acc[concept.name] = concept.financial_groups?.name || null
+      return acc
+    }, {})
+  }, [financialConcepts])
+
   const filteredMovements = movements.filter((movement) => {
     if (movement.is_void) return false
 
@@ -740,6 +823,16 @@ export default function Treasury() {
       filters.type === "all" ||
       movement.type === filters.type
 
+    const matchesCategory =
+      filters.category === "all" ||
+      movement.category === filters.category
+
+    const conceptGroup = financialConceptMap[movement.category]
+
+    const matchesFinancialGroup =
+      filters.financial_group === "all" ||
+      conceptGroup === filters.financial_group
+
     const matchesMonth =
       !filters.month ||
       movement.date?.startsWith(filters.month)
@@ -748,6 +841,8 @@ export default function Treasury() {
       matchesCompany &&
       matchesBank &&
       matchesType &&
+      matchesCategory &&
+      matchesFinancialGroup &&
       matchesMonth
     )
   })
@@ -806,6 +901,75 @@ export default function Treasury() {
     0
   )
 
+  const monthIncomeMovements = filteredMovements.filter(
+    (movement) => movement.type === "ingreso"
+  )
+
+  const monthExpenseMovements = filteredMovements.filter(
+    (movement) => movement.type === "egreso"
+  )
+
+  const unreconciledIncome = monthIncomeMovements.filter(
+    (movement) => movement.reconciliation_status !== "conciliado"
+  )
+
+  const unreconciledExpense = monthExpenseMovements.filter(
+    (movement) => movement.reconciliation_status !== "conciliado"
+  )
+
+  const expectedIncome = projects
+    .filter((project) =>
+      [
+        "aceptado",
+        "medicion",
+        "compras",
+        "produccion",
+        "instalacion",
+        "facturacion",
+      ].includes(project.status)
+    )
+    .reduce((acc, project) => {
+      const pending =
+        Number(project.sale_value || 0) -
+        Number(project.amount_paid || 0)
+
+      return acc + Math.max(0, pending)
+    }, 0)
+
+  const pendingCommitments = commitments
+    .filter((c) => c.status === "pendiente")
+    .reduce(
+      (acc, c) => acc + Number(c.amount || 0),
+      0
+    )
+
+  const projectedCash =
+    cashBalance +
+    expectedIncome -
+    pendingCommitments
+
+  const committedPercentage =
+    cashBalance > 0
+      ? (pendingCommitments / cashBalance) * 100
+      : 0
+
+  async function markAsReconciled(movement) {
+    const { error } = await supabase
+      .from("treasury_movements")
+      .update({
+        reconciliation_status: "conciliado",
+      })
+      .eq("id", movement.id)
+
+    if (error) {
+      console.error(error)
+      alert("No se pudo conciliar el movimiento.")
+      return
+    }
+
+    loadMovements()
+  }
+
   return (
     <section className="treasury-page">
       <div className="dashboard-header">
@@ -820,6 +984,17 @@ export default function Treasury() {
             onClick={() => setView("movements")}
           >
             Movimientos
+          </button>
+
+          <button
+            className={
+              view === "reconciliation"
+                ? "primary-btn"
+                : "secondary-btn"
+            }
+            onClick={() => setView("reconciliation")}
+          >
+            Conciliación
           </button>
 
           <button
@@ -888,11 +1063,67 @@ export default function Treasury() {
           <option value="egreso">Egresos</option>
         </select>
 
+        <select
+          value={filters.category}
+          onChange={(e) => updateFilter("category", e.target.value)}
+        >
+          <option value="all">Todos los conceptos</option>
+          {categories.map((cat) => (
+            <option key={cat} value={cat}>
+              {cat}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={filters.financial_group}
+          onChange={(e) => updateFilter("financial_group", e.target.value)}
+        >
+          <option value="all">Todos los grupos</option>
+          {financialGroups.map((group) => (
+            <option key={group.id} value={group.name}>
+              {group.icon} {group.name}
+            </option>
+          ))}
+        </select>
+
         <input
           type="month"
           value={filters.month}
           onChange={(e) => updateFilter("month", e.target.value)}
         />
+      </div>
+
+      <div
+        className="treasury-summary"
+        style={{ marginBottom: "24px" }}
+      >
+        <div className="stat-card">
+          <span>💰 Saldo Bancos</span>
+          <h2>{money(cashBalance)}</h2>
+        </div>
+
+        <div className="stat-card">
+          <span>📥 Cobros Esperados</span>
+          <h2>{money(expectedIncome)}</h2>
+        </div>
+
+        <div className="stat-card">
+          <span>📤 Compromisos</span>
+          <h2>{money(pendingCommitments)}</h2>
+        </div>
+
+        <div className="stat-card">
+          <span>🏦 Caja Disponible</span>
+          <h2>{money(projectedCash)}</h2>
+        </div>
+
+        <div className="stat-card">
+          <span>⚠️ Dinero comprometido</span>
+          <h2>
+            {committedPercentage.toFixed(0)}%
+          </h2>
+        </div>
       </div>
 
       {canViewTreasuryTotals(profile) && (
@@ -927,6 +1158,120 @@ export default function Treasury() {
             <h2>{money(openLoanBalance)}</h2>
           </div>
         </div>
+      )}
+
+      {view === "reconciliation" && (
+        <section className="treasury-table">
+          <div className="dashboard-header">
+            <div>
+              <h2>Conciliación bancaria</h2>
+              <p>
+                Vista tipo cartola bancaria para revisar movimientos del mes seleccionado.
+              </p>
+            </div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Empresa</th>
+                <th>Banco</th>
+                <th>Descripción</th>
+                <th>Ingresos</th>
+                <th>Egresos</th>
+                <th>Estado</th>
+                <th>Acción</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {filteredMovements.map((m) => (
+                <tr key={m.id}>
+                  <td>{m.date}</td>
+                  <td>{m.company_name || "-"}</td>
+                  <td>{m.bank}</td>
+                  <td>{m.description}</td>
+
+                  <td
+                    style={{
+                      color: m.type === "ingreso" ? "#16a34a" : undefined,
+                      fontWeight: m.type === "ingreso" ? 700 : 400,
+                    }}
+                  >
+                    {m.type === "ingreso"
+                      ? `+ ${money(m.amount)}`
+                      : ""}
+                  </td>
+
+                  <td
+                    style={{
+                      color: m.type === "egreso" ? "#dc2626" : undefined,
+                      fontWeight: m.type === "egreso" ? 700 : 400,
+                    }}
+                  >
+                    {m.type === "egreso"
+                      ? `- ${money(m.amount)}`
+                      : ""}
+                  </td>
+
+                  <td>{m.reconciliation_status || "pendiente"}</td>
+
+                  <td>
+                    {m.reconciliation_status !== "conciliado" && (
+                      <button
+                        type="button"
+                        className="secondary-btn"
+                        onClick={() => markAsReconciled(m)}
+                      >
+                        Conciliar
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <div
+            className="treasury-summary"
+            style={{ marginTop: "24px" }}
+          >
+            <div className="stat-card">
+              <span>Ingresos sin conciliar</span>
+              <h2>{unreconciledIncome.length}</h2>
+            </div>
+
+            <div className="stat-card">
+              <span>Egresos sin conciliar</span>
+              <h2>{unreconciledExpense.length}</h2>
+            </div>
+
+            <div className="stat-card">
+              <span>Total ingresos</span>
+              <h2>
+                {money(
+                  monthIncomeMovements.reduce(
+                    (acc, m) => acc + Number(m.amount || 0),
+                    0
+                  )
+                )}
+              </h2>
+            </div>
+
+            <div className="stat-card">
+              <span>Total egresos</span>
+              <h2>
+                {money(
+                  monthExpenseMovements.reduce(
+                    (acc, m) => acc + Number(m.amount || 0),
+                    0
+                  )
+                )}
+              </h2>
+            </div>
+          </div>
+        </section>
       )}
 
       {view === "movements" && (
