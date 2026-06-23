@@ -183,6 +183,7 @@ export async function scanCompraAgil(opportunities = []) {
         days_left: daysLeft(item.receptionDate),
 
         region_code: item.regionCode || null,
+        region: getRegionName(item.regionCode),
         guarantee: item.guarantee || null,
         is_public_budget: item.isPublicBudget ?? null,
         proposal_state: item.proposalState ?? null,
