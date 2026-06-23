@@ -3,14 +3,16 @@ import { supabase } from "../lib/supabase";
 import { testMercadoPublico } from "../lib/testMercadoPublico";
 import { scanCompraAgil } from "../lib/compraAgilScanner";
 
-const [mpBearerToken, setMpBearerToken] = useState("");
-const [mpApiKey, setMpApiKey] = useState("");
-const [mpSettings, setMpSettings] = useState(null);
+
 
 export default function MercadoPublico() {
   const [loading, setLoading] = useState(false);
   const [opportunities, setOpportunities] = useState([]);
   const [jsonInput, setJsonInput] = useState("");
+  
+  const [mpBearerToken, setMpBearerToken] = useState("");
+  const [mpApiKey, setMpApiKey] = useState("");
+  const [mpSettings, setMpSettings] = useState(null);
 
   async function loadOpportunities() {
     const { data, error } = await supabase
