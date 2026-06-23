@@ -128,7 +128,13 @@ export default function MercadoPublico() {
         return;
       }
 
-      alert(`Se encontraron ${data.total} oportunidades.`);
+      const result = await scanCompraAgil(data.data.content || []);
+
+      console.log("Importación automática recomendadas:", result);
+
+      await loadOpportunities();
+
+      alert(`${data.total} oportunidades revisadas. ${result.inserted || 0} guardadas/actualizadas.`);
     } catch (error) {
       console.error(error);
       alert("Error ejecutando función.");
