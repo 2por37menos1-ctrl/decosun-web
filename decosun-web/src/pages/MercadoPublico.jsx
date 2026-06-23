@@ -9,7 +9,7 @@ export default function MercadoPublico() {
   const [loading, setLoading] = useState(false);
   const [opportunities, setOpportunities] = useState([]);
   const [jsonInput, setJsonInput] = useState("");
-  
+
   const [mpBearerToken, setMpBearerToken] = useState("");
   const [mpApiKey, setMpApiKey] = useState("");
   const [mpSettings, setMpSettings] = useState(null);
@@ -166,6 +166,54 @@ export default function MercadoPublico() {
       console.error(error);
       alert("Error ejecutando función.");
     }
+  }
+
+  async function saveMarketPublicSettings() {
+    const payload = {
+      bearer_token: mpBearerToken.trim(),
+      api_key: mpApiKey.trim(),
+      status: "guardado",
+      updated_at: new Date().toISOString(),
+    };
+
+    if (!payload.bearer_token || !payload.api_key) {
+      alert("Debes ingresar Bearer Token y API Key.");
+      return;
+    }
+
+    if (mpSettings?.id) {
+      const { data, error } = await supabase
+        .from("market_public_settings")
+        .update(payload)
+        .eq("id", mpSettings.id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error(error);
+        alert("No se pudo guardar la configuración.");
+        return;
+      }
+
+      setMpSettings(data);
+      alert("Configuración guardada.");
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("market_public_settings")
+      .insert(payload)
+      .select()
+      .single();
+
+    if (error) {
+      console.error(error);
+      alert("No se pudo guardar la configuración.");
+      return;
+    }
+
+    setMpSettings(data);
+    alert("Configuración guardada.");
   }
 
   async function copyCode(code) {
@@ -330,6 +378,57 @@ export default function MercadoPublico() {
           title="Por vencer"
           value={opportunities.filter(o => o.days_left !== null && o.days_left <= 5).length}
         />
+      </div>
+
+      <div className="bg-white rounded-xl shadow p-4 mb-6">
+        <h3 className="font-bold mb-2">Configuración Mercado Público</h3>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="text-sm text-gray-600">Bearer Token</label>
+            <input
+              className="w-full border rounded-lg p-2 text-xs"
+              type="password"
+              value={mpBearerToken}
+              onChange={(e) => setMpBearerToken(e.target.value)}
+              placeholder="Pega aquí el Bearer Token"
+            />
+          </div>
+
+          <div>
+            <label className="text-sm text-gray-600">x-api-key</label>
+            <input
+              className="w-full border rounded-lg p-2 text-xs"
+              type="password"
+              value={mpApiKey}
+              onChange={(e) => setMpApiKey(e.target.value)}
+              placeholder="Pega aquí la API Key"
+            />
+          </div>
+        </div>
+
+        <div className="mt-3 flex gap-2 items-center">
+          <button
+            className="px-4 py-2 rounded-lg bg-gray-800 text-white"
+            onClick={saveMarketPublicSettings}
+          >
+            Guardar configuración
+          </button>
+
+          <button
+            className="px-4 py-2 rounded-lg bg-indigo-600 text-white"
+            onClick={actualizarRecomendadas}
+          >
+            🔄 Actualizar recomendadas
+          </button>
+
+          <span className="text-xs text-gray-500">
+            Estado: {mpSettings?.status || "sin configurar"}
+            {mpSettings?.last_sync_at
+              ? ` · Última sync: ${new Date(mpSettings.last_sync_at).toLocaleString("es-CL")}`
+              : ""}
+          </span>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl shadow p-4 mb-6">
