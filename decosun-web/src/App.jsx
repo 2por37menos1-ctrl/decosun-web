@@ -14,6 +14,7 @@ import Cotizar from "./pages/Cotizar";
 import Login from "./pages/Login";
 import Agenda from "./pages/Agenda";
 import ProjectStatusPublic from "./pages/ProjectStatusPublic";
+import MercadoPublico from "./pages/MercadoPublico";
 
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Academy = lazy(() => import("./pages/Academy"));
@@ -39,6 +40,7 @@ function AppContent() {
         <Route path="/agenda" element={<Agenda />} />
         <Route path="/estado/:token" element={<ProjectStatusPublic />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/panel/mercado-publico" element={<MercadoPublico />} />
 
         {/* Panel DecoSun */}
         <Route
@@ -77,6 +79,8 @@ function AppContent() {
 }
 
 export default function App() {
+
+
   return (
     <AuthProvider>
       <BrowserRouter>

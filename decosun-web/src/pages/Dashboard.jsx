@@ -14,6 +14,7 @@ import OperationsPanel from "../components/OperationsPanel"
 import AgendaPanel from "./AgendaPanel"
 import PurchaseRequests from "./PurchaseRequests"
 import Treasury from "./Treasury"
+import MercadoPublico from "./MercadoPublico"
 
 import { supabase } from "../lib/supabase"
 import { createProjectHistory } from "../lib/projectHistory"
@@ -530,6 +531,17 @@ export default function Dashboard() {
             </button>
           )}
 
+          <button
+            className={
+              view === "mercado_publico"
+                ? "primary-btn"
+                : "secondary-btn"
+            }
+            onClick={() => setView("mercado_publico")}
+          >
+            Mercado Público
+          </button>
+
           {isAdvisor && (
             <button
               className="secondary-btn"
@@ -940,6 +952,10 @@ export default function Dashboard() {
 
       {view === "finanzas" && canViewTreasury(profile) && (
         <Treasury />
+      )}
+
+      {view === "mercado_publico" && (
+        <MercadoPublico />
       )}
 
       <ProjectModal
