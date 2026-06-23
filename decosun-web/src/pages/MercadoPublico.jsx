@@ -130,19 +130,24 @@ export default function MercadoPublico() {
 
   async function actualizarRecomendadas() {
     try {
-      const bearerToken = prompt("Bearer Token");
-      const apiKey = prompt("x-api-key");
+      const bearerToken = mpBearerToken.trim();
+      const apiKey = mpApiKey.trim();
 
       if (!bearerToken || !apiKey) {
+        alert("Primero guarda Bearer Token y API Key.");
         return;
       }
+
+      const cleanBearer = bearerToken.startsWith("Bearer ")
+        ? bearerToken.replace("Bearer ", "").trim()
+        : bearerToken;
 
       const { data, error } = await supabase.functions.invoke(
         "importar-recomendadas",
         {
           body: {
-            bearerToken,
-            apiKey,
+            bearerToken: cleanBearer,
+            apiKey: apiKey,
           },
         }
       );
@@ -160,6 +165,21 @@ export default function MercadoPublico() {
       console.log("Importación automática recomendadas:", result);
 
       await loadOpportunities();
+
+      if (mpSettings?.id) {
+        await supabase
+          .from("market_public_settings")
+          .update({
+            last_sync_at: new Date().toISOString(),
+            last_total: data.total || 0,
+            last_imported: result.inserted || 0,
+            status: "conectado",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", mpSettings.id);
+
+        await loadMarketPublicSettings();
+      }
 
       alert(`${data.total} oportunidades revisadas. ${result.inserted || 0} guardadas/actualizadas.`);
     } catch (error) {
