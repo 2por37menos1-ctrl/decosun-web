@@ -3,6 +3,10 @@ import { supabase } from "../lib/supabase";
 import { testMercadoPublico } from "../lib/testMercadoPublico";
 import { scanCompraAgil } from "../lib/compraAgilScanner";
 
+const [mpBearerToken, setMpBearerToken] = useState("");
+const [mpApiKey, setMpApiKey] = useState("");
+const [mpSettings, setMpSettings] = useState(null);
+
 export default function MercadoPublico() {
   const [loading, setLoading] = useState(false);
   const [opportunities, setOpportunities] = useState([]);
@@ -31,8 +35,29 @@ export default function MercadoPublico() {
     setLoading(false);
   }
 
+  async function loadMarketPublicSettings() {
+    const { data, error } = await supabase
+      .from("market_public_settings")
+      .select("*")
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    if (data) {
+      setMpSettings(data);
+      setMpBearerToken(data.bearer_token || "");
+      setMpApiKey(data.api_key || "");
+    }
+  }
+
   useEffect(() => {
     loadOpportunities();
+    loadMarketPublicSettings();
   }, []);
 
   function getDeadlineLabel(days) {
@@ -158,6 +183,7 @@ export default function MercadoPublico() {
       13: "metropolitana",
       15: "arica_parinacota",
       16: "nuble",
+
     };
 
     return regions[regionCode] || "metropolitana";
