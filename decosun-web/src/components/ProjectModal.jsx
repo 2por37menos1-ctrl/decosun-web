@@ -109,6 +109,8 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
   const [history, setHistory] = useState([])
   const [loadingHistory, setLoadingHistory] = useState(false)
   const [advisors, setAdvisors] = useState([])
+  const [projectPayments, setProjectPayments] = useState([])
+  const [loadingPayments, setLoadingPayments] = useState(false)
   const [newPayment, setNewPayment] = useState({
     paymentDate: todayDate(),
     amount: "",
@@ -166,6 +168,9 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
       sale_value: project.sale_value || 0,
       invoice_value: project.invoice_value || 0,
       amount_paid: project.amount_paid || 0,
+      amount_paid_cached: project.amount_paid_cached || 0,
+      balance_cached: project.balance_cached || 0,
+      finance_status: project.finance_status || "pending",
       payment_status: project.payment_status || "pendiente",
       payment_type: project.payment_type || "pendiente",
       payment_bank: project.payment_bank || "",
@@ -204,11 +209,18 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
     })
 
     loadProjectHistory(project.id)
+    loadProjectPayments(project.id)
   }, [project])
 
   useEffect(() => {
     loadAdvisors()
   }, [])
+
+  useEffect(() => {
+    if (!project?.id || !form) return
+
+    loadProjectPayments(project.id)
+  }, [project?.id, form?.amount_paid_cached, form?.balance_cached, form?.finance_status])
 
   async function loadProjectHistory(projectId) {
     setLoadingHistory(true)
@@ -228,6 +240,27 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
 
     setHistory(data || [])
     setLoadingHistory(false)
+  }
+
+  async function loadProjectPayments(projectId) {
+    setLoadingPayments(true)
+
+    const { data, error } = await supabase
+      .from("project_payments")
+      .select("id, payment_date, amount, bank, payment_method, payment_milestone, status, created_at")
+      .eq("project_id", projectId)
+      .order("payment_date", { ascending: false })
+      .order("created_at", { ascending: false })
+
+    if (error) {
+      console.error(error)
+      setProjectPayments([])
+      setLoadingPayments(false)
+      return
+    }
+
+    setProjectPayments(data || [])
+    setLoadingPayments(false)
   }
 
   async function loadAdvisors() {
@@ -1209,6 +1242,70 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
               >
                 Registrar saldo final
               </button>
+            </div>
+
+            <div className="full-field">
+              <h3>Cartola financiera (Beta)</h3>
+            </div>
+
+            <div className="balance-box">
+              <span>Valor venta</span>
+              <strong>{money(form.sale_value)}</strong>
+            </div>
+
+            <div className="balance-box">
+              <span>Pagado confirmado</span>
+              <strong>{money(form.amount_paid_cached)}</strong>
+            </div>
+
+            <div className="balance-box">
+              <span>Saldo pendiente</span>
+              <strong>{money(form.balance_cached)}</strong>
+            </div>
+
+            <div className="balance-box">
+              <span>Estado financiero</span>
+              <strong>{form.finance_status || "pending"}</strong>
+            </div>
+
+            <div className="full-field treasury-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Monto</th>
+                    <th>Banco</th>
+                    <th>Metodo</th>
+                    <th>Hito</th>
+                    <th>Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loadingPayments && (
+                    <tr>
+                      <td colSpan="6">Cargando pagos...</td>
+                    </tr>
+                  )}
+
+                  {!loadingPayments && projectPayments.length === 0 && (
+                    <tr>
+                      <td colSpan="6">Sin pagos registrados en el motor financiero.</td>
+                    </tr>
+                  )}
+
+                  {!loadingPayments &&
+                    projectPayments.map((payment) => (
+                      <tr key={payment.id}>
+                        <td>{payment.payment_date || "-"}</td>
+                        <td>{money(payment.amount)}</td>
+                        <td>{payment.bank || "-"}</td>
+                        <td>{payment.payment_method || "-"}</td>
+                        <td>{payment.payment_milestone || "-"}</td>
+                        <td>{payment.status || "-"}</td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
             </div>
 
             <div className="full-field">
