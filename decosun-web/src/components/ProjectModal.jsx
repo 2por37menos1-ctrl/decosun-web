@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { supabase } from "../lib/supabase"
 import { canViewCommissions } from "../lib/permissions"
+import { registerProjectPayment } from "../lib/projectPayments"
 
 const statuses = [
   "agendado",
@@ -41,6 +42,15 @@ const regionOptions = [
 
 function money(value) {
   return `$${Number(value || 0).toLocaleString("es-CL")}`
+}
+
+function todayDate() {
+  return new Date().toISOString().slice(0, 10)
+}
+
+function defaultCompanyName(project) {
+  if (project?.company_name) return project.company_name
+  return project?.region_code === "iquique" ? "Decosun Spa" : "Decosun Group SpA"
 }
 
 function cleanPhone(phone) {
@@ -99,6 +109,16 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
   const [history, setHistory] = useState([])
   const [loadingHistory, setLoadingHistory] = useState(false)
   const [advisors, setAdvisors] = useState([])
+  const [newPayment, setNewPayment] = useState({
+    paymentDate: todayDate(),
+    amount: "",
+    companyName: "",
+    bank: "",
+    paymentMethod: "bank_transfer",
+    paymentMilestone: "partial",
+    notes: "",
+  })
+  const [savingPayment, setSavingPayment] = useState(false)
 
   const isAdvisor = profile?.role === "asesor_comercial"
   const isGerencia = profile?.role === "gerencia"
@@ -173,6 +193,16 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
       summary: project.summary || "",
     })
 
+    setNewPayment({
+      paymentDate: todayDate(),
+      amount: "",
+      companyName: defaultCompanyName(project),
+      bank: project.payment_bank || "",
+      paymentMethod: "bank_transfer",
+      paymentMilestone: "partial",
+      notes: "",
+    })
+
     loadProjectHistory(project.id)
   }, [project])
 
@@ -221,6 +251,61 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
       ...current,
       [field]: value,
     }))
+  }
+
+  function updateNewPaymentField(field, value) {
+    setNewPayment((current) => ({
+      ...current,
+      [field]: value,
+    }))
+  }
+
+  async function submitNewPayment() {
+    if (savingPayment) return
+
+    if (!newPayment.bank?.trim()) {
+      alert("Selecciona o ingresa el banco receptor antes de registrar el pago.")
+      return
+    }
+
+    setSavingPayment(true)
+
+    try {
+      const result = await registerProjectPayment({
+        projectId: project.id,
+        amount: newPayment.amount,
+        paymentDate: newPayment.paymentDate,
+        companyName: newPayment.companyName,
+        bank: newPayment.bank,
+        paymentMethod: newPayment.paymentMethod,
+        paymentMilestone: newPayment.paymentMilestone,
+        notes: newPayment.notes,
+      })
+
+      const paymentResult = Array.isArray(result) ? result[0] : result
+
+      if (paymentResult) {
+        setForm((current) => ({
+          ...current,
+          amount_paid_cached: paymentResult.amount_paid_cached,
+          balance_cached: paymentResult.balance_cached,
+          finance_status: paymentResult.finance_status,
+        }))
+      }
+
+      setNewPayment((current) => ({
+        ...current,
+        amount: "",
+        notes: "",
+      }))
+
+      alert("Pago registrado correctamente.")
+    } catch (error) {
+      console.error(error)
+      alert(error.message || "No se pudo registrar el pago.")
+    } finally {
+      setSavingPayment(false)
+    }
   }
 
   function handleAdvisorChange(advisorId) {
@@ -1123,6 +1208,118 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
                 onClick={registerFinalPayment}
               >
                 Registrar saldo final
+              </button>
+            </div>
+
+            <div className="full-field">
+              <h3>Nuevo registro de pagos</h3>
+              <p className="muted-text">Beta - registra pagos como eventos financieros trazables.</p>
+            </div>
+
+            <label>
+              Fecha de pago
+              <input
+                type="date"
+                value={newPayment.paymentDate}
+                onChange={(e) =>
+                  updateNewPaymentField("paymentDate", e.target.value)
+                }
+              />
+            </label>
+
+            <label>
+              Monto
+              <input
+                type="number"
+                value={newPayment.amount}
+                onChange={(e) =>
+                  updateNewPaymentField("amount", e.target.value)
+                }
+              />
+            </label>
+
+            <label>
+              Empresa
+              <select
+                value={newPayment.companyName}
+                onChange={(e) =>
+                  updateNewPaymentField("companyName", e.target.value)
+                }
+              >
+                <option value="Decosun Group SpA">Decosun Group SpA</option>
+                <option value="Decosun Spa">Decosun Spa</option>
+              </select>
+            </label>
+
+            <label>
+              Banco
+              <select
+                value={newPayment.bank}
+                onChange={(e) =>
+                  updateNewPaymentField("bank", e.target.value)
+                }
+              >
+                <option value="">Seleccionar banco</option>
+                <option value="BCI">BCI</option>
+                <option value="Scotiabank">Scotiabank</option>
+                <option value="Santander">Santander</option>
+                <option value="BancoEstado">BancoEstado</option>
+                <option value="Mercado Pago">Mercado Pago</option>
+                <option value="Efectivo">Efectivo</option>
+                <option value="Otro">Otro</option>
+              </select>
+            </label>
+
+            <label>
+              Metodo de pago
+              <select
+                value={newPayment.paymentMethod}
+                onChange={(e) =>
+                  updateNewPaymentField("paymentMethod", e.target.value)
+                }
+              >
+                <option value="bank_transfer">Transferencia bancaria</option>
+                <option value="cash">Efectivo</option>
+                <option value="card">Tarjeta</option>
+                <option value="mercado_pago">Mercado Pago</option>
+                <option value="other">Otro</option>
+              </select>
+            </label>
+
+            <label>
+              Hito de pago
+              <select
+                value={newPayment.paymentMilestone}
+                onChange={(e) =>
+                  updateNewPaymentField("paymentMilestone", e.target.value)
+                }
+              >
+                <option value="initial_50">initial_50</option>
+                <option value="final_50">final_50</option>
+                <option value="partial">partial</option>
+                <option value="full">full</option>
+              </select>
+            </label>
+
+            <label className="full-field">
+              Notas
+              <textarea
+                rows="3"
+                value={newPayment.notes}
+                onChange={(e) =>
+                  updateNewPaymentField("notes", e.target.value)
+                }
+              />
+            </label>
+
+            <div className="full-field">
+              <button
+                type="button"
+                className="primary-btn"
+                onClick={submitNewPayment}
+                disabled={savingPayment}
+              >
+                {savingPayment ? "Registrando..." : "Registrar pago"}
               </button>
             </div>
           </div>
