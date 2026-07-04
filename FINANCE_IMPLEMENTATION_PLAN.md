@@ -44,6 +44,12 @@ Crear nuevas entidades financieras sin eliminar los campos actuales.
   - Actualizo `finance_status`.
   - Preservo `amount_paid` como campo legacy sin modificarlo.
   - No se realizaron cambios en React ni se activo el nuevo flujo visual de pagos.
+- Phase 1D completada: se agrego la cartola financiera beta del proyecto.
+  - Lee informacion desde `project_payments`.
+  - Muestra `sale_value`, `amount_paid_cached`, `balance_cached` y `finance_status`.
+  - Muestra historial de eventos de pago con fecha, monto, banco, metodo, hito y estado.
+  - Se valido la necesidad de una politica RLS de lectura para `project_payments`.
+  - `amount_paid` legacy permanece sin modificaciones.
 
 ### `project_payments`
 
