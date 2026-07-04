@@ -31,6 +31,20 @@ La migracion debe preservar la funcionalidad existente mientras se incorpora el 
 
 Crear nuevas entidades financieras sin eliminar los campos actuales.
 
+### Estado de avance
+
+- Phase 1A completada: se creo la base `project_payments` y los campos cache de proyecto sin activar cambios de comportamiento.
+- Phase 1B completada: se creo y aplico `register_project_payment` como RPC transaccional para registrar pagos reales como eventos financieros.
+- Fecha de validacion: 2026-07-03.
+- Resultado de validacion manual en Supabase:
+  - `register_project_payment` creo correctamente el evento en `project_payments`.
+  - Creo correctamente el movimiento relacionado en `treasury_movements`.
+  - Recalculo `amount_paid_cached`.
+  - Recalculo `balance_cached`.
+  - Actualizo `finance_status`.
+  - Preservo `amount_paid` como campo legacy sin modificarlo.
+  - No se realizaron cambios en React ni se activo el nuevo flujo visual de pagos.
+
 ### `project_payments`
 
 Proposito:
