@@ -141,6 +141,25 @@ Notas tecnicas:
 
 Reemplazar la edicion directa de `amount_paid` por un flujo basado en eventos.
 
+### Estado de avance
+
+- Phase 2A.1 completada: se creo y aplico la tabla `project_commissions`.
+- Se valido el RPC `generate_project_commission_from_payment`.
+- Caso de validacion:
+  - Proyecto: COT-IQQ-2026-0019 - Nicolas Lara.
+  - Asesor: Edgar Leighton.
+  - Pago de cliente: $10.000.
+  - Configuracion de comision: base 15%.
+  - Resultado: comision generada por $1.500.
+- Confirmaciones:
+  - `status = generated`.
+  - `paid_amount_cached = 0`.
+  - `balance_cached = 1500`.
+  - Idempotencia del RPC validada: ejecutarlo dos veces retorno el mismo `project_commission_id`.
+  - No se creo una comision duplicada.
+  - No se creo un gasto en `treasury_movements`.
+  - Los campos legacy de comision permanecen sin modificaciones.
+
 Nuevo flujo:
 
 ```text
