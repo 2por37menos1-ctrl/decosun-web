@@ -780,7 +780,7 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
               className={tab === "comisiones" ? "active" : ""}
               onClick={() => setTab("comisiones")}
             >
-              Config. comision / Capital
+              Config. comisión estimada / Capital
             </button>
           )}
 
@@ -1030,12 +1030,12 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
             {canSeeCommissions && (
               <>
                 <div className="full-field balance-box">
-                  <span>Configuracion comision</span>
+                  <span>Configuración de comisión estimada</span>
                   <strong>El pago real de comisiones se gestiona desde Finanzas &gt; Comisiones.</strong>
                 </div>
 
                 <label>
-                  % comisión base
+                  % comisión base estimada
                   <input
                     type="number"
                     value={form.advisor_commission_rate}
@@ -1046,7 +1046,7 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
                 </label>
 
                 <label>
-                  Tipo comisión
+                  Tipo de comisión estimada
                   <select
                     value={form.advisor_commission_type}
                     onChange={(e) =>
@@ -1060,7 +1060,7 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
                 </label>
 
                 <label>
-                  Comisión especial
+                  Monto especial estimado
                   <input
                     type="number"
                     value={form.advisor_commission_amount}
@@ -1071,7 +1071,7 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
                 </label>
 
                 <label>
-                  Estado comisión
+                  Estado legacy no financiero
                   <small>Legacy no financiero. El pago real se gestiona desde Finanzas &gt; Comisiones.</small>
                   <select
                     value={form.advisor_commission_status}

@@ -680,7 +680,7 @@ export default function Dashboard() {
                 />
 
                 <StatCard
-                  title="Mi comisión"
+                  title="Mi comisión estimada"
                   value={formatMoney(advisorCommission)}
                 />
 
@@ -716,7 +716,7 @@ export default function Dashboard() {
 
             {isGerencia(profile) && (
               <StatCard
-                title={`Comisión Edgar · ${edgarCommissionLabel}`}
+                title={`Comisión estimada Edgar · ${edgarCommissionLabel}`}
                 value={formatMoney(edgarCommission)}
               />
             )}
@@ -825,7 +825,7 @@ export default function Dashboard() {
                   <div>
                     <h2>Equipo Comercial</h2>
                     <p>
-                      Ventas y comisiones por asesor.
+                      Ventas y comisiones estimadas por asesor.
                     </p>
                   </div>
                 </div>

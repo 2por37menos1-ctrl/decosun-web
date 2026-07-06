@@ -1530,17 +1530,17 @@ export default function Treasury() {
             style={{ marginBottom: "24px" }}
           >
             <div className="stat-card">
-              <span>Total generado</span>
+              <span>Total comisión generada</span>
               <h2>{money(commissionTotals.generated)}</h2>
             </div>
 
             <div className="stat-card">
-              <span>Total pagado</span>
+              <span>Total comisión pagada</span>
               <h2>{money(commissionTotals.paid)}</h2>
             </div>
 
             <div className="stat-card">
-              <span>Total pendiente</span>
+              <span>Total comisión pendiente</span>
               <h2>{money(commissionTotals.pending)}</h2>
             </div>
 
@@ -1569,11 +1569,11 @@ export default function Treasury() {
                 <tr>
                   <th>Advisor</th>
                   <th>Region</th>
-                  <th>Generated</th>
-                  <th>Paid</th>
-                  <th>Pending</th>
+                  <th>Generada</th>
+                  <th>Pagada</th>
+                  <th>Pendiente</th>
                   <th>Projects</th>
-                  <th>Payments</th>
+                  <th>Pagos cliente origen</th>
                 </tr>
               </thead>
 
@@ -1621,12 +1621,12 @@ export default function Treasury() {
                   <th>Project</th>
                   <th>Customer</th>
                   <th>Advisor</th>
-                  <th>Customer payment amount</th>
-                  <th>Commission type/rate</th>
-                  <th>Generated commission</th>
-                  <th>Paid</th>
-                  <th>Pending</th>
-                  <th>Status</th>
+                  <th>Pago cliente origen</th>
+                  <th>Tipo/tasa comisión</th>
+                  <th>Comisión generada</th>
+                  <th>Pagado comisión</th>
+                  <th>Saldo comisión</th>
+                  <th>Estado comisión</th>
                   {canPayProjectCommissions(profile) && (
                     <th>Accion</th>
                   )}
@@ -1676,7 +1676,7 @@ export default function Treasury() {
                               type="button"
                               onClick={() => openCommissionPaymentModal(commission)}
                             >
-                              Pagar comision
+                              Pagar comisión
                             </button>
                           ) : (
                             "-"
@@ -1715,7 +1715,7 @@ export default function Treasury() {
           >
             <div className="dashboard-header">
               <div>
-                <h2>Pagar comision</h2>
+                <h2>Pagar comisión generada</h2>
                 <p>Pago controlado desde comisiones generadas.</p>
               </div>
 
