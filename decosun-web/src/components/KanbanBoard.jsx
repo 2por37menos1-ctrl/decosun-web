@@ -196,6 +196,26 @@ function getProjectBalance(project) {
   )
 }
 
+function getFinanceStatus(project) {
+  if (project.finance_status != null) return project.finance_status
+
+  if (project.payment_status === "pagado") return "paid"
+  if (
+    project.payment_status === "parcial" ||
+    project.payment_status === "abonado"
+  ) {
+    return "partial"
+  }
+
+  return "pending"
+}
+
+function formatFinanceStatus(status) {
+  if (status === "paid") return "Pagado"
+  if (status === "partial") return "Pago parcial"
+  return "Pendiente"
+}
+
 export default function KanbanBoard({
   projects,
   onStatusChange,
@@ -253,6 +273,7 @@ export default function KanbanBoard({
               {columnProjects.map((project) => {
                 const paid = getProjectPaid(project)
                 const balance = getProjectBalance(project)
+                const financeStatus = getFinanceStatus(project)
 
                 const activityStatus = getActivityStatus(project.updated_at)
 
@@ -404,7 +425,7 @@ export default function KanbanBoard({
 
                     <div className="card-footer">
                       <small>
-                        {project.payment_status || "Sin estado pago"}
+                        {formatFinanceStatus(financeStatus)}
                       </small>
 
                       <button

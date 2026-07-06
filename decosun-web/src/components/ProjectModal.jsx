@@ -53,6 +53,26 @@ function defaultCompanyName(project) {
   return project?.region_code === "iquique" ? "Decosun Spa" : "Decosun Group SpA"
 }
 
+function getFinanceStatus(projectOrForm) {
+  if (projectOrForm?.finance_status != null) return projectOrForm.finance_status
+
+  if (projectOrForm?.payment_status === "pagado") return "paid"
+  if (
+    projectOrForm?.payment_status === "parcial" ||
+    projectOrForm?.payment_status === "abonado"
+  ) {
+    return "partial"
+  }
+
+  return "pending"
+}
+
+function formatFinanceStatus(status) {
+  if (status === "paid") return "Pagado"
+  if (status === "partial") return "Pago parcial"
+  return "Pendiente"
+}
+
 function cleanPhone(phone) {
   const onlyNumbers = String(phone || "").replace(/\D/g, "")
 
@@ -1280,7 +1300,7 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
 
             <div className="balance-box">
               <span>Estado financiero</span>
-              <strong>{form.finance_status || "pending"}</strong>
+              <strong>{formatFinanceStatus(getFinanceStatus(form))}</strong>
             </div>
 
             <div className="full-field treasury-table">
