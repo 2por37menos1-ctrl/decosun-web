@@ -1187,12 +1187,18 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
               <strong>{money(Number(form.sale_value || 0) * 0.5)}</strong>
             </div>
 
+            <div className="full-field balance-box">
+              <span>Información histórica de pagos</span>
+              <strong>Los nuevos pagos se registran desde Nuevo registro de pagos.</strong>
+            </div>
+
             <label>
-              Abono real recibido
+              Abono registrado anteriormente
               <input
                 type="number"
                 value={form.amount_paid}
                 onChange={(e) => updateField("amount_paid", e.target.value)}
+                disabled
               />
             </label>
 
@@ -1202,10 +1208,11 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
             </div>
 
             <label>
-              Estado pago
+              Estado anterior
               <select
                 value={form.payment_status}
                 onChange={(e) => updateField("payment_status", e.target.value)}
+                disabled
               >
                 <option value="pendiente">Pendiente</option>
                 <option value="abonado">Abonado</option>
@@ -1215,10 +1222,11 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
             </label>
 
             <label>
-              Banco receptor
+              Banco registrado anteriormente
               <input
                 value={form.payment_bank}
                 onChange={(e) => updateField("payment_bank", e.target.value)}
+                disabled
               />
             </label>
 
@@ -1227,6 +1235,7 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
                 type="button"
                 className="secondary-btn"
                 onClick={registerInitialPayment}
+                disabled
               >
                 Registrar abono 50%
               </button>
@@ -1235,6 +1244,7 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
                 type="button"
                 className="secondary-btn"
                 onClick={registerManualPayment}
+                disabled
               >
                 Guardar abono manual
               </button>
@@ -1243,6 +1253,7 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
                 type="button"
                 className="primary-btn"
                 onClick={registerFinalPayment}
+                disabled
               >
                 Registrar saldo final
               </button>
