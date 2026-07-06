@@ -87,6 +87,21 @@ function currentDate() {
   return new Date().toISOString().slice(0, 10)
 }
 
+function getProjectedReceivable(project) {
+  if (project.balance_cached != null) {
+    return Math.max(0, Number(project.balance_cached || 0))
+  }
+
+  if (project.amount_paid_cached != null) {
+    return Math.max(
+      0,
+      Number(project.sale_value || 0) - Number(project.amount_paid_cached || 0)
+    )
+  }
+
+  return 0
+}
+
 export default function Treasury() {
   const [view, setView] = useState("movements")
   const [movements, setMovements] = useState([])
@@ -264,7 +279,9 @@ export default function Treasury() {
       id,
       status,
       sale_value,
-      amount_paid
+      amount_paid_cached,
+      balance_cached,
+      finance_status
     `)
 
     if (error) {
@@ -1185,11 +1202,7 @@ export default function Treasury() {
       ].includes(project.status)
     )
     .reduce((acc, project) => {
-      const pending =
-        Number(project.sale_value || 0) -
-        Number(project.amount_paid || 0)
-
-      return acc + Math.max(0, pending)
+      return acc + getProjectedReceivable(project)
     }, 0)
 
   const pendingCommitments = commitments
