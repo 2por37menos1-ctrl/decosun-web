@@ -429,19 +429,8 @@ export default function Dashboard() {
 
     if (!ok) return
 
-    if (paymentDifference > 0) {
-      await createTreasuryIncome(previousProject, paymentDifference)
-
-      await createProjectHistory({
-        projectId,
-        type: "payment",
-        description: `Pago registrado por ${formatMoney(paymentDifference)}`,
-        createdBy: profile?.full_name || "usuario",
-        metadata: {
-          amount: paymentDifference,
-        },
-      })
-    }
+    // Legacy amount_paid no longer creates treasury income.
+    // Real payments must use register_project_payment.
 
     setSelectedProject(null)
   }
