@@ -29,6 +29,35 @@ function formatCLP(value) {
   return `$${Number(value || 0).toLocaleString("es-CL")}`
 }
 
+function formatFinanceStatus(status) {
+  if (status === "paid") return "Pagado"
+  if (status === "partial") return "Pago parcial"
+  if (status === "overpaid") return "Sobrepagado"
+
+  return "Pendiente"
+}
+
+function getPublicFinance(project) {
+  const saleValue = Math.max(0, Number(project.sale_value || 0))
+
+  const amountPaid =
+    project.amount_paid_cached != null
+      ? Math.max(0, Number(project.amount_paid_cached || 0))
+      : 0
+
+  const balance =
+    project.balance_cached != null
+      ? Math.max(0, Number(project.balance_cached || 0))
+      : Math.max(saleValue - amountPaid, 0)
+
+  return {
+    saleValue,
+    amountPaid,
+    balance,
+    financeStatus: project.finance_status || "pending",
+  }
+}
+
 export default function ProjectStatusPublic() {
   const { token } = useParams()
   const [project, setProject] = useState(null)
@@ -77,9 +106,8 @@ export default function ProjectStatusPublic() {
 
   const currentStatus = project.client_visible_status || "Cotización recibida"
   const progress = progressMap[currentStatus] || 10
-  const saleValue = Number(project.sale_value || 0)
-  const amountPaid = Number(project.amount_paid || 0)
-  const balance = Math.max(saleValue - amountPaid, 0)
+  const { saleValue, amountPaid, balance, financeStatus } =
+    getPublicFinance(project)
 
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-20 text-white">
@@ -155,6 +183,9 @@ export default function ProjectStatusPublic() {
                 <h3 className="mt-2 text-xl font-semibold">
                   {formatCLP(amountPaid)}
                 </h3>
+                <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-amber-200">
+                  {formatFinanceStatus(financeStatus)}
+                </p>
               </div>
 
               <div className="rounded-2xl bg-white/[0.04] p-5">
