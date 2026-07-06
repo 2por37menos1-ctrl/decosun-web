@@ -3,6 +3,7 @@ import { Link } from "react-router-dom"
 import { useEffect, useState } from "react"
 
 import { supabase } from "../lib/supabase"
+import PromoVideoModal from "../components/PromoVideoModal"
 
 import heroLogo from "../assets/images/logo-horizontal.png"
 
@@ -84,6 +85,8 @@ export default function Home() {
 
   return (
     <main className="bg-white text-slate-950">
+      <PromoVideoModal />
+
       {/* HERO */}
       <section className="relative min-h-screen overflow-hidden bg-slate-950">
         {heroImages.map((image, index) => (
@@ -116,22 +119,20 @@ export default function Home() {
             </div>
 
             <p className="text-sm font-bold uppercase tracking-[0.35em] text-amber-400">
-              Control solar premium · Presencia regional
+              CONTROL SOLAR · AUTOMATIZACIÓN · CONFORT
             </p>
 
             <h1 className="mt-6 text-5xl font-black leading-[1.05] tracking-tight text-white md:text-7xl">
-              Soluciones premium
+              Soluciones inteligentes
               <span className="block text-amber-400">
-                de control solar
+                para transformar tus espacios.
               </span>
-              para proyectos en Chile.
             </h1>
 
             <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-200">
-              DecoSun integra asesoría, fabricación, instalación y
-              soporte técnico a través de sucursales y representantes
-              regionales, entregando productos bien terminados para hogares,
-              empresas e instituciones.
+              Desde sistemas motorizados hasta protección solar y cerramientos
+              modernos: asesoramos, fabricamos e instalamos soluciones DecoSun
+              con terminaciones profesionales.
             </p>
 
             <div className="mt-9 flex flex-wrap gap-4">
@@ -152,10 +153,10 @@ export default function Home() {
 
             <div className="mt-12 grid gap-4 sm:grid-cols-4">
               {[
-                ["Calidad premium", "Materiales seleccionados"],
-                ["Tecnología", "Automatización disponible"],
-                ["Diseño a medida", "Soluciones personalizadas"],
-                ["Asesoría", "Acompañamiento técnico"],
+                ["Soluciones a medida", "Diseñadas para cada espacio y necesidad."],
+                ["Automatización inteligente", "Control, comodidad y tecnología integrada."],
+                ["Terminaciones premium", "Materiales seleccionados y diseño profesional."],
+                ["Acompañamiento experto", "Asesoría, instalación y soporte DecoSun."],
               ].map(([title, text]) => (
                 <div
                   key={title}
