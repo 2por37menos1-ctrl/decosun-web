@@ -780,7 +780,7 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
               className={tab === "comisiones" ? "active" : ""}
               onClick={() => setTab("comisiones")}
             >
-              Comisiones / Capital
+              Config. comision / Capital
             </button>
           )}
 
@@ -1029,6 +1029,11 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
 
             {canSeeCommissions && (
               <>
+                <div className="full-field balance-box">
+                  <span>Configuracion comision</span>
+                  <strong>El pago real de comisiones se gestiona desde Finanzas &gt; Comisiones.</strong>
+                </div>
+
                 <label>
                   % comisión base
                   <input
@@ -1067,14 +1072,13 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
 
                 <label>
                   Estado comisión
+                  <small>Legacy no financiero. El pago real se gestiona desde Finanzas &gt; Comisiones.</small>
                   <select
                     value={form.advisor_commission_status}
-                    onChange={(e) =>
-                      updateField("advisor_commission_status", e.target.value)
-                    }
+                    disabled
                   >
-                    <option value="pendiente">Pendiente</option>
-                    <option value="pagada">Pagada</option>
+                    <option value="pendiente">Pendiente legacy</option>
+                    <option value="pagada">Pagada legacy</option>
                   </select>
                 </label>
 
@@ -1424,6 +1428,11 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
 
         {tab === "comisiones" && canSeeCommissions && (
           <div className="modal-grid">
+            <div className="full-field balance-box">
+              <span>Comisiones estimadas</span>
+              <strong>El pago real de comisiones se gestiona desde Finanzas &gt; Comisiones.</strong>
+            </div>
+
             <label>
               % manejo gerencia
               <input
@@ -1460,7 +1469,7 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
             </label>
 
             <label className="full-field">
-              Notas capital / comisiones
+              Notas capital / comisiones estimadas
               <textarea
                 rows="4"
                 value={form.capital_notes}
