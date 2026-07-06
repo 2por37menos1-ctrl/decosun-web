@@ -214,17 +214,38 @@ export default function Dashboard() {
     [filteredProjects]
   )
 
+  function getProjectPaid(project) {
+    return Number(
+      project.amount_paid_cached != null
+        ? project.amount_paid_cached
+        : project.amount_paid || 0
+    )
+  }
+
+  function getProjectBalance(project) {
+    const paid = getProjectPaid(project)
+
+    return Number(
+      project.balance_cached != null
+        ? project.balance_cached
+        : Number(project.sale_value || 0) - paid
+    )
+  }
+
   const visibleTotalSold = visibleSalesProjects.reduce(
     (acc, project) => acc + Number(project.sale_value || 0),
     0
   )
 
   const visibleTotalPaid = visibleSalesProjects.reduce(
-    (acc, project) => acc + Number(project.amount_paid || 0),
+    (acc, project) => acc + getProjectPaid(project),
     0
   )
 
-  const visibleBalance = visibleTotalSold - visibleTotalPaid
+  const visibleBalance = visibleSalesProjects.reduce(
+    (acc, project) => acc + getProjectBalance(project),
+    0
+  )
 
   const advisorCommission = visibleSalesProjects.reduce(
     (acc, project) => {

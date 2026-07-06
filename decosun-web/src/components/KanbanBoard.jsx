@@ -178,6 +178,24 @@ function openCalendar(project) {
   )
 }
 
+function getProjectPaid(project) {
+  return Number(
+    project.amount_paid_cached != null
+      ? project.amount_paid_cached
+      : project.amount_paid || 0
+  )
+}
+
+function getProjectBalance(project) {
+  const paid = getProjectPaid(project)
+
+  return Number(
+    project.balance_cached != null
+      ? project.balance_cached
+      : Number(project.sale_value || 0) - paid
+  )
+}
+
 export default function KanbanBoard({
   projects,
   onStatusChange,
@@ -233,9 +251,8 @@ export default function KanbanBoard({
 
             <div className="column-cards">
               {columnProjects.map((project) => {
-                const balance =
-                  Number(project.sale_value || 0) -
-                  Number(project.amount_paid || 0)
+                const paid = getProjectPaid(project)
+                const balance = getProjectBalance(project)
 
                 const activityStatus = getActivityStatus(project.updated_at)
 
@@ -330,7 +347,7 @@ export default function KanbanBoard({
 
                       <div>
                         <small>Pagado</small>
-                        <strong>{money(project.amount_paid)}</strong>
+                        <strong>{money(paid)}</strong>
                       </div>
                     </div>
 
