@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { supabase } from "../lib/supabase"
 
 import {
   canViewTreasuryTotals,
   canViewInternalLoans,
+  canViewCommissionReports,
 } from "../lib/permissions"
 
 import { useProfile } from "../hooks/useProfile"
@@ -41,8 +42,33 @@ const banks = [
   "Otro",
 ]
 
+const commissionStatuses = [
+  { value: "all", label: "Estados activos" },
+  { value: "generated", label: "Generada" },
+  { value: "partially_paid", label: "Parcialmente pagada" },
+  { value: "paid", label: "Pagada" },
+  { value: "voided", label: "Anulada" },
+  { value: "reversed", label: "Reversada" },
+]
+
+const commissionRegions = [
+  { value: "all", label: "Todas las regiones" },
+  { value: "iquique", label: "Iquique" },
+  { value: "quinta_region", label: "Quinta Region" },
+  { value: "quinta_region_interior", label: "Quinta Region Interior" },
+  { value: "santiago", label: "Santiago" },
+  { value: "atacama", label: "Atacama" },
+  { value: "iv_region_coquimbo", label: "IV Region Coquimbo" },
+  { value: "la_serena", label: "La Serena" },
+]
+
 function money(value) {
   return `$${Number(value || 0).toLocaleString("es-CL")}`
+}
+
+function formatDate(dateString) {
+  if (!dateString) return "-"
+  return new Date(dateString).toLocaleDateString("es-CL")
 }
 
 function currentMonth() {
@@ -58,6 +84,10 @@ export default function Treasury() {
   const [projects, setProjects] = useState([])
   const [financialGroups, setFinancialGroups] = useState([])
   const [financialConcepts, setFinancialConcepts] = useState([])
+  const [commissionSummary, setCommissionSummary] = useState([])
+  const [commissionDetail, setCommissionDetail] = useState([])
+  const [loadingCommissions, setLoadingCommissions] = useState(false)
+  const [commissionError, setCommissionError] = useState("")
 
   const [editingMovement, setEditingMovement] = useState(null)
 
@@ -68,6 +98,14 @@ export default function Treasury() {
     category: "all",
     financial_group: "all",
     month: currentMonth(),
+  })
+
+  const [commissionFilters, setCommissionFilters] = useState({
+    from_date: "",
+    to_date: "",
+    advisor_id: "all",
+    status: "all",
+    region: "all",
   })
 
   const [form, setForm] = useState({
@@ -244,6 +282,71 @@ export default function Treasury() {
     setFinancialConcepts(data || [])
   }
 
+  const loadCommissionReports = useCallback(async () => {
+    setLoadingCommissions(true)
+    setCommissionError("")
+
+    const rpcFilters = {
+      p_from_date: commissionFilters.from_date || null,
+      p_to_date: commissionFilters.to_date || null,
+      p_advisor_id:
+        commissionFilters.advisor_id === "all"
+          ? null
+          : commissionFilters.advisor_id,
+      p_status:
+        commissionFilters.status === "all"
+          ? null
+          : commissionFilters.status,
+      p_region:
+        commissionFilters.region === "all"
+          ? null
+          : commissionFilters.region,
+    }
+
+    const [summaryResponse, detailResponse] = await Promise.all([
+      supabase.rpc("get_project_commissions_summary", rpcFilters),
+      supabase.rpc("get_project_commissions_detail", rpcFilters),
+    ])
+
+    if (summaryResponse.error || detailResponse.error) {
+      const message =
+        summaryResponse.error?.message ||
+        detailResponse.error?.message ||
+        "No se pudieron cargar las comisiones."
+
+      console.error(summaryResponse.error || detailResponse.error)
+      setCommissionSummary([])
+      setCommissionDetail([])
+      setCommissionError(message)
+      setLoadingCommissions(false)
+      return
+    }
+
+    setCommissionSummary(summaryResponse.data || [])
+    setCommissionDetail(detailResponse.data || [])
+    setLoadingCommissions(false)
+  }, [
+    commissionFilters.from_date,
+    commissionFilters.to_date,
+    commissionFilters.advisor_id,
+    commissionFilters.status,
+    commissionFilters.region,
+  ])
+
+  useEffect(() => {
+    if (view !== "commissions") return
+    if (!canViewCommissionReports(profile)) return
+
+    loadCommissionReports()
+  }, [
+    view,
+    profile,
+    profile?.id,
+    profile?.role,
+    profile?.region_code,
+    loadCommissionReports,
+  ])
+
   function updateField(field, value) {
     setForm((current) => ({
       ...current,
@@ -281,6 +384,13 @@ export default function Treasury() {
 
   function updateFilter(field, value) {
     setFilters((current) => ({
+      ...current,
+      [field]: value,
+    }))
+  }
+
+  function updateCommissionFilter(field, value) {
+    setCommissionFilters((current) => ({
       ...current,
       [field]: value,
     }))
@@ -953,6 +1063,49 @@ export default function Treasury() {
       ? (pendingCommitments / cashBalance) * 100
       : 0
 
+  const commissionTotals = useMemo(() => {
+    const totals = commissionSummary.reduce(
+      (acc, item) => ({
+        generated: acc.generated + Number(item.total_generated || 0),
+        paid: acc.paid + Number(item.total_paid || 0),
+        pending: acc.pending + Number(item.total_pending || 0),
+        projects: acc.projects,
+      }),
+      {
+        generated: 0,
+        paid: 0,
+        pending: 0,
+        projects: 0,
+      }
+    )
+
+    totals.projects = new Set(
+      commissionDetail
+        .map((item) => item.project_id)
+        .filter(Boolean)
+    ).size
+
+    return totals
+  }, [commissionSummary, commissionDetail])
+
+  const commissionAdvisorOptions = useMemo(() => {
+    const map = new Map()
+
+    commissionSummary.forEach((item) => {
+      if (!item.advisor_id) return
+      map.set(item.advisor_id, item.advisor_name || "Sin asesor")
+    })
+
+    commissionDetail.forEach((item) => {
+      if (!item.advisor_id) return
+      map.set(item.advisor_id, item.advisor_name || "Sin asesor")
+    })
+
+    return Array.from(map.entries())
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name))
+  }, [commissionSummary, commissionDetail])
+
   async function markAsReconciled(movement) {
     const { error } = await supabase
       .from("treasury_movements")
@@ -997,6 +1150,15 @@ export default function Treasury() {
             Conciliación
           </button>
 
+          {canViewCommissionReports(profile) && (
+            <button
+              className={view === "commissions" ? "primary-btn" : "secondary-btn"}
+              onClick={() => setView("commissions")}
+            >
+              Comisiones
+            </button>
+          )}
+
           <button
             className={view === "transfers" ? "primary-btn" : "secondary-btn"}
             onClick={() => setView("transfers")}
@@ -1029,6 +1191,8 @@ export default function Treasury() {
         </div>
       </div>
 
+      {view !== "commissions" && (
+        <>
       <div className="dashboard-filters">
         <select
           value={filters.company_name}
@@ -1158,6 +1322,205 @@ export default function Treasury() {
             <h2>{money(openLoanBalance)}</h2>
           </div>
         </div>
+      )}
+
+        </>
+      )}
+
+      {view === "commissions" && canViewCommissionReports(profile) && (
+        <>
+          <div className="dashboard-filters">
+            <input
+              type="date"
+              value={commissionFilters.from_date}
+              onChange={(e) => updateCommissionFilter("from_date", e.target.value)}
+            />
+
+            <input
+              type="date"
+              value={commissionFilters.to_date}
+              onChange={(e) => updateCommissionFilter("to_date", e.target.value)}
+            />
+
+            <select
+              value={commissionFilters.status}
+              onChange={(e) => updateCommissionFilter("status", e.target.value)}
+            >
+              {commissionStatuses.map((status) => (
+                <option key={status.value} value={status.value}>
+                  {status.label}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={commissionFilters.advisor_id}
+              onChange={(e) => updateCommissionFilter("advisor_id", e.target.value)}
+            >
+              <option value="all">Todos los asesores</option>
+              {commissionAdvisorOptions.map((advisor) => (
+                <option key={advisor.id} value={advisor.id}>
+                  {advisor.name}
+                </option>
+              ))}
+            </select>
+
+            {profile?.role === "gerencia" && (
+              <select
+                value={commissionFilters.region}
+                onChange={(e) => updateCommissionFilter("region", e.target.value)}
+              >
+                {commissionRegions.map((region) => (
+                  <option key={region.value} value={region.value}>
+                    {region.label}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+
+          <div
+            className="treasury-summary"
+            style={{ marginBottom: "24px" }}
+          >
+            <div className="stat-card">
+              <span>Total generado</span>
+              <h2>{money(commissionTotals.generated)}</h2>
+            </div>
+
+            <div className="stat-card">
+              <span>Total pagado</span>
+              <h2>{money(commissionTotals.paid)}</h2>
+            </div>
+
+            <div className="stat-card">
+              <span>Total pendiente</span>
+              <h2>{money(commissionTotals.pending)}</h2>
+            </div>
+
+            <div className="stat-card">
+              <span>Proyectos asociados</span>
+              <h2>{commissionTotals.projects}</h2>
+            </div>
+          </div>
+
+          {commissionError && (
+            <section className="treasury-table" style={{ marginBottom: "24px" }}>
+              <p style={{ color: "#dc2626" }}>{commissionError}</p>
+            </section>
+          )}
+
+          <section className="treasury-table" style={{ marginBottom: "24px" }}>
+            <div className="dashboard-header">
+              <div>
+                <h2>Comisiones por asesor</h2>
+                <p>Lectura financiera desde comisiones generadas. No registra pagos.</p>
+              </div>
+            </div>
+
+            <table>
+              <thead>
+                <tr>
+                  <th>Advisor</th>
+                  <th>Region</th>
+                  <th>Generated</th>
+                  <th>Paid</th>
+                  <th>Pending</th>
+                  <th>Projects</th>
+                  <th>Payments</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {loadingCommissions && (
+                  <tr>
+                    <td colSpan="7">Cargando comisiones...</td>
+                  </tr>
+                )}
+
+                {!loadingCommissions && commissionSummary.length === 0 && (
+                  <tr>
+                    <td colSpan="7">Sin comisiones generadas para los filtros seleccionados.</td>
+                  </tr>
+                )}
+
+                {!loadingCommissions &&
+                  commissionSummary.map((advisor) => (
+                    <tr key={advisor.advisor_id || advisor.advisor_name}>
+                      <td>{advisor.advisor_name || "Sin asesor"}</td>
+                      <td>{advisor.advisor_region || "-"}</td>
+                      <td>{money(advisor.total_generated)}</td>
+                      <td>{money(advisor.total_paid)}</td>
+                      <td>{money(advisor.total_pending)}</td>
+                      <td>{advisor.project_count}</td>
+                      <td>{advisor.payment_count}</td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </section>
+
+          <section className="treasury-table">
+            <div className="dashboard-header">
+              <div>
+                <h2>Detalle de comisiones</h2>
+                <p>Detalle read-only de comisiones generadas por pagos de cliente.</p>
+              </div>
+            </div>
+
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Project</th>
+                  <th>Customer</th>
+                  <th>Advisor</th>
+                  <th>Customer payment amount</th>
+                  <th>Commission type/rate</th>
+                  <th>Generated commission</th>
+                  <th>Paid</th>
+                  <th>Pending</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {loadingCommissions && (
+                  <tr>
+                    <td colSpan="10">Cargando detalle...</td>
+                  </tr>
+                )}
+
+                {!loadingCommissions && commissionDetail.length === 0 && (
+                  <tr>
+                    <td colSpan="10">Sin detalle de comisiones para los filtros seleccionados.</td>
+                  </tr>
+                )}
+
+                {!loadingCommissions &&
+                  commissionDetail.map((commission) => (
+                    <tr key={commission.project_commission_id}>
+                      <td>{formatDate(commission.payment_date || commission.created_at)}</td>
+                      <td>{commission.project_title || commission.project_id}</td>
+                      <td>{commission.customer_name || "-"}</td>
+                      <td>{commission.advisor_name || "Sin asesor"}</td>
+                      <td>{money(commission.payment_amount)}</td>
+                      <td>
+                        {commission.commission_type || "-"}
+                        {commission.commission_rate
+                          ? ` / ${Number(commission.commission_rate)}%`
+                          : ""}
+                      </td>
+                      <td>{money(commission.commission_amount)}</td>
+                      <td>{money(commission.paid_amount_cached)}</td>
+                      <td>{money(commission.balance_cached)}</td>
+                      <td>{commission.status || "-"}</td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </section>
+        </>
       )}
 
       {view === "reconciliation" && (

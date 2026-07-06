@@ -71,6 +71,13 @@ export function canViewCommissions(profile) {
   return isGerencia(profile)
 }
 
+export function canViewCommissionReports(profile) {
+  return (
+    isGerencia(profile) ||
+    isAdministracionRegional(profile)
+  )
+}
+
 export function canEditOperationalCosts(profile) {
   return (
     isGerencia(profile) ||
