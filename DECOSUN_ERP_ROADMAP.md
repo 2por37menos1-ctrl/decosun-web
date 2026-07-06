@@ -63,42 +63,65 @@ Movimiento bancario
 
 ## 2. Finance Engine v1
 
-### Completado
+### Estado: COMPLETADO
 
-- Base conceptual del motor financiero gerencial.
-- Separacion filosofica entre contabilidad tradicional y gestion de flujo de caja.
-- Enfoque en eventos financieros asociados a proyectos, categorias y personas.
-- Necesidad definida de mantener trazabilidad desde movimientos bancarios hasta decisiones gerenciales.
-- Primeras piezas del sistema financiero integradas al ERP, sujetas a auditoria tecnica y funcional.
+Finance Engine v1 queda completado como motor gerencial de flujo de caja para DecoSun ERP v1.
 
-### Pendiente
+El sistema ya no depende de `amount_paid` legacy como fuente financiera principal para las vistas criticas. El flujo base queda orientado a eventos trazables:
 
-#### Phase 2B.4 Treasury projections
+```text
+Movimiento bancario
+-> Evento financiero
+-> Proyecto / categoria / persona
+-> Decision gerencial
+```
 
-- Construir proyecciones de caja basadas en:
-  - Cobros esperados.
-  - Pagos comprometidos.
-  - Ordenes de compra.
-  - Comisiones pendientes.
-  - Gastos fijos.
-  - Fechas probables y fechas comprometidas.
-- Mostrar escenarios de caja por semana y mes.
-- Identificar alertas de liquidez antes de que ocurran.
-- Permitir distinguir caja real, caja proyectada y caja disponible despues de compromisos.
+### Phase 2A Comisiones
 
-#### Phase 2B.5 Public customer status
+- ✅ `project_commissions` implementado como base trazable de comisiones.
+- ✅ Dashboard de comisiones disponible para lectura gerencial.
+- ✅ `pay_project_commission` implementado para pagos controlados de comisiones.
+- ✅ Flujo legacy de comisiones apagado como fuente principal.
 
-- Definir estados publicos de cliente/proyecto que puedan ser entendidos por el equipo sin exponer complejidad interna.
-- Separar estado interno operacional de estado visible o comunicable.
-- Usar estados para mejorar seguimiento comercial, cobranza e instalacion.
-- Alinear estos estados con deuda pendiente, agenda, produccion y cierre.
+### Phase 2B Cache financiero y reconciliacion
 
-#### Phase 2B.6 Historical reconciliation
+- ✅ Pagos antiguos de UI apagados como fuente operacional.
+- ✅ `amount_paid` desconectado de Tesoreria.
+- ✅ Dashboard/Kanban usando cache financiero.
+- ✅ `finance_status` disponible como estado financiero visual.
+- ✅ Treasury projections usando cache financiero.
+- ✅ Vista publica cliente usando cache financiero.
+- ✅ RPC publica `get_project_status` actualizada para exponer cache financiero.
+- ✅ Reconciliacion historica aplicada desde movimientos de Tesoreria vinculados.
 
-- Revisar movimientos historicos y conciliarlos contra eventos financieros existentes.
-- Detectar pagos no asociados, duplicados, diferencias de monto y registros antiguos incompletos.
-- Crear criterios de reconciliacion incremental sin romper compatibilidad hacia atras.
-- Mantener auditoria de ajustes y decisiones tomadas.
+### Resultado de reconciliacion historica
+
+- 103 proyectos procesados.
+- 103 proyectos con cache financiero.
+- 18 proyectos con `project_payments` trazables.
+- 0 casos `treasury_only_needs_review` pendientes.
+
+### Pendientes menores
+
+- 6 casos legacy para revision manual.
+- 3 casos overpaid para revision manual.
+
+### Siguiente etapa: ERP Audit Phase
+
+Objetivo:
+
+Auditoria completa del ERP para revisar consistencia, trazabilidad, reglas de negocio, seguridad, UX y deuda tecnica antes de avanzar a nuevos modulos profundos.
+
+Areas de auditoria:
+
+- Finanzas.
+- Inventario.
+- Mercaderia.
+- Produccion.
+- Corte de tela.
+- Optimizacion.
+- Compras.
+- UX general.
 
 ## 3. Auditoria general del sistema
 
@@ -377,9 +400,9 @@ Movimiento bancario
 
 ## Orden recomendado de trabajo
 
-1. Auditar estado actual del sistema sin modificar comportamiento.
-2. Cerrar Finance Engine v1 con Phase 2B.4, 2B.5 y 2B.6.
-3. Revisar Supabase/RLS, permisos y trazabilidad financiera.
+1. Ejecutar ERP Audit Phase sin modificar comportamiento.
+2. Revisar Supabase/RLS, permisos y trazabilidad financiera.
+3. Auditar Finance Engine v1 en produccion: pagos, cache, comisiones, Tesoreria y reconciliacion historica.
 4. Mejorar UX de Dashboard, ProjectModal, Treasury y Kanban.
 5. Consolidar agenda y estados operacionales de proyectos.
 6. Disenar inventario y bodega con modelo incremental.
@@ -398,4 +421,3 @@ Movimiento bancario
 - Cada dato financiero debe ser trazable hasta su origen.
 - Cada pantalla operacional debe ayudar a tomar una decision o ejecutar una accion.
 - Cada migracion futura debe ser incremental, revisable y segura.
-
