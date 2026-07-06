@@ -78,6 +78,10 @@ export function canViewCommissionReports(profile) {
   )
 }
 
+export function canPayProjectCommissions(profile) {
+  return isGerencia(profile)
+}
+
 export function canEditOperationalCosts(profile) {
   return (
     isGerencia(profile) ||

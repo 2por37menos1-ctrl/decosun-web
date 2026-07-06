@@ -5,6 +5,7 @@ import {
   canViewTreasuryTotals,
   canViewInternalLoans,
   canViewCommissionReports,
+  canPayProjectCommissions,
 } from "../lib/permissions"
 
 import { useProfile } from "../hooks/useProfile"
@@ -42,6 +43,13 @@ const banks = [
   "Otro",
 ]
 
+const commissionPaymentMethods = [
+  "Transferencia",
+  "Efectivo",
+  "Mercado Pago",
+  "Otro",
+]
+
 const commissionStatuses = [
   { value: "all", label: "Estados activos" },
   { value: "generated", label: "Generada" },
@@ -75,6 +83,10 @@ function currentMonth() {
   return new Date().toISOString().slice(0, 7)
 }
 
+function currentDate() {
+  return new Date().toISOString().slice(0, 10)
+}
+
 export default function Treasury() {
   const [view, setView] = useState("movements")
   const [movements, setMovements] = useState([])
@@ -88,6 +100,11 @@ export default function Treasury() {
   const [commissionDetail, setCommissionDetail] = useState([])
   const [loadingCommissions, setLoadingCommissions] = useState(false)
   const [commissionError, setCommissionError] = useState("")
+  const [selectedCommissionPayment, setSelectedCommissionPayment] = useState(null)
+  const [payingCommission, setPayingCommission] = useState(false)
+  const [commissionPaymentError, setCommissionPaymentError] = useState("")
+  const [commissionPaymentIdempotencyKey, setCommissionPaymentIdempotencyKey] =
+    useState("")
 
   const [editingMovement, setEditingMovement] = useState(null)
 
@@ -108,8 +125,17 @@ export default function Treasury() {
     region: "all",
   })
 
+  const [commissionPaymentForm, setCommissionPaymentForm] = useState({
+    amount: "",
+    payment_date: currentDate(),
+    company_name: "Decosun Group SpA",
+    bank: "BCI",
+    payment_method: "Transferencia",
+    notes: "",
+  })
+
   const [form, setForm] = useState({
-    date: new Date().toISOString().slice(0, 10),
+    date: currentDate(),
     company_name: "Decosun Group SpA",
     bank: "BCI",
     description: "",
@@ -144,7 +170,7 @@ export default function Treasury() {
   })
 
   const [transferForm, setTransferForm] = useState({
-    date: new Date().toISOString().slice(0, 10),
+    date: currentDate(),
     company_name: "Decosun Group SpA",
     from_bank: "Mercado Pago",
     to_bank: "BCI",
@@ -153,7 +179,7 @@ export default function Treasury() {
   })
 
   const [companyTransferForm, setCompanyTransferForm] = useState({
-    date: new Date().toISOString().slice(0, 10),
+    date: currentDate(),
     from_company: "Decosun Group SpA",
     from_bank: "BCI",
     to_company: "Decosun Spa",
@@ -394,6 +420,126 @@ export default function Treasury() {
       ...current,
       [field]: value,
     }))
+  }
+
+  function updateCommissionPaymentField(field, value) {
+    setCommissionPaymentForm((current) => ({
+      ...current,
+      [field]: value,
+    }))
+  }
+
+  function createCommissionPaymentIdempotencyKey(projectCommissionId) {
+    const randomPart =
+      globalThis.crypto?.randomUUID?.() ||
+      `${Date.now()}-${Math.random().toString(36).slice(2)}`
+
+    return `commission-payment:${projectCommissionId}:${randomPart}`
+  }
+
+  function openCommissionPaymentModal(commission) {
+    setSelectedCommissionPayment(commission)
+    setCommissionPaymentError("")
+    setCommissionPaymentIdempotencyKey("")
+    setCommissionPaymentForm({
+      amount: String(Number(commission.balance_cached || 0)),
+      payment_date: currentDate(),
+      company_name: companies[1] || companies[0] || "",
+      bank: banks[0] || "",
+      payment_method: commissionPaymentMethods[0] || "",
+      notes: "",
+    })
+  }
+
+  function closeCommissionPaymentModal() {
+    if (payingCommission) return
+
+    setSelectedCommissionPayment(null)
+    setCommissionPaymentError("")
+    setCommissionPaymentIdempotencyKey("")
+    setCommissionPaymentForm({
+      amount: "",
+      payment_date: currentDate(),
+      company_name: "Decosun Group SpA",
+      bank: "BCI",
+      payment_method: "Transferencia",
+      notes: "",
+    })
+  }
+
+  async function submitCommissionPayment(e) {
+    e.preventDefault()
+
+    if (!selectedCommissionPayment || payingCommission) return
+
+    const amount = Number(commissionPaymentForm.amount || 0)
+    const pending = Number(selectedCommissionPayment.balance_cached || 0)
+
+    if (amount <= 0) {
+      setCommissionPaymentError("El monto debe ser mayor que cero.")
+      return
+    }
+
+    if (amount > pending) {
+      setCommissionPaymentError("El monto no puede superar el saldo pendiente.")
+      return
+    }
+
+    if (!commissionPaymentForm.company_name) {
+      setCommissionPaymentError("Selecciona una empresa.")
+      return
+    }
+
+    if (!commissionPaymentForm.bank) {
+      setCommissionPaymentError("Selecciona un banco.")
+      return
+    }
+
+    setPayingCommission(true)
+    setCommissionPaymentError("")
+
+    const idempotencyKey =
+      commissionPaymentIdempotencyKey ||
+      createCommissionPaymentIdempotencyKey(
+        selectedCommissionPayment.project_commission_id
+      )
+
+    setCommissionPaymentIdempotencyKey(idempotencyKey)
+
+    const { error } = await supabase.rpc("pay_project_commission", {
+      p_project_commission_id:
+        selectedCommissionPayment.project_commission_id,
+      p_amount: amount,
+      p_payment_date: commissionPaymentForm.payment_date,
+      p_company_name: commissionPaymentForm.company_name,
+      p_bank: commissionPaymentForm.bank,
+      p_payment_method: commissionPaymentForm.payment_method || null,
+      p_notes: commissionPaymentForm.notes || null,
+      p_idempotency_key: idempotencyKey,
+    })
+
+    if (error) {
+      console.error(error)
+      setCommissionPaymentError(
+        error.message || "No se pudo pagar la comision."
+      )
+      setPayingCommission(false)
+      return
+    }
+
+    await loadCommissionReports()
+    await loadMovements()
+
+    setPayingCommission(false)
+    closeCommissionPaymentModal()
+  }
+
+  function canPayCommissionRow(commission) {
+    return (
+      canPayProjectCommissions(profile) &&
+      ["generated", "partially_paid"].includes(commission.status) &&
+      Number(commission.balance_cached || 0) > 0
+    )
   }
 
   async function createIntercompanyPayment(e) {
@@ -1481,19 +1627,26 @@ export default function Treasury() {
                   <th>Paid</th>
                   <th>Pending</th>
                   <th>Status</th>
+                  {canPayProjectCommissions(profile) && (
+                    <th>Accion</th>
+                  )}
                 </tr>
               </thead>
 
               <tbody>
                 {loadingCommissions && (
                   <tr>
-                    <td colSpan="10">Cargando detalle...</td>
+                    <td colSpan={canPayProjectCommissions(profile) ? 11 : 10}>
+                      Cargando detalle...
+                    </td>
                   </tr>
                 )}
 
                 {!loadingCommissions && commissionDetail.length === 0 && (
                   <tr>
-                    <td colSpan="10">Sin detalle de comisiones para los filtros seleccionados.</td>
+                    <td colSpan={canPayProjectCommissions(profile) ? 11 : 10}>
+                      Sin detalle de comisiones para los filtros seleccionados.
+                    </td>
                   </tr>
                 )}
 
@@ -1515,12 +1668,224 @@ export default function Treasury() {
                       <td>{money(commission.paid_amount_cached)}</td>
                       <td>{money(commission.balance_cached)}</td>
                       <td>{commission.status || "-"}</td>
+                      {canPayProjectCommissions(profile) && (
+                        <td>
+                          {canPayCommissionRow(commission) ? (
+                            <button
+                              className="secondary-btn"
+                              type="button"
+                              onClick={() => openCommissionPaymentModal(commission)}
+                            >
+                              Pagar comision
+                            </button>
+                          ) : (
+                            "-"
+                          )}
+                        </td>
+                      )}
                     </tr>
                   ))}
               </tbody>
             </table>
           </section>
         </>
+      )}
+
+      {selectedCommissionPayment && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(15, 23, 42, 0.45)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "24px",
+            zIndex: 50,
+          }}
+        >
+          <section
+            className="treasury-table"
+            style={{
+              width: "min(680px, 100%)",
+              maxHeight: "90vh",
+              overflow: "auto",
+              background: "#fff",
+            }}
+          >
+            <div className="dashboard-header">
+              <div>
+                <h2>Pagar comision</h2>
+                <p>Pago controlado desde comisiones generadas.</p>
+              </div>
+
+              <button
+                className="secondary-btn"
+                type="button"
+                onClick={closeCommissionPaymentModal}
+                disabled={payingCommission}
+              >
+                Cerrar
+              </button>
+            </div>
+
+            <div
+              className="treasury-summary"
+              style={{ marginBottom: "24px" }}
+            >
+              <div className="stat-card">
+                <span>Asesor</span>
+                <h2>{selectedCommissionPayment.advisor_name || "Sin asesor"}</h2>
+              </div>
+
+              <div className="stat-card">
+                <span>Proyecto</span>
+                <h2>
+                  {selectedCommissionPayment.project_title ||
+                    selectedCommissionPayment.project_id}
+                </h2>
+              </div>
+
+              <div className="stat-card">
+                <span>Cliente</span>
+                <h2>{selectedCommissionPayment.customer_name || "-"}</h2>
+              </div>
+            </div>
+
+            <div
+              className="treasury-summary"
+              style={{ marginBottom: "24px" }}
+            >
+              <div className="stat-card">
+                <span>Comision generada</span>
+                <h2>{money(selectedCommissionPayment.commission_amount)}</h2>
+              </div>
+
+              <div className="stat-card">
+                <span>Pagado</span>
+                <h2>{money(selectedCommissionPayment.paid_amount_cached)}</h2>
+              </div>
+
+              <div className="stat-card">
+                <span>Pendiente</span>
+                <h2>{money(selectedCommissionPayment.balance_cached)}</h2>
+              </div>
+            </div>
+
+            {commissionPaymentError && (
+              <p style={{ color: "#dc2626", marginBottom: "16px" }}>
+                {commissionPaymentError}
+              </p>
+            )}
+
+            <form className="treasury-form" onSubmit={submitCommissionPayment}>
+              <label>
+                Monto
+                <input
+                  type="number"
+                  min="1"
+                  max={Number(selectedCommissionPayment.balance_cached || 0)}
+                  step="1"
+                  value={commissionPaymentForm.amount}
+                  onChange={(e) =>
+                    updateCommissionPaymentField("amount", e.target.value)
+                  }
+                  disabled={payingCommission}
+                  required
+                />
+              </label>
+
+              <label>
+                Fecha de pago
+                <input
+                  type="date"
+                  value={commissionPaymentForm.payment_date}
+                  onChange={(e) =>
+                    updateCommissionPaymentField("payment_date", e.target.value)
+                  }
+                  disabled={payingCommission}
+                  required
+                />
+              </label>
+
+              <label>
+                Empresa
+                <select
+                  value={commissionPaymentForm.company_name}
+                  onChange={(e) =>
+                    updateCommissionPaymentField("company_name", e.target.value)
+                  }
+                  disabled={payingCommission}
+                  required
+                >
+                  {companies.map((company) => (
+                    <option key={company} value={company}>
+                      {company}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label>
+                Banco
+                <select
+                  value={commissionPaymentForm.bank}
+                  onChange={(e) =>
+                    updateCommissionPaymentField("bank", e.target.value)
+                  }
+                  disabled={payingCommission}
+                  required
+                >
+                  {banks.map((bank) => (
+                    <option key={bank} value={bank}>
+                      {bank}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label>
+                Metodo de pago
+                <select
+                  value={commissionPaymentForm.payment_method}
+                  onChange={(e) =>
+                    updateCommissionPaymentField(
+                      "payment_method",
+                      e.target.value
+                    )
+                  }
+                  disabled={payingCommission}
+                >
+                  {commissionPaymentMethods.map((method) => (
+                    <option key={method} value={method}>
+                      {method}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label>
+                Notas
+                <textarea
+                  value={commissionPaymentForm.notes}
+                  onChange={(e) =>
+                    updateCommissionPaymentField("notes", e.target.value)
+                  }
+                  disabled={payingCommission}
+                  rows="3"
+                />
+              </label>
+
+              <button
+                className="primary-btn"
+                type="submit"
+                disabled={payingCommission}
+              >
+                {payingCommission ? "Pagando..." : "Confirmar pago"}
+              </button>
+            </form>
+          </section>
+        </div>
       )}
 
       {view === "reconciliation" && (
