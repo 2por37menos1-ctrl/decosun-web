@@ -44,6 +44,33 @@ export default function MercadoPublico() {
     );
   }
 
+  async function readSyncErrorPayload(error) {
+    const context = error?.context;
+
+    if (context && typeof context.json === "function") {
+      try {
+        return await context.json();
+      } catch {
+        return null;
+      }
+    }
+
+    return null;
+  }
+
+  function showSafeSyncError(payload) {
+    if (payload?.error_code === "token_expired_or_unauthorized") {
+      alert(
+        "La sesión segura de Mercado Público expiró. Actualiza el bearer en Supabase Secrets y vuelve a sincronizar."
+      );
+      return;
+    }
+
+    alert(
+      "No se pudo sincronizar Mercado Público. El Radar sigue disponible en modo lectura."
+    );
+  }
+
   async function syncRecommendedOpportunities() {
     setLoading(true);
 
@@ -54,7 +81,13 @@ export default function MercadoPublico() {
 
       if (error) {
         console.error(error);
-        alert("Error consultando Mercado Publico desde backend seguro.");
+        const payload = await readSyncErrorPayload(error);
+        showSafeSyncError(payload);
+        return;
+      }
+
+      if (data?.ok === false) {
+        showSafeSyncError(data);
         return;
       }
 
@@ -70,7 +103,7 @@ export default function MercadoPublico() {
       );
     } catch (error) {
       console.error(error);
-      alert("Error ejecutando funcion.");
+      showSafeSyncError(null);
     } finally {
       setLoading(false);
     }

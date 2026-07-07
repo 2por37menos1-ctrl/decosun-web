@@ -277,6 +277,7 @@ serve(async (req) => {
       return jsonResponse(
         {
           ok: false,
+          error_code: "missing_mercado_publico_secrets",
           total: 0,
           inserted_or_updated: 0,
           skipped: 0,
@@ -292,6 +293,7 @@ serve(async (req) => {
       return jsonResponse(
         {
           ok: false,
+          error_code: "missing_supabase_secrets",
           total: 0,
           inserted_or_updated: 0,
           skipped: 0,
@@ -328,6 +330,40 @@ serve(async (req) => {
     );
 
     const responseText = await response.text();
+
+    if (response.status === 401 || response.status === 403) {
+      return jsonResponse(
+        {
+          ok: false,
+          status: response.status,
+          error_code: "token_expired_or_unauthorized",
+          error:
+            "La sesion segura de Mercado Publico expiro o no esta autorizada.",
+          total: 0,
+          inserted_or_updated: 0,
+          skipped: 0,
+          errors: 1,
+        },
+        response.status
+      );
+    }
+
+    if (!response.ok) {
+      return jsonResponse(
+        {
+          ok: false,
+          status: response.status,
+          error_code: "mercado_publico_request_failed",
+          total: 0,
+          inserted_or_updated: 0,
+          skipped: 0,
+          errors: 1,
+          error: "Error consultando Mercado Publico.",
+        },
+        response.status
+      );
+    }
+
     let payload;
 
     try {
@@ -337,6 +373,7 @@ serve(async (req) => {
         {
           ok: false,
           status: response.status,
+          error_code: "mercado_publico_invalid_json",
           total: 0,
           inserted_or_updated: 0,
           skipped: 0,
@@ -344,21 +381,6 @@ serve(async (req) => {
           error: "Mercado Publico no devolvio JSON valido.",
         },
         502
-      );
-    }
-
-    if (!response.ok) {
-      return jsonResponse(
-        {
-          ok: false,
-          status: response.status,
-          total: 0,
-          inserted_or_updated: 0,
-          skipped: 0,
-          errors: 1,
-          error: "Error consultando Mercado Publico.",
-        },
-        response.status
       );
     }
 
@@ -379,6 +401,7 @@ serve(async (req) => {
       return jsonResponse(
         {
           ok: false,
+          error_code: "keywords_load_failed",
           total: items.length,
           inserted_or_updated: 0,
           skipped: items.length,
@@ -410,6 +433,7 @@ serve(async (req) => {
         return jsonResponse(
           {
             ok: false,
+            error_code: "opportunities_read_failed",
             total: items.length,
             inserted_or_updated: 0,
             skipped: items.length,
@@ -460,6 +484,7 @@ serve(async (req) => {
       return jsonResponse(
         {
           ok: false,
+          error_code: "opportunities_save_failed",
           total: items.length,
           nuevas: 0,
           actualizadas: 0,
@@ -485,6 +510,7 @@ serve(async (req) => {
     return jsonResponse(
       {
         ok: false,
+        error_code: "internal_sync_error",
         total: 0,
         inserted_or_updated: 0,
         skipped: 0,
