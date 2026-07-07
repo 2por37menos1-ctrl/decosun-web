@@ -30,7 +30,7 @@ export default function PromoVideoModal() {
       aria-modal="true"
       aria-labelledby="promo-video-title"
     >
-      <div className="relative w-full max-w-4xl overflow-hidden rounded-[28px] bg-slate-950 shadow-2xl ring-1 ring-white/10">
+      <div className="relative max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-[28px] bg-slate-950 shadow-2xl ring-1 ring-white/10">
         <button
           type="button"
           onClick={closeModal}
@@ -40,10 +40,10 @@ export default function PromoVideoModal() {
           x
         </button>
 
-        <div className="grid lg:grid-cols-[1.15fr_0.85fr]">
-          <div className="relative min-h-[280px] bg-black sm:min-h-[360px] lg:min-h-[520px]">
+        <div>
+          <div className="relative aspect-video rounded-t-[28px] bg-black">
             <video
-              className="absolute inset-0 h-full w-full object-cover"
+              className="absolute inset-0 h-full w-full rounded-t-[28px] object-contain"
               autoPlay
               muted
               loop
@@ -61,23 +61,23 @@ export default function PromoVideoModal() {
             </video>
           </div>
 
-          <div className="flex flex-col justify-center bg-slate-950 p-7 text-white sm:p-9 lg:p-10">
+          <div className="bg-slate-950 p-6 text-white sm:p-8 lg:p-9">
             <p className="text-xs font-bold uppercase tracking-[0.28em] text-amber-400">
               Motorización DecoSun
             </p>
 
             <h2
               id="promo-video-title"
-              className="mt-4 text-3xl font-black leading-tight tracking-tight sm:text-4xl"
+              className="mt-3 text-3xl font-black leading-tight tracking-tight sm:text-4xl"
             >
               Controla tus cortinas con un toque
             </h2>
 
-            <p className="mt-4 text-base leading-7 text-slate-300">
+            <p className="mt-3 max-w-3xl text-base leading-7 text-slate-300">
               Motorización premium para espacios modernos con respaldo DecoSun.
             </p>
 
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row lg:flex-col">
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <Link
                 to="/cotizar"
                 onClick={closeModal}

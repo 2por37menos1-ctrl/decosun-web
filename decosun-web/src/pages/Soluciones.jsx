@@ -7,6 +7,7 @@ import toldoImg from "../assets/images/toldo-proyectante-premium.png"
 import pergolaImg from "../assets/images/pergola-premium.png"
 import sucursalImg from "../assets/images/sucursal-iquique.jpeg"
 import telasImg from "../assets/images/telas-textura.jpg"
+import cierreCristalImg from "../assets/images/cierres-cristal/cierre-cristal-balcon-04.jpeg"
 
 export default function Soluciones() {
   const soluciones = [
@@ -80,6 +81,20 @@ export default function Soluciones() {
         "Control de sombra y ventilación",
         "Ideal para terrazas premium",
         "Proyección de alto valor inmobiliario",
+      ],
+    },
+    {
+      title: "Cierres de cristal para balcones y terrazas",
+      category: "Exterior · Cerramientos",
+      text: "Sistema transparente para balcones, terrazas y quinchos, pensado para extender el uso de espacios exteriores con protección, luminosidad y una vista despejada.",
+      image: cierreCristalImg,
+      note: "Producto comercializado bajo marca DecoSun.",
+      cta: "Cotizar cierre de cristal",
+      points: [
+        "Protección contra viento, polvo y lluvia ligera",
+        "Vista despejada y estética moderna",
+        "Mayor confort para terrazas y balcones",
+        "Instalación coordinada bajo respaldo DecoSun",
       ],
     },
   ]
@@ -180,10 +195,16 @@ export default function Soluciones() {
                   ))}
                 </ul>
 
+                {item.note && (
+                  <p className="mt-5 rounded-2xl bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+                    {item.note}
+                  </p>
+                )}
+
                 <Link to="/cotizar"
                   className="mt-7 inline-flex rounded-2xl bg-slate-950 px-5 py-3 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-amber-500 hover:text-black"
                 >
-                  Cotizar
+                  {item.cta || "Cotizar"}
                 </Link>
               </div>
             </article>

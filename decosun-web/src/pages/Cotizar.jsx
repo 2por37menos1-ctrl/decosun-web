@@ -30,7 +30,7 @@ const calculableProducts = {
 const requestOnlyProducts = {
   toldoProyectante: "Toldo proyectante",
   toldoVertical: "Toldo vertical",
-  cierreTerraza: "Cierre de terraza",
+  cierreTerraza: "Cierres de cristal para terrazas y balcones",
   pergolaBioclimatica: "Pérgola bioclimática",
 }
 
@@ -887,7 +887,7 @@ export default function Cotizar() {
                               </option>
                               <option value="toldoVertical">Toldo vertical</option>
                               <option value="cierreTerraza">
-                                Cierre de terraza
+                                Cierres de cristal para terrazas y balcones
                               </option>
                               <option value="pergolaBioclimatica">
                                 Pérgola bioclimática

@@ -20,6 +20,7 @@ import toldoImg from "../assets/images/toldo-proyectante-premium.png"
 import duoImg from "../assets/images/duo-03.jpg"
 import pergolaImg from "../assets/images/pergola-premium.png"
 import redImg from "../assets/images/sucursal-iquique03.jpg"
+import cierreCristalHomeImg from "../assets/images/cierres-cristal/cierre-cristal-balcon-03.jpeg"
 
 export default function Home() {
   const heroImages = [hero1, hero2, hero3, hero4, hero5, hero6, hero7]
@@ -80,6 +81,13 @@ export default function Home() {
       title: "Pérgolas Bioclimáticas",
       text: "Diseño exterior premium para terrazas de alto valor.",
       image: pergolaImg,
+    },
+    {
+      title: "Cierres de cristal para balcones y terrazas",
+      text: "Sistema transparente para proteger espacios exteriores del viento, polvo y lluvia ligera, manteniendo vista, luminosidad y una terminación limpia bajo marca DecoSun.",
+      image: cierreCristalHomeImg,
+      cta: "Cotizar cierre de cristal",
+      to: "/cotizar",
     },
   ]
 
@@ -189,7 +197,7 @@ export default function Home() {
             </h2>
           </div>
 
-          <div className="mt-12 grid gap-7 md:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-12 grid gap-7 md:grid-cols-2 lg:grid-cols-5">
             {soluciones.map((item) => (
               <motion.article
                 initial={{ opacity: 0, y: 40 }}
@@ -215,10 +223,10 @@ export default function Home() {
                   </p>
 
                   <Link
-                    to="/soluciones"
+                    to={item.to || "/soluciones"}
                     className="mt-5 inline-flex text-sm font-bold uppercase tracking-wide text-amber-700"
                   >
-                    Ver más →
+                    {item.cta || "Ver más →"}
                   </Link>
                 </div>
               </motion.article>
