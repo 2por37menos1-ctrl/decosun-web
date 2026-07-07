@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
-import { testMercadoPublico } from "../lib/testMercadoPublico";
 import { scanCompraAgil } from "../lib/compraAgilScanner";
 
 
@@ -9,10 +8,6 @@ export default function MercadoPublico() {
   const [loading, setLoading] = useState(false);
   const [opportunities, setOpportunities] = useState([]);
   const [jsonInput, setJsonInput] = useState("");
-
-  const [mpBearerToken, setMpBearerToken] = useState("");
-  const [mpApiKey, setMpApiKey] = useState("");
-  const [mpSettings, setMpSettings] = useState(null);
 
   async function loadOpportunities() {
     const { data, error } = await supabase
@@ -30,36 +25,11 @@ export default function MercadoPublico() {
   }
 
   async function handleScan() {
-    setLoading(true);
-    const result = await testMercadoPublico();
-    console.log("Resultado scanner:", result);
-    await loadOpportunities();
-    setLoading(false);
-  }
-
-  async function loadMarketPublicSettings() {
-    const { data, error } = await supabase
-      .from("market_public_settings")
-      .select("*")
-      .order("created_at", { ascending: true })
-      .limit(1)
-      .maybeSingle();
-
-    if (error) {
-      console.error(error);
-      return;
-    }
-
-    if (data) {
-      setMpSettings(data);
-      setMpBearerToken(data.bearer_token || "");
-      setMpApiKey(data.api_key || "");
-    }
+    await actualizarRecomendadas();
   }
 
   useEffect(() => {
     loadOpportunities();
-    loadMarketPublicSettings();
   }, []);
 
   function getDeadlineLabel(days) {
@@ -104,7 +74,7 @@ export default function MercadoPublico() {
 
     const result = await scanCompraAgil(ejemplo);
 
-    console.log(result);
+    alert(result.message || "Scanner de prueba desactivado por seguridad.");
   }
 
   async function importarJsonRecomendadas() {
@@ -117,8 +87,6 @@ export default function MercadoPublico() {
 
       const result = await scanCompraAgil(oportunidades);
 
-      console.log("Importación JSON recomendadas:", result);
-
       await loadOpportunities();
 
       setJsonInput("");
@@ -130,110 +98,25 @@ export default function MercadoPublico() {
 
   async function actualizarRecomendadas() {
     try {
-      const bearerToken = mpBearerToken.trim();
-      const apiKey = mpApiKey.trim();
-
-      if (!bearerToken || !apiKey) {
-        alert("Primero guarda Bearer Token y API Key.");
-        return;
-      }
-
-      const cleanBearer = bearerToken.startsWith("Bearer ")
-        ? bearerToken.replace("Bearer ", "").trim()
-        : bearerToken;
-
       const { data, error } = await supabase.functions.invoke(
-        "importar-recomendadas",
-        {
-          body: {
-            bearerToken: cleanBearer,
-            apiKey: apiKey,
-          },
-        }
+        "importar-recomendadas"
       );
-
-      console.log("Respuesta función:", data);
 
       if (error) {
         console.error(error);
-        alert("Error consultando Mercado Público.");
+        alert("Error consultando Mercado Público desde backend seguro.");
         return;
       }
 
-      const result = await scanCompraAgil(data.data.content || []);
-
-      console.log("Importación automática recomendadas:", result);
+      const result = await scanCompraAgil(data?.data?.content || []);
 
       await loadOpportunities();
-
-      if (mpSettings?.id) {
-        await supabase
-          .from("market_public_settings")
-          .update({
-            last_sync_at: new Date().toISOString(),
-            last_total: data.total || 0,
-            last_imported: result.inserted || 0,
-            status: "conectado",
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", mpSettings.id);
-
-        await loadMarketPublicSettings();
-      }
 
       alert(`${data.total} oportunidades revisadas. ${result.inserted || 0} guardadas/actualizadas.`);
     } catch (error) {
       console.error(error);
       alert("Error ejecutando función.");
     }
-  }
-
-  async function saveMarketPublicSettings() {
-    const payload = {
-      bearer_token: mpBearerToken.trim(),
-      api_key: mpApiKey.trim(),
-      status: "guardado",
-      updated_at: new Date().toISOString(),
-    };
-
-    if (!payload.bearer_token || !payload.api_key) {
-      alert("Debes ingresar Bearer Token y API Key.");
-      return;
-    }
-
-    if (mpSettings?.id) {
-      const { data, error } = await supabase
-        .from("market_public_settings")
-        .update(payload)
-        .eq("id", mpSettings.id)
-        .select()
-        .single();
-
-      if (error) {
-        console.error(error);
-        alert("No se pudo guardar la configuración.");
-        return;
-      }
-
-      setMpSettings(data);
-      alert("Configuración guardada.");
-      return;
-    }
-
-    const { data, error } = await supabase
-      .from("market_public_settings")
-      .insert(payload)
-      .select()
-      .single();
-
-    if (error) {
-      console.error(error);
-      alert("No se pudo guardar la configuración.");
-      return;
-    }
-
-    setMpSettings(data);
-    alert("Configuración guardada.");
   }
 
   async function copyCode(code) {
@@ -284,13 +167,6 @@ export default function MercadoPublico() {
     ]
       .filter(Boolean)
       .join("\n\n");
-
-    console.log("Crear proyecto desde MP", {
-      external_id: item.external_id,
-      region: item.region,
-      region_code: item.region_code,
-      mapped_region: mapRegionCode(item.region_code),
-    });
 
     const { data, error } = await supabase
       .from("projects")
@@ -346,7 +222,6 @@ export default function MercadoPublico() {
     }
 
     alert("Proyecto creado correctamente.");
-    console.log("Proyecto creado:", data);
   }
 
   return (
@@ -401,40 +276,14 @@ export default function MercadoPublico() {
       </div>
 
       <div className="bg-white rounded-xl shadow p-4 mb-6">
-        <h3 className="font-bold mb-2">Configuración Mercado Público</h3>
+        <h3 className="font-bold mb-2">Sincronización Mercado Público</h3>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="text-sm text-gray-600">Bearer Token</label>
-            <input
-              className="w-full border rounded-lg p-2 text-xs"
-              type="password"
-              value={mpBearerToken}
-              onChange={(e) => setMpBearerToken(e.target.value)}
-              placeholder="Pega aquí el Bearer Token"
-            />
-          </div>
-
-          <div>
-            <label className="text-sm text-gray-600">x-api-key</label>
-            <input
-              className="w-full border rounded-lg p-2 text-xs"
-              type="password"
-              value={mpApiKey}
-              onChange={(e) => setMpApiKey(e.target.value)}
-              placeholder="Pega aquí la API Key"
-            />
-          </div>
-        </div>
+        <p className="text-sm leading-6 text-gray-600">
+          La sincronización segura de Mercado Público debe ejecutarse desde
+          backend/Edge Function con credenciales protegidas.
+        </p>
 
         <div className="mt-3 flex gap-2 items-center">
-          <button
-            className="px-4 py-2 rounded-lg bg-gray-800 text-white"
-            onClick={saveMarketPublicSettings}
-          >
-            Guardar configuración
-          </button>
-
           <button
             className="px-4 py-2 rounded-lg bg-indigo-600 text-white"
             onClick={actualizarRecomendadas}
@@ -443,10 +292,7 @@ export default function MercadoPublico() {
           </button>
 
           <span className="text-xs text-gray-500">
-            Estado: {mpSettings?.status || "sin configurar"}
-            {mpSettings?.last_sync_at
-              ? ` · Última sync: ${new Date(mpSettings.last_sync_at).toLocaleString("es-CL")}`
-              : ""}
+            Las credenciales ya no se muestran ni se editan desde el navegador.
           </span>
         </div>
       </div>

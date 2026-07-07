@@ -1,7 +1,6 @@
 // @ts-nocheck
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -19,13 +18,15 @@ serve(async (req) => {
   }
 
   try {
-    const { bearerToken, apiKey } = await req.json();
+    const bearerToken = Deno.env.get("MERCADO_PUBLICO_BEARER_TOKEN");
+    const apiKey = Deno.env.get("MERCADO_PUBLICO_API_KEY");
 
     if (!bearerToken || !apiKey) {
       return new Response(
         JSON.stringify({
           ok: false,
-          error: "Faltan bearerToken o apiKey",
+          error:
+            "Faltan credenciales server-side de Mercado Publico. Configura MERCADO_PUBLICO_BEARER_TOKEN y MERCADO_PUBLICO_API_KEY como secrets.",
         }),
         {
           status: 400,
@@ -39,17 +40,9 @@ serve(async (req) => {
 
     // No es estrictamente necesario todavía,
     // pero lo dejamos listo para futuras inserciones
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const serviceRoleKey = Deno.env.get(
-      "SUPABASE_SERVICE_ROLE_KEY"
-    );
-
-    if (supabaseUrl && serviceRoleKey) {
-      createClient(
-        supabaseUrl,
-        serviceRoleKey
-      );
-    }
+    const cleanBearer = bearerToken.startsWith("Bearer ")
+      ? bearerToken.replace("Bearer ", "").trim()
+      : bearerToken.trim();
 
     const response = await fetch(
       "https://ywri2h0ar5.execute-api.us-east-1.amazonaws.com/escritorio/oportunidades/recomendadas",
@@ -57,7 +50,7 @@ serve(async (req) => {
         method: "GET",
         headers: {
           accept: "application/json, text/plain, */*",
-          authorization: `Bearer ${bearerToken}`,
+          authorization: `Bearer ${cleanBearer}`,
           "x-api-key": apiKey,
           origin: "https://proveedor.mercadopublico.cl",
           referer: "https://proveedor.mercadopublico.cl/",
@@ -78,7 +71,6 @@ serve(async (req) => {
           ok: false,
           status: response.status,
           error: "Mercado Público no devolvió JSON válido",
-          body: responseText,
         }),
         {
           status: 500,
@@ -96,7 +88,6 @@ serve(async (req) => {
           ok: false,
           status: response.status,
           error: "Error consultando Mercado Público",
-          body: json,
         }),
         {
           status: response.status,
