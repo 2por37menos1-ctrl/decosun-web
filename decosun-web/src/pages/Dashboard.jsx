@@ -1,5 +1,5 @@
 import "../panel.css"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 
 import DashboardLayout from "../layouts/DashboardLayout"
 import StatCard from "../components/StatCard"
@@ -151,6 +151,20 @@ function GaugeChart({ percentage }) {
   )
 }
 
+function daysSince(dateString) {
+  if (!dateString) return null
+
+  const date = new Date(dateString)
+
+  if (Number.isNaN(date.getTime())) return null
+
+  return Math.floor((Date.now() - date.getTime()) / 86400000)
+}
+
+function isMissingDate(value) {
+  return !value || String(value).trim() === ""
+}
+
 export default function Dashboard() {
   const [view, setView] = useState("inicio")
   const [commercialView, setCommercialView] = useState("pipeline")
@@ -176,6 +190,65 @@ export default function Dashboard() {
     loadingArchived,
     reloadArchivedProjects,
   } = useArchivedProjects(profile)
+
+  function navigatePanel(nextView) {
+    if (nextView === "proyectos") {
+      alert("Proyectos dedicado estará disponible pronto. Abriendo Comercial.")
+      setView("comercial")
+      setCommercialView("pipeline")
+      return
+    }
+
+    if (nextView === "clientes") {
+      alert("Clientes estará disponible pronto. Abriendo Seguimiento comercial.")
+      setView("comercial")
+      setCommercialView("seguimiento")
+      return
+    }
+
+    if (nextView === "configuracion") {
+      alert("Configuración estará disponible pronto.")
+      setView("inicio")
+      return
+    }
+
+    if (nextView === "agenda" && !canViewAgenda(profile)) {
+      alert("No tienes permiso para ver Agenda.")
+      return
+    }
+
+    if (nextView === "operaciones" && !canViewPurchases(profile)) {
+      alert("No tienes permiso para ver Operaciones.")
+      return
+    }
+
+    if (nextView === "finanzas" && !canViewTreasury(profile)) {
+      alert("No tienes permiso para ver Finanzas.")
+      return
+    }
+
+    setView(nextView)
+  }
+
+  useEffect(() => {
+    function handlePanelNavigation(event) {
+      navigatePanel(event.detail?.view || "inicio")
+    }
+
+    window.addEventListener("decosun:panel-navigate", handlePanelNavigation)
+
+    return () => {
+      window.removeEventListener("decosun:panel-navigate", handlePanelNavigation)
+    }
+  }, [profile])
+
+  useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent("decosun:panel-view-changed", {
+        detail: { view },
+      })
+    )
+  }, [view])
 
   const availableProjects = useMemo(() => {
     if (profile?.role !== "gerencia") return projects
@@ -384,6 +457,53 @@ export default function Dashboard() {
       ? Math.min((visibleTotalPaid / visibleTotalSold) * 100, 100)
       : 0
 
+  const activeProjectsCount = filteredProjects.filter(
+    (project) => project.status !== "cerrado"
+  ).length
+
+  const opportunityProjects = filteredProjects.filter((project) =>
+    ["agendado", "cotizado", "seguimiento"].includes(project.status)
+  )
+
+  const followUpProjects = filteredProjects.filter(
+    (project) => project.status === "seguimiento"
+  )
+
+  const productionProjects = filteredProjects.filter(
+    (project) => project.status === "produccion"
+  )
+
+  const purchaseProjects = filteredProjects.filter(
+    (project) => project.status === "compras"
+  )
+
+  const installationProjects = filteredProjects.filter(
+    (project) => project.status === "instalacion"
+  )
+
+  const installationsWithoutDate = installationProjects.filter(
+    (project) => isMissingDate(project.key_date)
+  )
+
+  const projectsWithoutMovement = filteredProjects.filter((project) => {
+    const inactiveDays = daysSince(project.updated_at)
+
+    return inactiveDays != null && inactiveDays >= 7
+  })
+
+  const pendingBalanceProjects = visibleSalesProjects.filter(
+    (project) => getProjectBalance(project) > 0
+  )
+
+  const closedSalesProjects = visibleSalesProjects.filter(
+    (project) => project.status === "cerrado"
+  )
+
+  const closedSalesTotal = closedSalesProjects.reduce(
+    (acc, project) => acc + Number(project.sale_value || 0),
+    0
+  )
+
   const iquiqueSalesProjects = projects.filter(
     (project) =>
       project.region_code === "iquique" &&
@@ -502,14 +622,14 @@ export default function Dashboard() {
         <div className="view-actions">
           <button
             className={view === "inicio" ? "primary-btn" : "secondary-btn"}
-            onClick={() => setView("inicio")}
+            onClick={() => navigatePanel("inicio")}
           >
             Inicio
           </button>
 
           <button
             className={view === "comercial" ? "primary-btn" : "secondary-btn"}
-            onClick={() => setView("comercial")}
+            onClick={() => navigatePanel("comercial")}
           >
             Comercial
           </button>
@@ -517,7 +637,7 @@ export default function Dashboard() {
           {canViewAgenda(profile) && (
             <button
               className={view === "agenda" ? "primary-btn" : "secondary-btn"}
-              onClick={() => setView("agenda")}
+              onClick={() => navigatePanel("agenda")}
             >
               Agenda
             </button>
@@ -526,7 +646,7 @@ export default function Dashboard() {
           {canViewPurchases(profile) && (
             <button
               className={view === "operaciones" ? "primary-btn" : "secondary-btn"}
-              onClick={() => setView("operaciones")}
+              onClick={() => navigatePanel("operaciones")}
             >
               Operaciones
             </button>
@@ -535,7 +655,7 @@ export default function Dashboard() {
           {canViewTreasury(profile) && (
             <button
               className={view === "finanzas" ? "primary-btn" : "secondary-btn"}
-              onClick={() => setView("finanzas")}
+              onClick={() => navigatePanel("finanzas")}
             >
               Finanzas
             </button>
@@ -547,7 +667,7 @@ export default function Dashboard() {
                 ? "primary-btn"
                 : "secondary-btn"
             }
-            onClick={() => setView("mercado_publico")}
+            onClick={() => navigatePanel("mercado_publico")}
           >
             Mercado Público
           </button>
@@ -739,6 +859,130 @@ export default function Dashboard() {
             )}
           </div>
 
+          <section className="dashboard-section">
+            <div className="section-heading">
+              <div>
+                <h2>Salud financiera</h2>
+                <p>Resumen gerencial con datos de proyectos ya cargados.</p>
+              </div>
+            </div>
+
+            <div className="stats-grid">
+              <StatCard
+                title="Venta cerrada"
+                value={formatMoney(closedSalesTotal)}
+              />
+
+              <StatCard
+                title="Cobrado"
+                value={formatMoney(visibleTotalPaid)}
+              />
+
+              <StatCard
+                title="Pendiente por cobrar"
+                value={formatMoney(visibleBalance)}
+              />
+
+              <StatCard
+                title="Avance de cobro"
+                value={`${paymentProgress.toFixed(0)}%`}
+              />
+            </div>
+          </section>
+
+          <section className="dashboard-section">
+            <div className="section-heading">
+              <div>
+                <h2>Comercial</h2>
+                <p>Indicadores de pipeline sin mostrar el tablero operativo.</p>
+              </div>
+            </div>
+
+            <div className="stats-grid">
+              <StatCard
+                title="Proyectos activos"
+                value={activeProjectsCount}
+              />
+
+              <StatCard
+                title="Oportunidades"
+                value={opportunityProjects.length}
+              />
+
+              <StatCard
+                title="En seguimiento"
+                value={followUpProjects.length}
+              />
+
+              <StatCard
+                title="Asesores activos"
+                value={commercialTotals.activeAdvisors}
+              />
+            </div>
+          </section>
+
+          <section className="dashboard-section">
+            <div className="section-heading">
+              <div>
+                <h2>Operaciones</h2>
+                <p>Lectura rapida de estados operativos actuales.</p>
+              </div>
+            </div>
+
+            <div className="stats-grid">
+              <StatCard
+                title="Produccion pendiente"
+                value={productionProjects.length}
+              />
+
+              <StatCard
+                title="Compras pendientes"
+                value={purchaseProjects.length}
+              />
+
+              <StatCard
+                title="Instalaciones"
+                value={installationProjects.length}
+              />
+
+              <StatCard
+                title="Visitas pendientes"
+                value={advisorPendingVisits}
+              />
+            </div>
+          </section>
+
+          <section className="dashboard-section">
+            <div className="section-heading">
+              <div>
+                <h2>Alertas gerenciales</h2>
+                <p>Senales simples para priorizar revision del dia.</p>
+              </div>
+            </div>
+
+            <div className="stats-grid">
+              <StatCard
+                title="Saldos pendientes"
+                value={pendingBalanceProjects.length}
+              />
+
+              <StatCard
+                title="Sin movimiento 7+ dias"
+                value={projectsWithoutMovement.length}
+              />
+
+              <StatCard
+                title="Instalaciones sin fecha"
+                value={installationsWithoutDate.length}
+              />
+
+              <StatCard
+                title="Compromisos proximos"
+                value="Ver Finanzas"
+              />
+            </div>
+          </section>
+
           {isGerencia(profile) && (
             <>
               <section className="executive-grid executive-grid-premium">
@@ -892,16 +1136,6 @@ export default function Dashboard() {
             </>
           )}
 
-          <KanbanBoard
-            projects={filteredProjects}
-            onStatusChange={updateProjectStatus}
-            onProjectClick={setSelectedProject}
-            onArchiveProject={
-              profile?.role === "asesor_comercial"
-                ? null
-                : archiveProject
-            }
-          />
         </>
       )}
 
