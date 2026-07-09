@@ -1,43 +1,34 @@
 const columns = [
   { id: "agendado", label: "Agendado", color: "#0ea5e9" },
-  { id: "cotizado", label: "Cotizado", color: "#6b7280" },
+  { id: "cotizado", label: "Cotizado", color: "#7c3aed" },
   { id: "seguimiento", label: "Seguimiento", color: "#f59e0b" },
   { id: "aceptado", label: "Aceptado", color: "#10b981" },
-  { id: "medicion", label: "Medición", color: "#06b6d4" },
+  { id: "medicion", label: "Medicion", color: "#06b6d4" },
   { id: "compras", label: "Compras", color: "#f97316" },
-  { id: "produccion", label: "Producción", color: "#3b82f6" },
-  { id: "instalacion", label: "Instalación", color: "#8b5cf6" },
-  { id: "facturacion", label: "Facturación", color: "#ef4444" },
-  { id: "cerrado", label: "Cerrado", color: "#166534" },
+  { id: "produccion", label: "Produccion", color: "#8b5cf6" },
+  { id: "instalacion", label: "Instalacion", color: "#22c55e" },
+  { id: "facturacion", label: "Facturacion", color: "#1e3a8a" },
+  { id: "cerrado", label: "Cerrado", color: "#64748b" },
 ]
-
-const publicStatusMap = {
-  agendado: "Visita coordinada",
-  cotizado: "Cotización enviada",
-  seguimiento: "En seguimiento",
-  aceptado: "Pedido confirmado",
-  medicion: "Preparación técnica",
-  compras: "En preparación",
-  produccion: "En producción",
-  instalacion: "Instalación programada",
-  facturacion: "Documento final",
-  cerrado: "Finalizado",
-}
 
 function money(value) {
   return `$${Number(value || 0).toLocaleString("es-CL")}`
 }
 
-function cleanPhone(phone) {
-  const onlyNumbers = String(phone || "").replace(/\D/g, "")
+function compactMoney(value) {
+  const amount = Number(value || 0)
 
-  if (!onlyNumbers) return ""
+  if (Math.abs(amount) >= 1000000) {
+    return `$${(amount / 1000000).toLocaleString("es-CL", {
+      maximumFractionDigits: 1,
+    })}M`
+  }
 
-  if (onlyNumbers.startsWith("56")) return onlyNumbers
+  if (Math.abs(amount) >= 1000) {
+    return `$${Math.round(amount / 1000).toLocaleString("es-CL")}k`
+  }
 
-  if (onlyNumbers.startsWith("9")) return `56${onlyNumbers}`
-
-  return onlyNumbers
+  return money(amount)
 }
 
 function timeAgo(dateString) {
@@ -47,135 +38,12 @@ function timeAgo(dateString) {
   const date = new Date(dateString)
   const diff = Math.floor((now - date) / 1000)
 
-  if (diff < 60) return "Hace unos segundos"
-  if (diff < 3600) return `Hace ${Math.floor(diff / 60)} min`
-  if (diff < 86400) return `Hace ${Math.floor(diff / 3600)} h`
-  if (diff < 604800) return `Hace ${Math.floor(diff / 86400)} días`
+  if (diff < 60) return "Hoy"
+  if (diff < 3600) return `${Math.floor(diff / 60)} min`
+  if (diff < 86400) return `${Math.floor(diff / 3600)} h`
+  if (diff < 604800) return `${Math.floor(diff / 86400)} dias`
 
   return date.toLocaleDateString("es-CL")
-}
-
-function getActivityStatus(updatedAt) {
-  if (!updatedAt) {
-    return {
-      label: "Sin actividad registrada",
-      background: "#f1f5f9",
-      color: "#475569",
-    }
-  }
-
-  const now = new Date()
-  const date = new Date(updatedAt)
-  const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24))
-
-  if (diffDays <= 1) {
-    return {
-      label: "Activo hoy",
-      background: "#dcfce7",
-      color: "#166534",
-    }
-  }
-
-  if (diffDays <= 3) {
-    return {
-      label: `Sin movimiento hace ${diffDays} días`,
-      background: "#fef9c3",
-      color: "#854d0e",
-    }
-  }
-
-  if (diffDays <= 7) {
-    return {
-      label: `Sin movimiento hace ${diffDays} días`,
-      background: "#ffedd5",
-      color: "#9a3412",
-    }
-  }
-
-  return {
-    label: `⚠️ Requiere seguimiento · ${diffDays} días`,
-    background: "#fee2e2",
-    color: "#991b1b",
-  }
-}
-
-function getProjectAddress(project) {
-  return [
-    project.address,
-    project.city,
-    project.region_code,
-    "Chile",
-  ]
-    .filter(Boolean)
-    .join(", ")
-}
-
-function openMaps(project) {
-  const address = getProjectAddress(project)
-
-  if (!address.trim()) {
-    alert("Este proyecto no tiene dirección o ciudad registrada.")
-    return
-  }
-
-  window.open(
-    `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-      address
-    )}`,
-    "_blank"
-  )
-}
-
-function openWhatsApp(project) {
-  const phone = cleanPhone(project.contact_phone)
-
-  if (!phone) {
-    alert("Este proyecto no tiene teléfono registrado.")
-    return
-  }
-
-  const message = encodeURIComponent(
-    `Hola ${project.contact_name || ""}, soy de DecoSun. Le escribo por el proyecto ${project.title || ""
-    }.`
-  )
-
-  window.open(`https://wa.me/${phone}?text=${message}`, "_blank")
-}
-
-function openCall(project) {
-  const phone = cleanPhone(project.contact_phone)
-
-  if (!phone) {
-    alert("Este proyecto no tiene teléfono registrado.")
-    return
-  }
-
-  window.location.href = `tel:+${phone}`
-}
-
-function openCalendar(project) {
-  const title = encodeURIComponent(
-    `Visita DecoSun - ${project.contact_name || project.title || "Cliente"}`
-  )
-
-  const location = encodeURIComponent(getProjectAddress(project))
-
-  const details = encodeURIComponent(
-    [
-      `Cliente: ${project.contact_name || ""}`,
-      `Proyecto: ${project.title || ""}`,
-      `Ciudad: ${project.city || ""}`,
-      `Teléfono: ${project.contact_phone || ""}`,
-      `Estado: ${publicStatusMap[project.status] || ""}`,
-      "",
-      "Evento creado desde el panel DecoSun.",
-    ].join("\n")
-  )
-
-  window.open(
-    `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}&location=${location}`,
-    "_blank"
-  )
 }
 
 function getProjectPaid(project) {
@@ -212,8 +80,16 @@ function getFinanceStatus(project) {
 
 function formatFinanceStatus(status) {
   if (status === "paid") return "Pagado"
-  if (status === "partial") return "Pago parcial"
+  if (status === "partial") return "Parcial"
+  if (status === "overpaid") return "Overpaid"
   return "Pendiente"
+}
+
+function getBalanceTone(financeStatus, balance) {
+  if (financeStatus === "paid" || Number(balance || 0) <= 0) return "paid"
+  if (financeStatus === "partial") return "partial"
+  if (financeStatus === "overpaid") return "paid"
+  return "neutral"
 }
 
 export default function KanbanBoard({
@@ -248,25 +124,44 @@ export default function KanbanBoard({
           0
         )
 
+        const columnBalance = columnProjects.reduce(
+          (acc, project) => acc + getProjectBalance(project),
+          0
+        )
+
         return (
           <section
             key={column.id}
             className="kanban-column"
+            style={{
+              "--stage-color": column.color,
+            }}
             onDragOver={(event) => event.preventDefault()}
             onDrop={(event) => handleDrop(event, column.id)}
           >
             <div
               className="column-header"
               style={{
-                borderTop: `4px solid ${column.color}`,
+                borderTop: `2px solid ${column.color}`,
               }}
             >
-              <div>
-                <h3>{column.label}</h3>
-                <p>{money(columnTotal)}</p>
-              </div>
+              <div className="column-title">
+                <h3>
+                  {column.label}
+                  <span>{columnProjects.length}</span>
+                </h3>
+                <div className="column-kpis">
+                  <div>
+                    <small>Venta</small>
+                    <strong>{compactMoney(columnTotal)}</strong>
+                  </div>
 
-              <span>{columnProjects.length}</span>
+                  <div>
+                    <small>Pendiente</small>
+                    <strong>{compactMoney(columnBalance)}</strong>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div className="column-cards">
@@ -274,8 +169,12 @@ export default function KanbanBoard({
                 const paid = getProjectPaid(project)
                 const balance = getProjectBalance(project)
                 const financeStatus = getFinanceStatus(project)
-
-                const activityStatus = getActivityStatus(project.updated_at)
+                const balanceTone = getBalanceTone(financeStatus, balance)
+                const advisor = project.advisor_name?.trim() || "Sin asesor"
+                const primaryName =
+                  project.contact_name || project.title || "Sin cliente"
+                const quoteLabel =
+                  project.quote_number || project.title || "Sin cotizacion"
 
                 return (
                   <article
@@ -289,8 +188,8 @@ export default function KanbanBoard({
                   >
                     <div className="card-top">
                       <div>
-                        <h4>{project.title || "Sin título"}</h4>
-                        <p>{project.city || "Sin ciudad"}</p>
+                        <h4>{primaryName}</h4>
+                        <p>{quoteLabel}</p>
                       </div>
 
                       <div
@@ -301,165 +200,67 @@ export default function KanbanBoard({
                       />
                     </div>
 
-                    <div className="public-status">
-                      {publicStatusMap[project.status] || "Sin estado público"}
-                    </div>
-
-                    <div className="card-tags">
-                      {project.client_type && <span>{project.client_type}</span>}
-                      {project.priority && <span>{project.priority}</span>}
-                      {project.region_code && <span>{project.region_code}</span>}
-                    </div>
-
-                    <div
-                      style={{
-                        marginTop: "8px",
-                        fontSize: "12px",
-                        color: "#64748b",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "6px",
-                      }}
-                    >
-                      <span>🕒</span>
-                      <span>
-                        Ingresado {timeAgo(project.created_at)}
-                      </span>
-                    </div>
-
-                    <div
-                      style={{
-                        marginBottom: "8px",
-                        fontSize: "12px",
-                        color: "#64748b",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "6px",
-                      }}
-                    >
-                      <span>🔄</span>
-                      <span>
-                        Actualizado {timeAgo(project.updated_at)}
-                      </span>
-                    </div>
-
-                    <div
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "6px",
-                        padding: "5px 8px",
-                        borderRadius: "999px",
-                        fontSize: "11px",
-                        fontWeight: "700",
-                        background: activityStatus.background,
-                        color: activityStatus.color,
-                        marginBottom: "10px",
-                      }}
-                    >
-                      {activityStatus.label}
+                    <div className="kanban-card-meta">
+                      <span>{project.region_code || "Sin region"}</span>
+                      <span>{advisor}</span>
+                      <span>{timeAgo(project.updated_at)}</span>
                     </div>
 
                     <div className="card-finance">
-                      <div>
+                      <div className="sale-amount">
                         <small>Venta</small>
-                        <strong>{money(project.sale_value)}</strong>
+                        <strong>{compactMoney(project.sale_value)}</strong>
                       </div>
 
-                      <div>
-                        <small>Pagado</small>
-                        <strong>{money(paid)}</strong>
+                      <div className={`balance-amount is-${balanceTone}`}>
+                        <small>Saldo</small>
+                        <strong>{compactMoney(balance)}</strong>
                       </div>
-                    </div>
-
-                    <div className="card-balance">
-                      <small>Saldo</small>
-                      <strong>{money(balance)}</strong>
-                    </div>
-
-                    <div className="card-actions">
-                      <button
-                        type="button"
-                        title="Abrir en Google Maps"
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          openMaps(project)
-                        }}
-                      >
-                        📍
-                      </button>
-
-                      <button
-                        type="button"
-                        title="Agendar en Google Calendar"
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          openCalendar(project)
-                        }}
-                      >
-                        📅
-                      </button>
-
-                      <button
-                        type="button"
-                        title="Llamar"
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          openCall(project)
-                        }}
-                      >
-                        📞
-                      </button>
-
-                      <button
-                        type="button"
-                        title="Abrir WhatsApp"
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          openWhatsApp(project)
-                        }}
-                      >
-                        💬
-                      </button>
                     </div>
 
                     <div className="card-footer">
-                      <small>
+                      <small
+                        className={`finance-badge is-${financeStatus || "pending"}`}
+                      >
                         {formatFinanceStatus(financeStatus)}
                       </small>
 
-                      <button
-                        type="button"
-                        onClick={(event) => {
-                          event.stopPropagation()
+                      <small>{compactMoney(paid)} cobrado</small>
 
-                          const archive_reason = window.prompt(
-                            "Motivo de archivo: sin_respuesta, precio_elevado, competencia, sin_presupuesto, postergado, fuera_cobertura, duplicado, otro",
-                            "sin_respuesta"
-                          )
+                      {onArchiveProject && (
+                        <button
+                          type="button"
+                          className="archive-link"
+                          onClick={(event) => {
+                            event.stopPropagation()
 
-                          if (!archive_reason) return
+                            const archive_reason = window.prompt(
+                              "Motivo de archivo: sin_respuesta, precio_elevado, competencia, sin_presupuesto, postergado, fuera_cobertura, duplicado, otro",
+                              "sin_respuesta"
+                            )
 
-                          const lost_amount = window.prompt(
-                            "Monto de oportunidad perdida",
-                            project.sale_value || 0
-                          )
+                            if (!archive_reason) return
 
-                          const archive_notes = window.prompt(
-                            "Notas del archivo / seguimiento",
-                            ""
-                          )
+                            const lost_amount = window.prompt(
+                              "Monto de oportunidad perdida",
+                              project.sale_value || 0
+                            )
 
-                          onArchiveProject(project.id, {
-                            archive_reason,
-                            lost_amount: Number(lost_amount || project.sale_value || 0),
-                            archive_notes,
-                          })
-                        }}
-                        className="mt-2 rounded-xl bg-amber-600 px-3 py-1 text-xs font-semibold text-white transition hover:bg-amber-700"
-                      >
-                        Archivar
-                      </button>
+                            const archive_notes = window.prompt(
+                              "Notas del archivo / seguimiento",
+                              ""
+                            )
+
+                            onArchiveProject(project.id, {
+                              archive_reason,
+                              lost_amount: Number(lost_amount || project.sale_value || 0),
+                              archive_notes,
+                            })
+                          }}
+                        >
+                          Archivar
+                        </button>
+                      )}
                     </div>
                   </article>
                 )

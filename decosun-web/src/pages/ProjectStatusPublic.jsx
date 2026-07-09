@@ -82,8 +82,6 @@ export default function ProjectStatusPublic() {
       setLoading(false)
       return
     }
-    console.log("PROJECT STATUS:", data)
-
     setProject(data)
     setLoading(false)
   }

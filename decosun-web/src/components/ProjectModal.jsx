@@ -124,7 +124,7 @@ function timeAgo(dateString) {
 }
 
 export default function ProjectModal({ project, profile, onClose, onSave }) {
-  const [tab, setTab] = useState("general")
+  const [tab, setTab] = useState("resumen")
   const [form, setForm] = useState(null)
   const [history, setHistory] = useState([])
   const [loadingHistory, setLoadingHistory] = useState(false)
@@ -156,7 +156,7 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
   useEffect(() => {
     if (!project) return
 
-    setTab("general")
+    setTab("resumen")
 
     setForm({
       title: project.title || "",
@@ -515,11 +515,42 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
     )
   }
 
+  async function copyPublicStatusURL() {
+    if (!publicStatusURL) {
+      alert("Este proyecto aun no tiene enlace publico disponible.")
+      return
+    }
+
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error("Clipboard no disponible")
+      }
+
+      await navigator.clipboard.writeText(publicStatusURL)
+      alert("Enlace copiado.")
+    } catch (error) {
+      console.error(error)
+      window.prompt("Copia manualmente este enlace:", publicStatusURL)
+    }
+  }
+
   function sendClientUpdateWhatsApp() {
     const phone = cleanPhone(form.contact_phone)
 
     if (!phone) {
       alert("Este proyecto no tiene teléfono registrado.")
+      return
+    }
+
+    if (!savedPublicStatusURL) {
+      alert("Este proyecto aun no tiene enlace publico disponible.")
+      return
+    }
+
+    if (hasUnsavedClientChanges) {
+      alert(
+        "Primero guarda la ficha para que el cliente vea el estado publico actualizado."
+      )
       return
     }
 
@@ -529,11 +560,9 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
         "",
         `Queremos informarle que su proyecto DecoSun ha sido actualizado.`,
         "",
-        `Estado actual: ${form.client_visible_status || "En revisión"}.`,
+        `Estado actual: ${savedClientVisibleStatus}.`,
         "",
-        publicStatusURL
-          ? `Puede revisar el avance aquí:\n${publicStatusURL}`
-          : "",
+        `Puede revisar el avance aqui:\n${savedPublicStatusURL}`,
         "",
         "Muchas gracias por confiar en DecoSun.",
       ]
@@ -729,6 +758,19 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
     ? `${window.location.origin}/estado/${form.public_token}`
     : ""
 
+  const savedPublicStatusURL = project?.public_token
+    ? `${window.location.origin}/estado/${project.public_token}`
+    : ""
+
+  const savedClientVisibleStatus =
+    project?.client_visible_status || "Cotizacion recibida"
+
+  const hasUnsavedClientChanges =
+    String(form?.client_visible_status || "") !==
+    String(project?.client_visible_status || "") ||
+    String(form?.public_token || "") !== String(project?.public_token || "") ||
+    String(form?.summary || "") !== String(project?.summary || "")
+
   if (!project || !form) return null
 
   return (
@@ -752,36 +794,18 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
         <div className="modal-tabs">
           <button
             type="button"
-            className={tab === "general" ? "active" : ""}
-            onClick={() => setTab("general")}
+            className={tab === "resumen" ? "active" : ""}
+            onClick={() => setTab("resumen")}
           >
-            General
+            Resumen
           </button>
 
           <button
             type="button"
-            className={tab === "visita" ? "active" : ""}
-            onClick={() => setTab("visita")}
+            className={tab === "operacion" ? "active" : ""}
+            onClick={() => setTab("operacion")}
           >
-            Visita
-          </button>
-
-          {canSeeAdvisorTab && (
-            <button
-              type="button"
-              className={tab === "asesor" ? "active" : ""}
-              onClick={() => setTab("asesor")}
-            >
-              Asesor comercial
-            </button>
-          )}
-
-          <button
-            type="button"
-            className={tab === "cliente" ? "active" : ""}
-            onClick={() => setTab("cliente")}
-          >
-            Vista cliente
+            Operacion
           </button>
 
           {canSeeFinance && (
@@ -794,7 +818,25 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
             </button>
           )}
 
-          {canSeeCommissions && (
+          <button
+            type="button"
+            className={tab === "cliente" ? "active" : ""}
+            onClick={() => setTab("cliente")}
+          >
+            Cliente
+          </button>
+
+          {canSeeFinance && (
+            <button
+              type="button"
+              className={tab === "compras" ? "active" : ""}
+              onClick={() => setTab("compras")}
+            >
+              Compras
+            </button>
+          )}
+
+          {false && canSeeCommissions && (
             <button
               type="button"
               className={tab === "comisiones" ? "active" : ""}
@@ -804,7 +846,7 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
             </button>
           )}
 
-          {canSeeCosts && (
+          {false && canSeeCosts && (
             <button
               type="button"
               className={tab === "costos" ? "active" : ""}
@@ -823,7 +865,7 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
           </button>
         </div>
 
-        {tab === "general" && (
+        {tab === "resumen" && (
           <div className="modal-grid">
             <label>
               Cliente / Proyecto
@@ -956,7 +998,7 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
           </div>
         )}
 
-        {tab === "visita" && (
+        {tab === "operacion" && (
           <div className="modal-grid">
             <label>
               Fecha visita
@@ -973,6 +1015,47 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
                 type="time"
                 value={form.visit_time || ""}
                 onChange={(e) => updateField("visit_time", e.target.value)}
+              />
+            </label>
+
+            <label>
+              Tecnico / responsable operativo
+              <input
+                value={form.technician_assigned}
+                disabled={isAdvisor}
+                onChange={(e) =>
+                  updateField("technician_assigned", e.target.value)
+                }
+              />
+            </label>
+
+            <label>
+              Medicion / fecha clave
+              <input
+                type="date"
+                value={form.key_date || ""}
+                disabled={isAdvisor}
+                onChange={(e) => updateField("key_date", e.target.value)}
+              />
+            </label>
+
+            <label>
+              Fecha venta
+              <input
+                type="date"
+                value={form.sale_date || ""}
+                disabled={isAdvisor}
+                onChange={(e) => updateField("sale_date", e.target.value)}
+              />
+            </label>
+
+            <label>
+              Documento / facturacion
+              <input
+                type="date"
+                value={form.invoice_date || ""}
+                disabled={isAdvisor}
+                onChange={(e) => updateField("invoice_date", e.target.value)}
               />
             </label>
 
@@ -1122,6 +1205,18 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
 
         {tab === "cliente" && (
           <div className="modal-grid">
+            <div className="full-field client-visible-note">
+              <strong>Esta informacion es visible para el cliente.</strong>
+              <p>
+                Revisa estado, enlace publico y mensaje antes de compartir el
+                seguimiento.
+              </p>
+              <p>
+                Los cambios del estado publico se reflejan en el enlace del
+                cliente despues de guardar la ficha.
+              </p>
+            </div>
+
             <label>
               Estado visible para cliente
               <select
@@ -1148,6 +1243,19 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
               </label>
             )}
 
+            {!publicStatusURL && (
+              <div className="full-field legacy-panel">
+                Este proyecto aun no tiene enlace publico disponible.
+              </div>
+            )}
+
+            {publicStatusURL && (
+              <div className="full-field public-link-box">
+                <span>Enlace publico</span>
+                <strong>{publicStatusURL}</strong>
+              </div>
+            )}
+
             {publicStatusURL && (
               <div className="full-field flex flex-wrap gap-3">
                 <a
@@ -1162,10 +1270,7 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
                 <button
                   type="button"
                   className="secondary-btn"
-                  onClick={() => {
-                    navigator.clipboard.writeText(publicStatusURL)
-                    alert("Enlace copiado")
-                  }}
+                  onClick={copyPublicStatusURL}
                 >
                   Copiar enlace
                 </button>
@@ -1193,6 +1298,31 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
 
         {tab === "finanzas" && canSeeFinance && (
           <div className="modal-grid">
+            <div className="full-field modal-section-heading">
+              <span>Finance Engine</span>
+              <strong>Pagos confirmados y saldo desde el motor financiero.</strong>
+            </div>
+
+            <div className="balance-box finance-focus">
+              <span>Valor venta</span>
+              <strong>{money(form.sale_value)}</strong>
+            </div>
+
+            <div className="balance-box finance-focus">
+              <span>Recibido confirmado</span>
+              <strong>{money(form.amount_paid_cached)}</strong>
+            </div>
+
+            <div className="balance-box finance-focus">
+              <span>Saldo pendiente</span>
+              <strong>{money(form.balance_cached)}</strong>
+            </div>
+
+            <div className="balance-box finance-focus">
+              <span>Estado financiero</span>
+              <strong>{formatFinanceStatus(getFinanceStatus(form))}</strong>
+            </div>
+
             <label>
               Valor aceptado / OC
               <input
@@ -1207,12 +1337,137 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
               <strong>{money(Number(form.sale_value || 0) * 0.5)}</strong>
             </div>
 
-            <div className="full-field balance-box">
+            <div className="full-field modal-section-heading">
+              <span>Asesor y comision</span>
+              <strong>Configuracion comercial asociada al proyecto.</strong>
+            </div>
+
+            {canSeeAdvisorTab && (
+              <>
+                <label>
+                  Asesor comercial
+                  <select
+                    value={form.advisor_id || ""}
+                    onChange={(e) => handleAdvisorChange(e.target.value)}
+                  >
+                    <option value="">Sin asesor asignado</option>
+
+                    {advisors.map((advisor) => (
+                      <option key={advisor.id} value={advisor.id}>
+                        {advisor.full_name} - {advisor.region_label || advisor.region_code}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label>
+                  Nombre asesor
+                  <input
+                    value={form.advisor_name}
+                    onChange={(e) => updateField("advisor_name", e.target.value)}
+                  />
+                </label>
+
+                <label>
+                  Region asesor
+                  <input
+                    value={form.advisor_region}
+                    onChange={(e) => updateField("advisor_region", e.target.value)}
+                  />
+                </label>
+              </>
+            )}
+
+            {canSeeCommissions && (
+              <>
+                <label>
+                  % comision estimada
+                  <input
+                    type="number"
+                    value={form.advisor_commission_rate}
+                    onChange={(e) =>
+                      updateField("advisor_commission_rate", e.target.value)
+                    }
+                  />
+                </label>
+
+                <label>
+                  Tipo comision
+                  <select
+                    value={form.advisor_commission_type}
+                    onChange={(e) =>
+                      updateField("advisor_commission_type", e.target.value)
+                    }
+                  >
+                    <option value="base">Base</option>
+                    <option value="especial">Especial</option>
+                    <option value="sin_comision">Sin comision</option>
+                  </select>
+                </label>
+
+                <div className="balance-box">
+                  <span>Comision estimada</span>
+                  <strong>{money(calculateAdvisorCommission())}</strong>
+                </div>
+              </>
+            )}
+
+            {canSeeCosts && (
+              <>
+                <div className="full-field modal-section-heading legacy-heading">
+                  <span>Costos manuales legacy / referencia</span>
+                  <strong>
+                    Los costos reales deben venir desde Compras e Inventario.
+                  </strong>
+                </div>
+
+                <label className="legacy-field">
+                  Tela
+                  <input
+                    type="number"
+                    value={form.fabric_cost}
+                    onChange={(e) => updateField("fabric_cost", e.target.value)}
+                  />
+                </label>
+
+                <label className="legacy-field">
+                  Motores
+                  <input
+                    type="number"
+                    value={form.motor_cost}
+                    onChange={(e) => updateField("motor_cost", e.target.value)}
+                  />
+                </label>
+
+                <label className="legacy-field">
+                  Mecanismos
+                  <input
+                    type="number"
+                    value={form.mechanism_cost}
+                    onChange={(e) =>
+                      updateField("mechanism_cost", e.target.value)
+                    }
+                  />
+                </label>
+
+                <div className="balance-box legacy-field">
+                  <span>Total costos manuales</span>
+                  <strong>{money(totalCosts)}</strong>
+                </div>
+
+                <div className="balance-box legacy-field">
+                  <span>Margen estimado manual</span>
+                  <strong>{money(estimatedMargin)}</strong>
+                </div>
+              </>
+            )}
+
+            <div className="full-field balance-box legacy-panel">
               <span>Información histórica de pagos</span>
               <strong>Los nuevos pagos se registran desde Nuevo registro de pagos.</strong>
             </div>
 
-            <label>
+            <label className="legacy-field">
               Abono registrado anteriormente
               <input
                 type="number"
@@ -1222,12 +1477,12 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
               />
             </label>
 
-            <div className="balance-box">
+            <div className="balance-box legacy-field">
               <span>Saldo pendiente</span>
               <strong>{money(balance)}</strong>
             </div>
 
-            <label>
+            <label className="legacy-field">
               Estado anterior
               <select
                 value={form.payment_status}
@@ -1241,7 +1496,7 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
               </select>
             </label>
 
-            <label>
+            <label className="legacy-field">
               Banco registrado anteriormente
               <input
                 value={form.payment_bank}
@@ -1250,7 +1505,7 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
               />
             </label>
 
-            <div className="full-field flex flex-wrap gap-3">
+            <div className="full-field flex flex-wrap gap-3 legacy-field">
               <button
                 type="button"
                 className="secondary-btn"
@@ -1281,26 +1536,6 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
 
             <div className="full-field">
               <h3>Cartola financiera (Beta)</h3>
-            </div>
-
-            <div className="balance-box">
-              <span>Valor venta</span>
-              <strong>{money(form.sale_value)}</strong>
-            </div>
-
-            <div className="balance-box">
-              <span>Pagado confirmado</span>
-              <strong>{money(form.amount_paid_cached)}</strong>
-            </div>
-
-            <div className="balance-box">
-              <span>Saldo pendiente</span>
-              <strong>{money(form.balance_cached)}</strong>
-            </div>
-
-            <div className="balance-box">
-              <span>Estado financiero</span>
-              <strong>{formatFinanceStatus(getFinanceStatus(form))}</strong>
             </div>
 
             <div className="full-field treasury-table">
@@ -1574,6 +1809,24 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
             <div className="balance-box">
               <span>Margen estimado</span>
               <strong>{money(estimatedMargin)}</strong>
+            </div>
+          </div>
+        )}
+
+        {tab === "compras" && (
+          <div className="modal-grid">
+            <div className="full-field client-visible-note">
+              <strong>Compras asociadas proximamente.</strong>
+              <p>
+                En una siguiente fase esta ficha mostrara solicitudes,
+                proveedor, monto, estado de aprobacion, pago y recepcion
+                vinculados al proyecto.
+              </p>
+            </div>
+
+            <div className="balance-box">
+              <span>Fuente futura</span>
+              <strong>Compras - Inventario - Proyecto</strong>
             </div>
           </div>
         )}

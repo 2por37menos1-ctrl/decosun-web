@@ -2,6 +2,7 @@ import "../panel.css"
 import { useEffect, useMemo, useState } from "react"
 
 import DashboardLayout from "../layouts/DashboardLayout"
+import ExecutiveMetricCard from "../components/ExecutiveMetricCard"
 import StatCard from "../components/StatCard"
 import KanbanBoard from "../components/KanbanBoard"
 import ProjectModal from "../components/ProjectModal"
@@ -504,6 +505,35 @@ export default function Dashboard() {
     0
   )
 
+  const mainRegion = regionSalesStats[0]
+
+  const executiveAttentionItems = [
+    ...projectsWithoutMovement.slice(0, 2).map((project) => ({
+      type: "Cliente sin movimiento",
+      title: project.title || project.contact_name || "Proyecto sin nombre",
+      detail: `${daysSince(project.updated_at)} dias sin actualizacion`,
+      status: "warning",
+    })),
+    ...installationsWithoutDate.slice(0, 1).map((project) => ({
+      type: "Instalacion pendiente",
+      title: project.title || project.contact_name || "Proyecto sin nombre",
+      detail: "Sin fecha definida",
+      status: "critical",
+    })),
+    ...pendingBalanceProjects.slice(0, 1).map((project) => ({
+      type: "Pago pendiente",
+      title: project.title || project.contact_name || "Proyecto sin nombre",
+      detail: formatMoney(getProjectBalance(project)),
+      status: "warning",
+    })),
+    ...purchaseProjects.slice(0, 1).map((project) => ({
+      type: "Compra pendiente",
+      title: project.title || project.contact_name || "Proyecto sin nombre",
+      detail: "En etapa compras",
+      status: "neutral",
+    })),
+  ].slice(0, 5)
+
   const iquiqueSalesProjects = projects.filter(
     (project) =>
       project.region_code === "iquique" &&
@@ -774,6 +804,187 @@ export default function Dashboard() {
 
       {view === "inicio" && (
         <>
+          <section className="executive-compact-hero">
+            <div>
+              <span>Dashboard ejecutivo</span>
+              <h2>Resumen Julio 2026</h2>
+              <p>Vista compacta para decidir; el analisis vive en los modulos.</p>
+            </div>
+
+            <div className="executive-compact-actions">
+              <button
+                type="button"
+                className="secondary-btn"
+                onClick={() => navigatePanel("comercial")}
+              >
+                Ver Comercial
+              </button>
+
+              {canViewTreasury(profile) && (
+                <button
+                  type="button"
+                  className="secondary-btn"
+                  onClick={() => navigatePanel("finanzas")}
+                >
+                  Ver Finanzas
+                </button>
+              )}
+            </div>
+          </section>
+
+          <section className="dashboard-section dashboard-section-compact">
+            <div className="section-heading compact">
+              <div>
+                <h2>Salud financiera</h2>
+                <p>Cuatro senales para entender caja y cobranza sin entrar al detalle.</p>
+              </div>
+            </div>
+
+            <div className="executive-metric-grid executive-metric-grid-primary">
+              <ExecutiveMetricCard
+                title="Venta mes"
+                value={formatMoney(visibleTotalSold)}
+                description="Venta comprometida actual."
+                status="neutral"
+                indicator="Venta"
+                compact
+              />
+
+              <ExecutiveMetricCard
+                title="Cobrado"
+                value={formatMoney(visibleTotalPaid)}
+                description={`${paymentProgress.toFixed(0)}% de avance.`}
+                status="positive"
+                indicator="Caja"
+                compact
+              />
+
+              <ExecutiveMetricCard
+                title="Pendiente cobrar"
+                value={formatMoney(visibleBalance)}
+                description={`${pendingBalanceProjects.length} proyectos con saldo.`}
+                status={visibleBalance > 0 ? "warning" : "positive"}
+                indicator="Saldo"
+                compact
+              />
+
+              <ExecutiveMetricCard
+                title="Caja proyectada"
+                value="Sin datos"
+                description="Pendiente de configurar desde Finanzas."
+                status="neutral"
+                indicator="Futuro"
+                compact
+              />
+            </div>
+          </section>
+
+          <div className="executive-mini-grid">
+            <section className="executive-mini-panel">
+              <div className="mini-panel-header">
+                <h3>Comercial</h3>
+                <span>{opportunityProjects.length} oportunidades</span>
+              </div>
+
+              <dl>
+                <div>
+                  <dt>Proyectos activos</dt>
+                  <dd>{activeProjectsCount}</dd>
+                </div>
+
+                <div>
+                  <dt>Oportunidades</dt>
+                  <dd>{opportunityProjects.length}</dd>
+                </div>
+
+                <div>
+                  <dt>Region principal</dt>
+                  <dd>{mainRegion?.region || "Sin datos"}</dd>
+                </div>
+              </dl>
+            </section>
+
+            <section className="executive-mini-panel">
+              <div className="mini-panel-header">
+                <h3>Operaciones</h3>
+                <span>{productionProjects.length + purchaseProjects.length} pendientes</span>
+              </div>
+
+              <dl>
+                <div>
+                  <dt>Produccion</dt>
+                  <dd>{productionProjects.length}</dd>
+                </div>
+
+                <div>
+                  <dt>Compras</dt>
+                  <dd>{purchaseProjects.length}</dd>
+                </div>
+
+                <div>
+                  <dt>Instalaciones</dt>
+                  <dd>{installationProjects.length}</dd>
+                </div>
+              </dl>
+            </section>
+
+            <section className="executive-mini-panel">
+              <div className="mini-panel-header">
+                <h3>Finanzas</h3>
+                <span>{pendingBalanceProjects.length} saldos</span>
+              </div>
+
+              <dl>
+                <div>
+                  <dt>Compromisos</dt>
+                  <dd>Sin datos</dd>
+                </div>
+
+                <div>
+                  <dt>Alertas</dt>
+                  <dd>{executiveAttentionItems.length}</dd>
+                </div>
+
+                <div>
+                  <dt>Saldo pendiente</dt>
+                  <dd>{formatMoney(visibleBalance)}</dd>
+                </div>
+              </dl>
+            </section>
+          </div>
+
+          <section className="executive-attention-panel">
+            <div className="section-heading compact">
+              <div>
+                <h2>Requieren atencion</h2>
+                <p>Maximo 5 senales para decidir la siguiente accion.</p>
+              </div>
+            </div>
+
+            {executiveAttentionItems.length > 0 ? (
+              <div className="attention-list">
+                {executiveAttentionItems.map((item, index) => (
+                  <article
+                    key={`${item.type}-${item.title}-${index}`}
+                    className={`attention-item is-${item.status}`}
+                  >
+                    <span>{item.type}</span>
+
+                    <div>
+                      <strong>{item.title}</strong>
+                      <small>{item.detail}</small>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="attention-empty">
+                Sin alertas gerenciales relevantes con los datos actuales.
+              </div>
+            )}
+          </section>
+
+          <div className="dashboard-legacy-detail" hidden>
           <div className="executive-filters">
             <div className="filter-field wide">
               <label>Buscar proyecto</label>
@@ -867,25 +1078,53 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="stats-grid">
-              <StatCard
+            <div className="executive-metric-grid">
+              <ExecutiveMetricCard
+                title="Venta comprometida"
+                value={formatMoney(visibleTotalSold)}
+                description="Base comercial vigente del periodo filtrado."
+                status="neutral"
+                indicator="Venta"
+              />
+
+              <ExecutiveMetricCard
                 title="Venta cerrada"
                 value={formatMoney(closedSalesTotal)}
+                description="Proyectos marcados como cerrados."
+                status="positive"
+                indicator="Cierre"
               />
 
-              <StatCard
+              <ExecutiveMetricCard
                 title="Cobrado"
                 value={formatMoney(visibleTotalPaid)}
+                description="Pagos confirmados o cache financiero disponible."
+                status="positive"
+                indicator="Caja"
               />
 
-              <StatCard
+              <ExecutiveMetricCard
                 title="Pendiente por cobrar"
                 value={formatMoney(visibleBalance)}
+                description={`${pendingBalanceProjects.length} proyectos con saldo.`}
+                status={visibleBalance > 0 ? "warning" : "positive"}
+                indicator="Saldo"
               />
 
-              <StatCard
-                title="Avance de cobro"
-                value={`${paymentProgress.toFixed(0)}%`}
+              <ExecutiveMetricCard
+                title="Caja proyectada"
+                value="Pendiente de configurar"
+                description="Disponible gerencial debe venir desde Finanzas."
+                status="neutral"
+                indicator="Futuro"
+              />
+
+              <ExecutiveMetricCard
+                title="Compromisos proximos"
+                value="Sin datos"
+                description="Se conectara cuando el modulo exponga vencimientos."
+                status="neutral"
+                indicator="Agenda"
               />
             </div>
           </section>
@@ -898,25 +1137,37 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="stats-grid">
-              <StatCard
+            <div className="executive-metric-grid">
+              <ExecutiveMetricCard
                 title="Proyectos activos"
                 value={activeProjectsCount}
+                description="Proyectos abiertos en el flujo comercial."
+                status="neutral"
+                indicator="Activos"
               />
 
-              <StatCard
+              <ExecutiveMetricCard
                 title="Oportunidades"
                 value={opportunityProjects.length}
+                description="Agendados, cotizados o en seguimiento."
+                status="positive"
+                indicator="Pipeline"
               />
 
-              <StatCard
-                title="En seguimiento"
-                value={followUpProjects.length}
+              <ExecutiveMetricCard
+                title="Sin movimiento"
+                value={projectsWithoutMovement.length}
+                description="Casos sin actualizacion hace 7 dias o mas."
+                status={projectsWithoutMovement.length > 0 ? "warning" : "positive"}
+                indicator="Follow-up"
               />
 
-              <StatCard
-                title="Asesores activos"
-                value={commercialTotals.activeAdvisors}
+              <ExecutiveMetricCard
+                title="Regiones con venta"
+                value={regionSalesStats.length || "Sin datos"}
+                description="Lectura disponible desde ventas por region."
+                status="neutral"
+                indicator="Region"
               />
             </div>
           </section>
@@ -929,25 +1180,37 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="stats-grid">
-              <StatCard
+            <div className="executive-metric-grid">
+              <ExecutiveMetricCard
                 title="Produccion pendiente"
                 value={productionProjects.length}
+                description="Proyectos actualmente en estado produccion."
+                status={productionProjects.length > 0 ? "warning" : "positive"}
+                indicator="Produccion"
               />
 
-              <StatCard
+              <ExecutiveMetricCard
                 title="Compras pendientes"
                 value={purchaseProjects.length}
+                description="Proyectos en etapa compras."
+                status={purchaseProjects.length > 0 ? "warning" : "positive"}
+                indicator="Compras"
               />
 
-              <StatCard
-                title="Instalaciones"
+              <ExecutiveMetricCard
+                title="Instalaciones proximas"
                 value={installationProjects.length}
+                description="Proyectos listos para coordinar o ejecutar."
+                status="neutral"
+                indicator="Agenda"
               />
 
-              <StatCard
-                title="Visitas pendientes"
-                value={advisorPendingVisits}
+              <ExecutiveMetricCard
+                title="Instalaciones sin fecha"
+                value={installationsWithoutDate.length}
+                description="Requieren fecha operativa visible."
+                status={installationsWithoutDate.length > 0 ? "critical" : "positive"}
+                indicator="Fecha"
               />
             </div>
           </section>
@@ -960,25 +1223,37 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="stats-grid">
-              <StatCard
+            <div className="executive-alert-grid">
+              <ExecutiveMetricCard
                 title="Saldos pendientes"
                 value={pendingBalanceProjects.length}
+                description={`${formatMoney(visibleBalance)} pendiente por cobrar.`}
+                status={visibleBalance > 0 ? "warning" : "positive"}
+                indicator="Cobranza"
               />
 
-              <StatCard
-                title="Sin movimiento 7+ dias"
+              <ExecutiveMetricCard
+                title="Clientes sin movimiento"
                 value={projectsWithoutMovement.length}
+                description="Ayuda a priorizar llamadas y seguimiento."
+                status={projectsWithoutMovement.length > 0 ? "warning" : "positive"}
+                indicator="Gestion"
               />
 
-              <StatCard
-                title="Instalaciones sin fecha"
+              <ExecutiveMetricCard
+                title="Fechas criticas"
                 value={installationsWithoutDate.length}
+                description="Instalaciones en curso sin fecha definida."
+                status={installationsWithoutDate.length > 0 ? "critical" : "positive"}
+                indicator="Operacion"
               />
 
-              <StatCard
+              <ExecutiveMetricCard
                 title="Compromisos proximos"
-                value="Ver Finanzas"
+                value="Pendiente de configurar"
+                description="No hay vencimientos disponibles en esta vista."
+                status="neutral"
+                indicator="Finanzas"
               />
             </div>
           </section>
@@ -1136,6 +1411,7 @@ export default function Dashboard() {
             </>
           )}
 
+          </div>
         </>
       )}
 
