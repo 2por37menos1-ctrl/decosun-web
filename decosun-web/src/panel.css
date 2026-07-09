@@ -1268,6 +1268,117 @@ button {
   gap: 18px;
 }
 
+.finance-hidden {
+  display: none !important;
+}
+
+.finance-filter-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.finance-filter-row {
+  display: grid;
+  gap: 12px;
+}
+
+.finance-filter-row-primary {
+  grid-template-columns: 180px repeat(3, minmax(160px, 1fr));
+}
+
+.finance-filter-row-secondary {
+  grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr) minmax(240px, 2fr);
+}
+
+.finance-filter-panel input,
+.finance-filter-panel select {
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 14px;
+  padding: 13px 15px;
+  font-size: 14px;
+}
+
+.finance-overview {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.finance-overview-group {
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  padding: 18px;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.05);
+}
+
+.finance-overview-group.is-projected {
+  background: #f8fafc;
+}
+
+.finance-overview-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.finance-overview-heading span {
+  color: #111827;
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.finance-overview-heading strong {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.finance-summary-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.finance-legacy-summary {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.finance-ledger th {
+  white-space: nowrap;
+}
+
+.finance-ledger td:nth-child(6),
+.finance-ledger td:nth-child(7) {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.finance-ledger-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.finance-commitments-panel .treasury-summary {
+  margin-bottom: 20px;
+}
+
+.finance-tool-panel {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  padding: 14px;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+}
+
+.finance-tool-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 .treasury-table {
   background: white;
   border-radius: 24px;
@@ -1373,6 +1484,14 @@ button {
   }
 
   .treasury-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .finance-overview,
+  .finance-filter-row-primary,
+  .finance-filter-row-secondary,
+  .finance-summary-grid,
+  .finance-legacy-summary {
     grid-template-columns: 1fr;
   }
 

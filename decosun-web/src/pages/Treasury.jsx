@@ -70,6 +70,13 @@ const commissionRegions = [
   { value: "la_serena", label: "La Serena" },
 ]
 
+const financeToolTabs = [
+  { id: "bankTransfer", label: "Traspaso cuentas" },
+  { id: "companyTransfer", label: "Entre empresas" },
+  { id: "intercompany", label: "Pago por cuenta" },
+  { id: "loans", label: "Prestamos" },
+]
+
 function money(value) {
   return `$${Number(value || 0).toLocaleString("es-CL")}`
 }
@@ -103,7 +110,8 @@ function getProjectedReceivable(project) {
 }
 
 export default function Treasury() {
-  const [view, setView] = useState("movements")
+  const [view, setView] = useState("cartola")
+  const [activeTool, setActiveTool] = useState("bankTransfer")
   const [movements, setMovements] = useState([])
   const [loans, setLoans] = useState([])
   const [intercompanyPayments, setIntercompanyPayments] = useState([])
@@ -130,6 +138,7 @@ export default function Treasury() {
     category: "all",
     financial_group: "all",
     month: currentMonth(),
+    search: "",
   })
 
   const [commissionFilters, setCommissionFilters] = useState({
@@ -1110,13 +1119,32 @@ export default function Treasury() {
       !filters.month ||
       movement.date?.startsWith(filters.month)
 
+    const searchText = String(filters.search || "").trim().toLowerCase()
+    const matchesSearch =
+      !searchText ||
+      [
+        movement.description,
+        movement.category,
+        movement.subcategory,
+        movement.company_name,
+        movement.bank,
+        movement.person_name,
+        movement.notes,
+        movement.source_module,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase()
+        .includes(searchText)
+
     return (
       matchesCompany &&
       matchesBank &&
       matchesType &&
       matchesCategory &&
       matchesFinancialGroup &&
-      matchesMonth
+      matchesMonth &&
+      matchesSearch
     )
   })
 
@@ -1222,6 +1250,15 @@ export default function Treasury() {
       ? (pendingCommitments / cashBalance) * 100
       : 0
 
+  const upcomingCommitments = [...commitments]
+    .filter((commitment) => commitment.status !== "pagado" && commitment.status !== "anulado")
+    .sort((a, b) =>
+      String(a.due_date || a.date || a.created_at || "").localeCompare(
+        String(b.due_date || b.date || b.created_at || "")
+      )
+    )
+    .slice(0, 8)
+
   const commissionTotals = useMemo(() => {
     const totals = commissionSummary.reduce(
       (acc, item) => ({
@@ -1286,27 +1323,16 @@ export default function Treasury() {
     <section className="treasury-page">
       <div className="dashboard-header">
         <div>
-          <h2>Tesorería</h2>
-          <p>Flujo de caja, empresas, bancos y préstamos internos.</p>
+          <h2>Finanzas</h2>
+          <p>Cartola gerencial, caja real y proyección operativa.</p>
         </div>
 
         <div className="view-actions">
           <button
-            className={view === "movements" ? "primary-btn" : "secondary-btn"}
-            onClick={() => setView("movements")}
+            className={view === "cartola" ? "primary-btn" : "secondary-btn"}
+            onClick={() => setView("cartola")}
           >
-            Movimientos
-          </button>
-
-          <button
-            className={
-              view === "reconciliation"
-                ? "primary-btn"
-                : "secondary-btn"
-            }
-            onClick={() => setView("reconciliation")}
-          >
-            Conciliación
+            Cartola
           </button>
 
           {canViewCommissionReports(profile) && (
@@ -1319,40 +1345,31 @@ export default function Treasury() {
           )}
 
           <button
-            className={view === "transfers" ? "primary-btn" : "secondary-btn"}
-            onClick={() => setView("transfers")}
+            className={view === "commitments" ? "primary-btn" : "secondary-btn"}
+            onClick={() => setView("commitments")}
           >
-            Traspasos
+            Compromisos
           </button>
 
           <button
-            className={view === "companyTransfer" ? "primary-btn" : "secondary-btn"}
-            onClick={() => setView("companyTransfer")}
+            className={view === "tools" ? "primary-btn" : "secondary-btn"}
+            onClick={() => setView("tools")}
           >
-            Entre empresas
+            Herramientas
           </button>
-
-          <button
-            className={view === "intercompany" ? "primary-btn" : "secondary-btn"}
-            onClick={() => setView("intercompany")}
-          >
-            Pagos por cuenta
-          </button>
-
-          {canViewInternalLoans(profile) && (
-            <button
-              className={view === "loans" ? "primary-btn" : "secondary-btn"}
-              onClick={() => setView("loans")}
-            >
-              Préstamos internos
-            </button>
-          )}
         </div>
       </div>
 
-      {view !== "commissions" && (
+      {(view === "cartola" || view === "tools") && (
         <>
-      <div className="dashboard-filters">
+      <div className="finance-filter-panel">
+        <div className="finance-filter-row finance-filter-row-primary">
+        <input
+          type="month"
+          value={filters.month}
+          onChange={(e) => updateFilter("month", e.target.value)}
+        />
+
         <select
           value={filters.company_name}
           onChange={(e) => updateFilter("company_name", e.target.value)}
@@ -1385,7 +1402,9 @@ export default function Treasury() {
           <option value="ingreso">Ingresos</option>
           <option value="egreso">Egresos</option>
         </select>
+        </div>
 
+        <div className="finance-filter-row finance-filter-row-secondary">
         <select
           value={filters.category}
           onChange={(e) => updateFilter("category", e.target.value)}
@@ -1411,14 +1430,89 @@ export default function Treasury() {
         </select>
 
         <input
-          type="month"
-          value={filters.month}
-          onChange={(e) => updateFilter("month", e.target.value)}
+          placeholder="Buscar movimiento, origen o nota"
+          value={filters.search}
+          onChange={(e) => updateFilter("search", e.target.value)}
         />
+        </div>
       </div>
 
+      <div className="finance-overview">
+        <section className="finance-overview-group">
+          <div className="finance-overview-heading">
+            <span>Caja Real</span>
+            <strong>Solo movimientos reales registrados</strong>
+          </div>
+
+          <div className="treasury-summary finance-summary-grid">
+            <div className="stat-card">
+              <span>Ingresos caja</span>
+              <h2>{money(cashIncome)}</h2>
+            </div>
+
+            <div className="stat-card">
+              <span>Egresos caja</span>
+              <h2>{money(cashExpense)}</h2>
+            </div>
+
+            <div className="stat-card">
+              <span>Resultado caja</span>
+              <h2>{money(cashBalance)}</h2>
+            </div>
+          </div>
+        </section>
+
+        <section className="finance-overview-group is-projected">
+          <div className="finance-overview-heading">
+            <span>Proyeccion Gerencial</span>
+            <strong>Proyectado no es saldo banco</strong>
+          </div>
+
+          <div className="treasury-summary finance-summary-grid">
+            <div className="stat-card">
+              <span>Por cobrar clientes</span>
+              <h2>{money(expectedIncome)}</h2>
+            </div>
+
+            <div className="stat-card">
+              <span>Compromisos pendientes</span>
+              <h2>{money(pendingCommitments)}</h2>
+            </div>
+
+            <div className="stat-card">
+              <span>Caja proyectada</span>
+              <h2>{money(projectedCash)}</h2>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      {canViewTreasuryTotals(profile) && (
+        <div className="treasury-summary finance-legacy-summary">
+          <div className="stat-card">
+            <span>Ventas reales</span>
+            <h2>{money(operationalIncome)}</h2>
+          </div>
+
+          <div className="stat-card">
+            <span>Resultado operacional</span>
+            <h2>{money(operationalResult)}</h2>
+          </div>
+
+          <div className="stat-card">
+            <span>Prestamos abiertos</span>
+            <h2>{money(openLoanBalance)}</h2>
+          </div>
+
+          <div className="stat-card">
+            <span>Dinero comprometido</span>
+            <h2>{committedPercentage.toFixed(0)}%</h2>
+          </div>
+        </div>
+      )}
+
       <div
-        className="treasury-summary"
+        className="treasury-summary finance-hidden"
         style={{ marginBottom: "24px" }}
       >
         <div className="stat-card">
@@ -1450,7 +1544,7 @@ export default function Treasury() {
       </div>
 
       {canViewTreasuryTotals(profile) && (
-        <div className="treasury-summary">
+        <div className="treasury-summary finance-hidden">
           <div className="stat-card">
             <span>Ingresos de caja</span>
             <h2>{money(cashIncome)}</h2>
@@ -1484,6 +1578,61 @@ export default function Treasury() {
       )}
 
         </>
+      )}
+
+      {view === "commitments" && (
+        <section className="treasury-table finance-commitments-panel">
+          <div className="dashboard-header">
+            <div>
+              <h2>Compromisos</h2>
+              <p>Lectura simple de compromisos financieros. No afecta caja real hasta pagarse.</p>
+            </div>
+          </div>
+
+          <div className="treasury-summary finance-summary-grid">
+            <div className="stat-card">
+              <span>Total pendiente</span>
+              <h2>{money(pendingCommitments)}</h2>
+            </div>
+
+            <div className="stat-card">
+              <span>PrÃ³ximos compromisos</span>
+              <h2>{upcomingCommitments.length}</h2>
+            </div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Vencimiento</th>
+                <th>Tipo</th>
+                <th>Empresa</th>
+                <th>Detalle</th>
+                <th>Monto</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {upcomingCommitments.length === 0 && (
+                <tr>
+                  <td colSpan="6">Sin compromisos pendientes cargados.</td>
+                </tr>
+              )}
+
+              {upcomingCommitments.map((commitment) => (
+                <tr key={commitment.id}>
+                  <td>{commitment.due_date || commitment.date || "-"}</td>
+                  <td>{commitment.type || commitment.category || "-"}</td>
+                  <td>{commitment.company_name || "-"}</td>
+                  <td>{commitment.description || commitment.notes || "-"}</td>
+                  <td>{money(commitment.amount)}</td>
+                  <td>{commitment.status || "pendiente"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
       )}
 
       {view === "commissions" && canViewCommissionReports(profile) && (
@@ -1901,13 +2050,13 @@ export default function Treasury() {
         </div>
       )}
 
-      {view === "reconciliation" && (
-        <section className="treasury-table">
+      {view === "cartola" && (
+        <section className="treasury-table finance-ledger">
           <div className="dashboard-header">
             <div>
-              <h2>Conciliación bancaria</h2>
+              <h2>Cartola inteligente</h2>
               <p>
-                Vista tipo cartola bancaria para revisar movimientos del mes seleccionado.
+                Movimientos reales comparables por empresa, banco, origen y estado.
               </p>
             </div>
           </div>
@@ -1916,12 +2065,14 @@ export default function Treasury() {
             <thead>
               <tr>
                 <th>Fecha</th>
+                <th>Descripción</th>
                 <th>Empresa</th>
                 <th>Banco</th>
-                <th>Descripción</th>
-                <th>Ingresos</th>
-                <th>Egresos</th>
+                <th>Categoría</th>
+                <th>Cargo</th>
+                <th>Abono</th>
                 <th>Estado</th>
+                <th>Origen</th>
                 <th>Acción</th>
               </tr>
             </thead>
@@ -1930,35 +2081,38 @@ export default function Treasury() {
               {filteredMovements.map((m) => (
                 <tr key={m.id}>
                   <td>{m.date}</td>
+                  <td>{m.description}</td>
                   <td>{m.company_name || "-"}</td>
                   <td>{m.bank}</td>
-                  <td>{m.description}</td>
-
-                  <td
-                    style={{
-                      color: m.type === "ingreso" ? "#16a34a" : undefined,
-                      fontWeight: m.type === "ingreso" ? 700 : 400,
-                    }}
-                  >
-                    {m.type === "ingreso"
-                      ? `+ ${money(m.amount)}`
-                      : ""}
-                  </td>
+                  <td>{m.category || "-"}</td>
 
                   <td
                     style={{
                       color: m.type === "egreso" ? "#dc2626" : undefined,
-                      fontWeight: m.type === "egreso" ? 700 : 400,
+                      fontWeight: m.type === "egreso" ? 800 : 400,
                     }}
                   >
                     {m.type === "egreso"
-                      ? `- ${money(m.amount)}`
+                      ? money(m.amount)
+                      : ""}
+                  </td>
+
+                  <td
+                    style={{
+                      color: m.type === "ingreso" ? "#16a34a" : undefined,
+                      fontWeight: m.type === "ingreso" ? 800 : 400,
+                    }}
+                  >
+                    {m.type === "ingreso"
+                      ? money(m.amount)
                       : ""}
                   </td>
 
                   <td>{m.reconciliation_status || "pendiente"}</td>
+                  <td>{m.source_module || "manual"}</td>
 
                   <td>
+                    <div className="finance-ledger-actions">
                     {m.reconciliation_status !== "conciliado" && (
                       <button
                         type="button"
@@ -1968,6 +2122,28 @@ export default function Treasury() {
                         Conciliar
                       </button>
                     )}
+                    <button
+                      type="button"
+                      className="secondary-btn"
+                      onClick={() => {
+                        setEditingMovement(m)
+                        setForm({
+                          ...m,
+                          amount: Number(m.amount || 0),
+                        })
+                      }}
+                    >
+                      Editar
+                    </button>
+
+                    <button
+                      type="button"
+                      className="secondary-btn"
+                      onClick={() => voidMovement(m)}
+                    >
+                      Anular
+                    </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -2015,7 +2191,7 @@ export default function Treasury() {
         </section>
       )}
 
-      {view === "movements" && (
+      {view === "cartola" && (
         <>
           <form className="treasury-form" onSubmit={saveMovement}>
             <input
@@ -2109,7 +2285,7 @@ export default function Treasury() {
             </button>
           </form>
 
-          <div className="treasury-table">
+          <div className="treasury-table finance-hidden">
             <table>
               <thead>
                 <tr>
@@ -2174,7 +2350,24 @@ export default function Treasury() {
         </>
       )}
 
-      {view === "transfers" && (
+      {view === "tools" && (
+        <section className="finance-tool-panel">
+          <div className="finance-tool-tabs">
+            {financeToolTabs.map((tool) => (
+              <button
+                key={tool.id}
+                type="button"
+                className={activeTool === tool.id ? "primary-btn" : "secondary-btn"}
+                onClick={() => setActiveTool(tool.id)}
+              >
+                {tool.label}
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {view === "tools" && activeTool === "bankTransfer" && (
         <>
           <form className="treasury-form" onSubmit={createBankTransfer}>
             <input
@@ -2277,7 +2470,7 @@ export default function Treasury() {
         </>
       )}
 
-      {view === "companyTransfer" && (
+      {view === "tools" && activeTool === "companyTransfer" && (
         <>
           <form className="treasury-form" onSubmit={createCompanyTransfer}>
             <input
@@ -2358,7 +2551,7 @@ export default function Treasury() {
         </>
       )}
 
-      {view === "intercompany" && (
+      {view === "tools" && activeTool === "intercompany" && (
         <>
           <form className="treasury-form" onSubmit={createIntercompanyPayment}>
             <select
@@ -2465,7 +2658,8 @@ export default function Treasury() {
         </>
       )}
 
-      {view === "loans" &&
+      {view === "tools" &&
+        activeTool === "loans" &&
         canViewInternalLoans(profile) && (
           <>
             <form className="treasury-form" onSubmit={createInternalLoan}>
