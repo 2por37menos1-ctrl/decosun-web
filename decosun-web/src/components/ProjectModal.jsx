@@ -6,6 +6,7 @@ import {
   canViewProjectFinance,
 } from "../lib/permissions"
 import { registerProjectPayment } from "../lib/projectPayments"
+import { getTerritoryAssignment } from "../lib/territoryAssignment"
 
 const statuses = [
   "agendado",
@@ -376,6 +377,22 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
   }
 
   function handleAdvisorChange(advisorId) {
+    if (advisorId === "__edgar__") {
+      setForm((current) => ({
+        ...current,
+        advisor_id: "",
+        advisor_name: "Edgar Leighton",
+        advisor_email: "",
+        advisor_region: current.region_code || "iquique",
+        advisor_commission_rate: 20,
+        advisor_commission_type: "base",
+        advisor_commission_amount: 0,
+        advisor_commission_status: "pendiente",
+      }))
+
+      return
+    }
+
     const advisor = advisors.find((item) => item.id === advisorId)
 
     if (!advisor) {
@@ -405,6 +422,23 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
       advisor_commission_amount: 0,
       advisor_commission_status: "pendiente",
     }))
+  }
+
+  function applySuggestedAdvisor() {
+    setForm((current) => {
+      const territory = getTerritoryAssignment({
+        city: current.city,
+        regionCode: current.region_code,
+      })
+
+      return {
+        ...current,
+        advisor_id: territory.advisor_id || "",
+        advisor_name: territory.advisor_name || "",
+        advisor_email: "",
+        advisor_region: territory.region_code || current.region_code || "",
+      }
+    })
   }
 
   function handleSubmit(e) {
@@ -796,6 +830,33 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
     String(form?.public_token || "") !== String(project?.public_token || "") ||
     String(form?.summary || "") !== String(project?.summary || "")
 
+  const suggestedTerritory = useMemo(
+    () =>
+      getTerritoryAssignment({
+        city: form?.city,
+        regionCode: form?.region_code,
+      }),
+    [form?.city, form?.region_code]
+  )
+
+  const advisorSelectValue =
+    form?.advisor_id ||
+    (form?.advisor_name === "Edgar Leighton" ? "__edgar__" : "")
+
+  const suggestedAdvisorIsDifferent =
+    Boolean(suggestedTerritory?.advisor_name) &&
+    (
+      suggestedTerritory.advisor_name !== form?.advisor_name ||
+      suggestedTerritory.region_code !== form?.advisor_region
+    )
+
+  const summaryTitle =
+    form?.source === "cotizador_web"
+      ? "Detalle cotizacion / medidas"
+      : form?.source === "agenda"
+        ? "Observaciones agenda"
+        : "Notas internas"
+
   if (!project || !form) return null
 
   return (
@@ -891,136 +952,225 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
         </div>
 
         {tab === "resumen" && (
-          <div className="modal-grid">
-            <label>
-              Cliente / Proyecto
-              <input
-                value={form.title}
-                disabled={isAdvisor}
-                onChange={(e) => updateField("title", e.target.value)}
-              />
-            </label>
+          <div className="project-summary-layout">
+            <section className="summary-card summary-card-hero">
+              <div className="summary-card-heading">
+                <span>Cliente</span>
+                <strong>{form.contact_name || "Sin contacto"}</strong>
+              </div>
 
-            <label>
-              N° cotización
-              <input
-                value={form.quote_number}
-                disabled={isAdvisor}
-                onChange={(e) => updateField("quote_number", e.target.value)}
-              />
-            </label>
-
-            <label>
-              Origen
-              <input
-                value={form.source}
-                disabled={isAdvisor}
-                onChange={(e) => updateField("source", e.target.value)}
-              />
-            </label>
-
-            <label>
-              Ciudad
-              <input
-                value={form.city}
-                onChange={(e) => updateField("city", e.target.value)}
-              />
-            </label>
-
-            <label>
-              Región
-              <select
-                value={form.region_code}
-                disabled={!canEditInternal}
-                onChange={(e) => updateField("region_code", e.target.value)}
-              >
-                {regionOptions.map((region) => (
-                  <option key={region.value} value={region.value}>
-                    {region.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label>
-              Contacto
-              <input
-                value={form.contact_name}
-                onChange={(e) => updateField("contact_name", e.target.value)}
-              />
-            </label>
-
-            <label>
-              Teléfono
-              <input
-                value={form.contact_phone}
-                onChange={(e) => updateField("contact_phone", e.target.value)}
-              />
-            </label>
-
-            <label className="full-field">
-              Dirección
-              <input
-                value={form.address}
-                onChange={(e) => updateField("address", e.target.value)}
-                placeholder="Dirección de visita o instalación"
-              />
-            </label>
-
-            <label>
-              Tipo cliente
-              <select
-                value={form.client_type}
-                disabled={isAdvisor}
-                onChange={(e) => updateField("client_type", e.target.value)}
-              >
-                <option value="">Sin tipo</option>
-                <option value="Residencial">Residencial</option>
-                <option value="Empresa">Empresa</option>
-                <option value="Institucional">Institucional</option>
-                <option value="Mercado Público">Mercado Público</option>
-              </select>
-            </label>
-
-            {!isAdvisor && (
-              <>
+              <div className="summary-grid">
                 <label>
-                  Estado interno
+                  Contacto
+                  <input
+                    value={form.contact_name}
+                    onChange={(e) => updateField("contact_name", e.target.value)}
+                  />
+                </label>
+
+                <label>
+                  Telefono
+                  <input
+                    value={form.contact_phone}
+                    onChange={(e) => updateField("contact_phone", e.target.value)}
+                  />
+                </label>
+
+                <label>
+                  Ciudad
+                  <input
+                    value={form.city}
+                    onChange={(e) => updateField("city", e.target.value)}
+                  />
+                </label>
+
+                <label>
+                  Tipo cliente
                   <select
-                    value={form.status}
-                    onChange={(e) => updateField("status", e.target.value)}
+                    value={form.client_type}
+                    disabled={isAdvisor}
+                    onChange={(e) => updateField("client_type", e.target.value)}
                   >
-                    {statuses.map((status) => (
-                      <option key={status} value={status}>
-                        {status}
+                    <option value="">Sin tipo</option>
+                    <option value="Residencial">Residencial</option>
+                    <option value="Empresa">Empresa</option>
+                    <option value="Institucional">Institucional</option>
+                    <option value="Mercado Publico">Mercado Publico</option>
+                  </select>
+                </label>
+
+                <label className="summary-wide">
+                  Direccion
+                  <input
+                    value={form.address}
+                    onChange={(e) => updateField("address", e.target.value)}
+                    placeholder="Direccion de visita o instalacion"
+                  />
+                </label>
+              </div>
+
+              <div className="summary-actions">
+                <button type="button" className="secondary-btn" onClick={openCall}>
+                  Llamar
+                </button>
+
+                <button type="button" className="secondary-btn" onClick={openWhatsApp}>
+                  WhatsApp
+                </button>
+
+                <button type="button" className="secondary-btn" onClick={openMaps}>
+                  Mapa
+                </button>
+              </div>
+            </section>
+
+            <section className="summary-card">
+              <div className="summary-card-heading">
+                <span>Proyecto</span>
+                <strong>{form.title || "Proyecto sin nombre"}</strong>
+              </div>
+
+              <div className="summary-grid">
+                <label className="summary-wide">
+                  Proyecto
+                  <input
+                    value={form.title}
+                    disabled={isAdvisor}
+                    onChange={(e) => updateField("title", e.target.value)}
+                  />
+                </label>
+
+                <label>
+                  Cotizacion
+                  <input
+                    value={form.quote_number}
+                    disabled={isAdvisor}
+                    onChange={(e) => updateField("quote_number", e.target.value)}
+                  />
+                </label>
+
+                <label>
+                  Origen
+                  <input
+                    value={form.source}
+                    disabled={isAdvisor}
+                    onChange={(e) => updateField("source", e.target.value)}
+                  />
+                </label>
+
+                {!isAdvisor && (
+                  <>
+                    <label>
+                      Estado interno
+                      <select
+                        value={form.status}
+                        onChange={(e) => updateField("status", e.target.value)}
+                      >
+                        {statuses.map((status) => (
+                          <option key={status} value={status}>
+                            {status}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label>
+                      Prioridad
+                      <select
+                        value={form.priority}
+                        onChange={(e) => updateField("priority", e.target.value)}
+                      >
+                        <option>Alta</option>
+                        <option>Media</option>
+                        <option>Baja</option>
+                      </select>
+                    </label>
+                  </>
+                )}
+
+                <label>
+                  Region
+                  <select
+                    value={form.region_code}
+                    disabled={!canEditInternal}
+                    onChange={(e) => updateField("region_code", e.target.value)}
+                  >
+                    {regionOptions.map((region) => (
+                      <option key={region.value} value={region.value}>
+                        {region.label}
                       </option>
                     ))}
                   </select>
                 </label>
+              </div>
+            </section>
 
-                <label>
-                  Prioridad
-                  <select
-                    value={form.priority}
-                    onChange={(e) => updateField("priority", e.target.value)}
-                  >
-                    <option>Alta</option>
-                    <option>Media</option>
-                    <option>Baja</option>
-                  </select>
-                </label>
-              </>
+            {canSeeAdvisorTab && (
+              <section className="summary-card">
+                <div className="summary-card-heading">
+                  <span>Responsable comercial</span>
+                </div>
+
+                <div className="assigned-owner">
+                  <span>Asesor asignado</span>
+                  <strong>{form.advisor_name || "Sin asesor asignado"}</strong>
+                  {form.advisor_region && <small>{form.advisor_region}</small>}
+                </div>
+
+                {suggestedAdvisorIsDifferent && (
+                  <div className="suggested-owner">
+                    <span>Responsable sugerido</span>
+                    <strong>{suggestedTerritory.advisor_name}</strong>
+                    <small>{suggestedTerritory.region_code}</small>
+                    <button
+                      type="button"
+                      className="secondary-btn"
+                      onClick={applySuggestedAdvisor}
+                    >
+                      Aplicar sugerencia
+                    </button>
+                  </div>
+                )}
+
+                <div className="summary-grid">
+                  <label className="summary-wide">
+                    Asesor comercial
+                    <select
+                      value={advisorSelectValue}
+                      onChange={(e) => handleAdvisorChange(e.target.value)}
+                    >
+                      <option value="">Sin asesor asignado</option>
+                      <option value="__edgar__">Edgar Leighton</option>
+
+                      {advisors.map((advisor) => (
+                        <option key={advisor.id} value={advisor.id}>
+                          {advisor.full_name} - {advisor.region_label || advisor.region_code}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                </div>
+              </section>
             )}
 
-            <label className="full-field">
-              Observaciones internas
-              <textarea
-                rows="4"
-                value={form.summary}
-                onChange={(e) => updateField("summary", e.target.value)}
-              />
-            </label>
+            <section className="summary-card">
+              <div className="summary-card-heading">
+                <span>Cotizacion / Medidas</span>
+                <strong>{summaryTitle}</strong>
+              </div>
+
+              <label className="summary-notes">
+                {summaryTitle}
+                <textarea
+                  rows="6"
+                  value={form.summary}
+                  onChange={(e) => updateField("summary", e.target.value)}
+                />
+              </label>
+            </section>
           </div>
+
         )}
 
         {tab === "operacion" && (

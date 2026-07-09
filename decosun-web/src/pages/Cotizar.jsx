@@ -1,5 +1,6 @@
 import bgCotizador from "../assets/images/telas-textura01.jpg"
 import { supabase } from "../lib/supabase"
+import { getTerritoryAssignment } from "../lib/territoryAssignment"
 import logoSolo from "../assets/images/logo-vertical.png"
 import { useMemo, useState } from "react"
 import emailjs from "@emailjs/browser"
@@ -469,8 +470,11 @@ export default function Cotizar() {
         })
         .join(" | ")
 
-      const region = form.sucursal === "iquique" ? "iquique" : "quinta_region"
       const city = form.zona === "otra" ? form.ciudadExtra : zoneLabel
+      const territory = getTerritoryAssignment({
+        city,
+        sucursal: form.sucursal,
+      })
 
       const { error: projectError } = await supabase.from("projects").insert([
         {
@@ -485,13 +489,16 @@ export default function Cotizar() {
           status: "cotizado",
           payment_status: "pendiente",
           payment_type: "pendiente",
-          region_code: region,
+          region_code: territory.region_code,
           client_type: "Residencial",
           company_name:
             form.sucursal === "iquique" ? "Decosun Spa" : "Decosun Group SpA",
           source: "cotizador_web",
           quote_number: realQuoteNumber,
           public_token: publicToken,
+          advisor_id: territory.advisor_id,
+          advisor_name: territory.advisor_name,
+          advisor_region: territory.region_code,
           client_visible_status: "Cotización recibida",
         },
       ])

@@ -1025,6 +1025,144 @@ button {
   background: #ffffff;
 }
 
+.project-summary-layout {
+  display: grid;
+  gap: 18px;
+}
+
+.summary-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 18px;
+}
+
+.summary-card-hero {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.summary-card-heading {
+  align-items: flex-start;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.summary-card-heading span {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.summary-card-heading strong {
+  color: #0f172a;
+  font-size: 18px;
+  line-height: 1.2;
+  text-align: right;
+}
+
+.summary-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.summary-grid label,
+.summary-notes {
+  color: #475569;
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+  font-weight: 700;
+  gap: 8px;
+}
+
+.summary-grid input,
+.summary-grid select,
+.summary-notes textarea {
+  border: 1px solid #dbe3ec;
+  border-radius: 8px;
+  color: #0f172a;
+  font: inherit;
+  font-weight: 500;
+  padding: 11px 12px;
+  width: 100%;
+}
+
+.summary-notes textarea {
+  min-height: 150px;
+  resize: vertical;
+}
+
+.summary-wide {
+  grid-column: 1 / -1;
+}
+
+.summary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.assigned-owner {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+  padding: 12px;
+}
+
+.assigned-owner span,
+.assigned-owner small {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.assigned-owner strong {
+  color: #0f172a;
+  font-size: 16px;
+}
+
+.suggested-owner {
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  display: grid;
+  gap: 6px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  margin-bottom: 16px;
+  padding: 12px;
+}
+
+.suggested-owner span,
+.suggested-owner small {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.suggested-owner strong {
+  color: #0f172a;
+  font-size: 16px;
+}
+
+.suggested-owner button {
+  grid-column: 2;
+  grid-row: 1 / span 3;
+}
+
 .full-field {
   grid-column: 1 / -1;
 }
@@ -1515,6 +1653,19 @@ button {
 
   .modal-grid {
     grid-template-columns: 1fr;
+  }
+
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .suggested-owner {
+    grid-template-columns: 1fr;
+  }
+
+  .suggested-owner button {
+    grid-column: auto;
+    grid-row: auto;
   }
 
   .project-modal {

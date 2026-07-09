@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 import { supabase } from "../lib/supabase"
+import { getTerritoryAssignment } from "../lib/territoryAssignment"
 import { useProfile } from "../hooks/useProfile"
 
 const estadosAgenda = [
@@ -123,6 +124,36 @@ export default function AgendaPanel() {
     if (!confirmConvert) return
 
     const projectId = crypto.randomUUID()
+    const territory = getTerritoryAssignment({
+      city: item.ciudad,
+      regionCode: item.region_code,
+      sucursal: item.branch,
+    })
+    const regionCode =
+      item.region_code ||
+      territory.region_code ||
+      profile?.region_code ||
+      "quinta_region"
+    const advisorId =
+      item.advisor_id ||
+      territory.advisor_id ||
+      profile?.advisor_id ||
+      null
+    const advisorName =
+      item.advisor_name ||
+      territory.advisor_name ||
+      (
+        profile?.advisor_id
+          ? profile?.full_name || ""
+          : ""
+      )
+    const advisorEmail =
+      item.advisor_email ||
+      (
+        profile?.advisor_id
+          ? profile?.email || ""
+          : ""
+      )
 
     const { error: projectError } = await supabase
       .from("projects")
@@ -141,7 +172,7 @@ export default function AgendaPanel() {
           status: "agendado",
           payment_status: "pendiente",
           payment_type: "pendiente",
-          region_code: item.region_code || profile?.region_code || "quinta_region",
+          region_code: regionCode,
           address: item.address || "",
           client_type: "Residencial",
           company_name: "Decosun Group SpA",
@@ -149,10 +180,10 @@ export default function AgendaPanel() {
           client_visible_status: "Visita coordinada",
           public_token: crypto.randomUUID(),
 
-          advisor_id: item.advisor_id || profile?.advisor_id || null,
-          advisor_name: item.advisor_name || profile?.full_name || "",
-          advisor_email: item.advisor_email || profile?.email || "",
-          advisor_region: item.advisor_region || profile?.region_code || "",
+          advisor_id: advisorId,
+          advisor_name: advisorName,
+          advisor_email: advisorEmail,
+          advisor_region: item.advisor_region || regionCode,
           advisor_commission_rate: 20,
           advisor_commission_type: "base",
           advisor_commission_amount: 0,

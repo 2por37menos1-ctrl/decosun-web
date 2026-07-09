@@ -1,5 +1,23 @@
 import { useState } from "react"
 import { supabase } from "../lib/supabase"
+import { getTerritoryAssignment } from "../lib/territoryAssignment"
+
+function isMissingAssignmentColumn(error) {
+  const message = String(error?.message || error?.details || "")
+    .toLowerCase()
+
+  return (
+    error?.code === "PGRST204" ||
+    (
+      message.includes("column") &&
+      (
+        message.includes("region_code") ||
+        message.includes("advisor_id") ||
+        message.includes("advisor_name")
+      )
+    )
+  )
+}
 
 export default function Agenda() {
   const [form, setForm] = useState({
@@ -22,18 +40,41 @@ export default function Agenda() {
   async function handleSubmit(e) {
     e.preventDefault()
 
-    const { error } = await supabase.from("agenda").insert([
-      {
-        nombre: form.nombre,
-        telefono: form.telefono,
-        ciudad: form.ciudad,
-        tipo: form.tipo,
-        fecha: form.fecha,
-        horario: form.horario,
-        observaciones: form.observaciones,
-        estado: "Pendiente",
-      },
+    const territory = getTerritoryAssignment({
+      city: form.ciudad,
+    })
+
+    const basePayload = {
+      nombre: form.nombre,
+      telefono: form.telefono,
+      ciudad: form.ciudad,
+      tipo: form.tipo,
+      fecha: form.fecha,
+      horario: form.horario,
+      observaciones: form.observaciones,
+      estado: "Pendiente",
+    }
+
+    const payloadWithAssignment = {
+      ...basePayload,
+      region_code: territory.region_code,
+      advisor_id: territory.advisor_id,
+      advisor_name: territory.advisor_name,
+    }
+
+    let { error } = await supabase.from("agenda").insert([
+      payloadWithAssignment,
     ])
+
+    if (error && isMissingAssignmentColumn(error)) {
+      console.warn(
+        "La tabla agenda no tiene columnas territoriales todavia. Reintentando sin asignacion.",
+        error
+      )
+
+      const retry = await supabase.from("agenda").insert([basePayload])
+      error = retry.error
+    }
 
     if (error) {
       console.error("Error al guardar agenda:", error)
