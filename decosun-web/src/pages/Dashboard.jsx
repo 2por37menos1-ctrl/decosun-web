@@ -22,6 +22,8 @@ import { createProjectHistory } from "../lib/projectHistory"
 
 import {
   canViewAgenda,
+  canViewKanbanMoney,
+  canViewMoney,
   canViewPurchases,
   canViewTreasury,
   isGerencia,
@@ -176,6 +178,8 @@ export default function Dashboard() {
 
   const { profile, loading: profileLoading } = useProfile()
   const isAdvisor = isAsesorComercial(profile)
+  const canSeeMoney = canViewMoney(profile)
+  const canSeeKanbanMoney = canViewKanbanMoney(profile)
 
   const {
     projects,
@@ -520,12 +524,14 @@ export default function Dashboard() {
       detail: "Sin fecha definida",
       status: "critical",
     })),
-    ...pendingBalanceProjects.slice(0, 1).map((project) => ({
-      type: "Pago pendiente",
-      title: project.title || project.contact_name || "Proyecto sin nombre",
-      detail: formatMoney(getProjectBalance(project)),
-      status: "warning",
-    })),
+    ...(canSeeMoney
+      ? pendingBalanceProjects.slice(0, 1).map((project) => ({
+        type: "Pago pendiente",
+        title: project.title || project.contact_name || "Proyecto sin nombre",
+        detail: formatMoney(getProjectBalance(project)),
+        status: "warning",
+      }))
+      : []),
     ...purchaseProjects.slice(0, 1).map((project) => ({
       type: "Compra pendiente",
       title: project.title || project.contact_name || "Proyecto sin nombre",
@@ -832,6 +838,8 @@ export default function Dashboard() {
             </div>
           </section>
 
+          {canSeeMoney && (
+            <>
           <section className="dashboard-section dashboard-section-compact">
             <div className="section-heading compact">
               <div>
@@ -952,6 +960,125 @@ export default function Dashboard() {
               </dl>
             </section>
           </div>
+            </>
+          )}
+
+          {!canSeeMoney && (
+            <>
+              <section className="dashboard-section dashboard-section-compact">
+                <div className="section-heading compact">
+                  <div>
+                    <h2>Panel operativo</h2>
+                    <p>Seguimiento de clientes, agenda y estados sin montos.</p>
+                  </div>
+                </div>
+
+                <div className="executive-metric-grid executive-metric-grid-primary">
+                  <ExecutiveMetricCard
+                    title="Clientes activos"
+                    value={activeProjectsCount}
+                    description="Proyectos abiertos en el flujo actual."
+                    status="neutral"
+                    indicator="Clientes"
+                    compact
+                  />
+
+                  <ExecutiveMetricCard
+                    title="Agenda pendiente"
+                    value={advisorPendingVisits}
+                    description="Visitas o mediciones por coordinar."
+                    status={advisorPendingVisits > 0 ? "warning" : "positive"}
+                    indicator="Agenda"
+                    compact
+                  />
+
+                  <ExecutiveMetricCard
+                    title="Instalaciones"
+                    value={installationProjects.length}
+                    description="Proyectos en etapa de instalacion."
+                    status="neutral"
+                    indicator="Operacion"
+                    compact
+                  />
+
+                  <ExecutiveMetricCard
+                    title="Sin movimiento"
+                    value={projectsWithoutMovement.length}
+                    description="Casos sin actualizacion hace 7 dias o mas."
+                    status={projectsWithoutMovement.length > 0 ? "warning" : "positive"}
+                    indicator="Gestion"
+                    compact
+                  />
+                </div>
+              </section>
+
+              <div className="executive-mini-grid">
+                <section className="executive-mini-panel">
+                  <div className="mini-panel-header">
+                    <h3>Clientes</h3>
+                    <span>{filteredProjects.length} visibles</span>
+                  </div>
+
+                  <dl>
+                    <div>
+                      <dt>Activos</dt>
+                      <dd>{activeProjectsCount}</dd>
+                    </div>
+
+                    <div>
+                      <dt>Oportunidades</dt>
+                      <dd>{opportunityProjects.length}</dd>
+                    </div>
+
+                    <div>
+                      <dt>Seguimiento</dt>
+                      <dd>{followUpProjects.length}</dd>
+                    </div>
+                  </dl>
+                </section>
+
+                <section className="executive-mini-panel">
+                  <div className="mini-panel-header">
+                    <h3>Operaciones</h3>
+                    <span>{productionProjects.length + purchaseProjects.length} pendientes</span>
+                  </div>
+
+                  <dl>
+                    <div>
+                      <dt>Produccion</dt>
+                      <dd>{productionProjects.length}</dd>
+                    </div>
+
+                    <div>
+                      <dt>Compras</dt>
+                      <dd>{purchaseProjects.length}</dd>
+                    </div>
+
+                    <div>
+                      <dt>Instalaciones</dt>
+                      <dd>{installationProjects.length}</dd>
+                    </div>
+                  </dl>
+                </section>
+
+                <section className="executive-mini-panel">
+                  <div className="mini-panel-header">
+                    <h3>Estados</h3>
+                    <span>{statusStats.length} con actividad</span>
+                  </div>
+
+                  <dl>
+                    {statusStats.slice(0, 3).map((item) => (
+                      <div key={item.label}>
+                        <dt>{item.label}</dt>
+                        <dd>{item.count}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </section>
+              </div>
+            </>
+          )}
 
           <section className="executive-attention-panel">
             <div className="section-heading compact">
@@ -1452,6 +1579,7 @@ export default function Dashboard() {
               projects={filteredProjects}
               onStatusChange={updateProjectStatus}
               onProjectClick={setSelectedProject}
+              canViewMoney={canSeeKanbanMoney}
               onArchiveProject={
                 profile?.role === "asesor_comercial"
                   ? null

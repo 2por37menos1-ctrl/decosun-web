@@ -97,6 +97,7 @@ export default function KanbanBoard({
   onStatusChange,
   onProjectClick,
   onArchiveProject,
+  canViewMoney = true,
 }) {
   function handleDragStart(event, projectId) {
     event.dataTransfer.setData("projectId", projectId)
@@ -150,17 +151,19 @@ export default function KanbanBoard({
                   {column.label}
                   <span>{columnProjects.length}</span>
                 </h3>
-                <div className="column-kpis">
-                  <div>
-                    <small>Venta</small>
-                    <strong>{compactMoney(columnTotal)}</strong>
-                  </div>
+                {canViewMoney && (
+                  <div className="column-kpis">
+                    <div>
+                      <small>Venta</small>
+                      <strong>{compactMoney(columnTotal)}</strong>
+                    </div>
 
-                  <div>
-                    <small>Pendiente</small>
-                    <strong>{compactMoney(columnBalance)}</strong>
+                    <div>
+                      <small>Pendiente</small>
+                      <strong>{compactMoney(columnBalance)}</strong>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
 
@@ -206,26 +209,32 @@ export default function KanbanBoard({
                       <span>{timeAgo(project.updated_at)}</span>
                     </div>
 
-                    <div className="card-finance">
-                      <div className="sale-amount">
-                        <small>Venta</small>
-                        <strong>{compactMoney(project.sale_value)}</strong>
-                      </div>
+                    {canViewMoney && (
+                      <div className="card-finance">
+                        <div className="sale-amount">
+                          <small>Venta</small>
+                          <strong>{compactMoney(project.sale_value)}</strong>
+                        </div>
 
-                      <div className={`balance-amount is-${balanceTone}`}>
-                        <small>Saldo</small>
-                        <strong>{compactMoney(balance)}</strong>
+                        <div className={`balance-amount is-${balanceTone}`}>
+                          <small>Saldo</small>
+                          <strong>{compactMoney(balance)}</strong>
+                        </div>
                       </div>
-                    </div>
+                    )}
 
                     <div className="card-footer">
-                      <small
-                        className={`finance-badge is-${financeStatus || "pending"}`}
-                      >
-                        {formatFinanceStatus(financeStatus)}
-                      </small>
+                      {canViewMoney && (
+                        <>
+                          <small
+                            className={`finance-badge is-${financeStatus || "pending"}`}
+                          >
+                            {formatFinanceStatus(financeStatus)}
+                          </small>
 
-                      <small>{compactMoney(paid)} cobrado</small>
+                          <small>{compactMoney(paid)} cobrado</small>
+                        </>
+                      )}
 
                       {onArchiveProject && (
                         <button

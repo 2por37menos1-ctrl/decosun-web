@@ -9,6 +9,8 @@ import {
   Settings,
   Users,
 } from "lucide-react"
+import { useProfile } from "../hooks/useProfile"
+import { canViewTreasury } from "../lib/permissions"
 
 const navItems = [
   { id: "inicio", label: "Dashboard", icon: LayoutDashboard },
@@ -23,6 +25,7 @@ const navItems = [
 
 export default function Sidebar() {
   const [activeView, setActiveView] = useState("inicio")
+  const { profile } = useProfile()
 
   useEffect(() => {
     function handleViewChange(event) {
@@ -55,7 +58,13 @@ export default function Sidebar() {
       </div>
 
       <nav className="nav-menu">
-        {navItems.map((item) => {
+        {navItems.filter((item) => {
+          if (item.id === "finanzas") {
+            return canViewTreasury(profile)
+          }
+
+          return true
+        }).map((item) => {
           const Icon = item.icon
           const isActive = activeView === item.id
 

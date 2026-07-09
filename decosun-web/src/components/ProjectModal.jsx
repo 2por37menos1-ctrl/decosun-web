@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from "react"
 import { supabase } from "../lib/supabase"
-import { canViewCommissions } from "../lib/permissions"
+import {
+  canRegisterProjectPayment,
+  canViewCommissions,
+  canViewProjectFinance,
+} from "../lib/permissions"
 import { registerProjectPayment } from "../lib/projectPayments"
 
 const statuses = [
@@ -149,9 +153,10 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
 
   const canEditInternal = isGerencia || isJefatura || isAdminRegional
   const canSeeAdvisorTab = !isAdvisor
-  const canSeeFinance = !isAdvisor
+  const canSeeFinance = canViewProjectFinance(profile)
   const canSeeCosts = isGerencia || isJefatura
   const canSeeCommissions = canViewCommissions(profile)
+  const canRegisterPayment = canRegisterProjectPayment(profile)
 
   useEffect(() => {
     if (!project) return
@@ -229,18 +234,22 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
     })
 
     loadProjectHistory(project.id)
-    loadProjectPayments(project.id)
-  }, [project])
+    if (canSeeFinance) {
+      loadProjectPayments(project.id)
+    } else {
+      setProjectPayments([])
+    }
+  }, [project, canSeeFinance])
 
   useEffect(() => {
     loadAdvisors()
   }, [])
 
   useEffect(() => {
-    if (!project?.id || !form) return
+    if (!project?.id || !form || !canSeeFinance) return
 
     loadProjectPayments(project.id)
-  }, [project?.id, form?.amount_paid_cached, form?.balance_cached, form?.finance_status])
+  }, [project?.id, form?.amount_paid_cached, form?.balance_cached, form?.finance_status, canSeeFinance])
 
   async function loadProjectHistory(projectId) {
     setLoadingHistory(true)
@@ -314,6 +323,11 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
   }
 
   async function submitNewPayment() {
+    if (!canRegisterPayment) {
+      alert("No tienes permiso para registrar pagos.")
+      return
+    }
+
     if (savingPayment) return
 
     if (!newPayment.bank?.trim()) {
@@ -1588,117 +1602,121 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
               </table>
             </div>
 
-            <div className="full-field">
-              <h3>Nuevo registro de pagos</h3>
-              <p className="muted-text">Beta - registra pagos como eventos financieros trazables.</p>
-            </div>
+            {canRegisterPayment && (
+              <>
+                <div className="full-field">
+                  <h3>Nuevo registro de pagos</h3>
+                  <p className="muted-text">Beta - registra pagos como eventos financieros trazables.</p>
+                </div>
 
-            <label>
-              Fecha de pago
-              <input
-                type="date"
-                value={newPayment.paymentDate}
-                onChange={(e) =>
-                  updateNewPaymentField("paymentDate", e.target.value)
-                }
-              />
-            </label>
+                <label>
+                  Fecha de pago
+                  <input
+                    type="date"
+                    value={newPayment.paymentDate}
+                    onChange={(e) =>
+                      updateNewPaymentField("paymentDate", e.target.value)
+                    }
+                  />
+                </label>
 
-            <label>
-              Monto
-              <input
-                type="number"
-                value={newPayment.amount}
-                onChange={(e) =>
-                  updateNewPaymentField("amount", e.target.value)
-                }
-              />
-            </label>
+                <label>
+                  Monto
+                  <input
+                    type="number"
+                    value={newPayment.amount}
+                    onChange={(e) =>
+                      updateNewPaymentField("amount", e.target.value)
+                    }
+                  />
+                </label>
 
-            <label>
-              Empresa
-              <select
-                value={newPayment.companyName}
-                onChange={(e) =>
-                  updateNewPaymentField("companyName", e.target.value)
-                }
-              >
-                <option value="Decosun Group SpA">Decosun Group SpA</option>
-                <option value="Decosun Spa">Decosun Spa</option>
-              </select>
-            </label>
+                <label>
+                  Empresa
+                  <select
+                    value={newPayment.companyName}
+                    onChange={(e) =>
+                      updateNewPaymentField("companyName", e.target.value)
+                    }
+                  >
+                    <option value="Decosun Group SpA">Decosun Group SpA</option>
+                    <option value="Decosun Spa">Decosun Spa</option>
+                  </select>
+                </label>
 
-            <label>
-              Banco
-              <select
-                value={newPayment.bank}
-                onChange={(e) =>
-                  updateNewPaymentField("bank", e.target.value)
-                }
-              >
-                <option value="">Seleccionar banco</option>
-                <option value="BCI">BCI</option>
-                <option value="Scotiabank">Scotiabank</option>
-                <option value="Santander">Santander</option>
-                <option value="BancoEstado">BancoEstado</option>
-                <option value="Mercado Pago">Mercado Pago</option>
-                <option value="Efectivo">Efectivo</option>
-                <option value="Otro">Otro</option>
-              </select>
-            </label>
+                <label>
+                  Banco
+                  <select
+                    value={newPayment.bank}
+                    onChange={(e) =>
+                      updateNewPaymentField("bank", e.target.value)
+                    }
+                  >
+                    <option value="">Seleccionar banco</option>
+                    <option value="BCI">BCI</option>
+                    <option value="Scotiabank">Scotiabank</option>
+                    <option value="Santander">Santander</option>
+                    <option value="BancoEstado">BancoEstado</option>
+                    <option value="Mercado Pago">Mercado Pago</option>
+                    <option value="Efectivo">Efectivo</option>
+                    <option value="Otro">Otro</option>
+                  </select>
+                </label>
 
-            <label>
-              Metodo de pago
-              <select
-                value={newPayment.paymentMethod}
-                onChange={(e) =>
-                  updateNewPaymentField("paymentMethod", e.target.value)
-                }
-              >
-                <option value="bank_transfer">Transferencia bancaria</option>
-                <option value="cash">Efectivo</option>
-                <option value="card">Tarjeta</option>
-                <option value="mercado_pago">Mercado Pago</option>
-                <option value="other">Otro</option>
-              </select>
-            </label>
+                <label>
+                  Metodo de pago
+                  <select
+                    value={newPayment.paymentMethod}
+                    onChange={(e) =>
+                      updateNewPaymentField("paymentMethod", e.target.value)
+                    }
+                  >
+                    <option value="bank_transfer">Transferencia bancaria</option>
+                    <option value="cash">Efectivo</option>
+                    <option value="card">Tarjeta</option>
+                    <option value="mercado_pago">Mercado Pago</option>
+                    <option value="other">Otro</option>
+                  </select>
+                </label>
 
-            <label>
-              Hito de pago
-              <select
-                value={newPayment.paymentMilestone}
-                onChange={(e) =>
-                  updateNewPaymentField("paymentMilestone", e.target.value)
-                }
-              >
-                <option value="initial_50">initial_50</option>
-                <option value="final_50">final_50</option>
-                <option value="partial">partial</option>
-                <option value="full">full</option>
-              </select>
-            </label>
+                <label>
+                  Hito de pago
+                  <select
+                    value={newPayment.paymentMilestone}
+                    onChange={(e) =>
+                      updateNewPaymentField("paymentMilestone", e.target.value)
+                    }
+                  >
+                    <option value="initial_50">initial_50</option>
+                    <option value="final_50">final_50</option>
+                    <option value="partial">partial</option>
+                    <option value="full">full</option>
+                  </select>
+                </label>
 
-            <label className="full-field">
-              Notas
-              <textarea
-                rows="3"
-                value={newPayment.notes}
-                onChange={(e) =>
-                  updateNewPaymentField("notes", e.target.value)
-                }
-              />
-            </label>
+                <label className="full-field">
+                  Notas
+                  <textarea
+                    rows="3"
+                    value={newPayment.notes}
+                    onChange={(e) =>
+                      updateNewPaymentField("notes", e.target.value)
+                    }
+                  />
+                </label>
 
-            <div className="full-field">
-              <button
-                type="button"
-                className="primary-btn"
-                onClick={submitNewPayment}
-                disabled={savingPayment}
-              >
-                {savingPayment ? "Registrando..." : "Registrar pago"}
-              </button>
-            </div>
+                <div className="full-field">
+                  <button
+                    type="button"
+                    className="primary-btn"
+                    onClick={submitNewPayment}
+                    disabled={savingPayment}
+                  >
+                    {savingPayment ? "Registrando..." : "Registrar pago"}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         )}
 

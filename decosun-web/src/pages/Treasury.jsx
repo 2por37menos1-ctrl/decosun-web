@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { supabase } from "../lib/supabase"
 
 import {
+  canViewTreasury,
   canViewTreasuryTotals,
   canViewInternalLoans,
   canViewCommissionReports,
@@ -212,9 +213,11 @@ export default function Treasury() {
     notes: "",
   })
 
-  const { profile } = useProfile()
+  const { profile, loading: profileLoading } = useProfile()
 
   useEffect(() => {
+    if (profileLoading || !canViewTreasury(profile)) return
+
     loadMovements()
     loadLoans()
     loadIntercompanyPayments()
@@ -223,7 +226,7 @@ export default function Treasury() {
     loadFinancialGroups()
     loadFinancialConcepts()
 
-  }, [])
+  }, [profileLoading, profile?.id, profile?.role, profile?.region_code])
 
   async function loadMovements() {
     const { data, error } = await supabase
@@ -1317,6 +1320,20 @@ export default function Treasury() {
     }
 
     loadMovements()
+  }
+
+  if (profileLoading) {
+    return <section className="treasury-page">Cargando Finanzas...</section>
+  }
+
+  if (!canViewTreasury(profile)) {
+    return (
+      <section className="treasury-page">
+        <div className="treasury-table">
+          No tienes permiso para ver Finanzas.
+        </div>
+      </section>
+    )
   }
 
   return (

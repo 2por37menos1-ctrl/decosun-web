@@ -32,23 +32,38 @@ export function canViewPurchases(profile) {
 }
 
 export function canViewTreasury(profile) {
-  return (
-    isGerencia(profile) ||
-    (
-      isAdministracionRegional(profile) &&
-      profile?.region_code === "quinta_region"
-    )
-  )
+  return canViewGlobalFinance(profile)
 }
 
 export function canCreateTreasuryMovement(profile) {
+  return canViewGlobalFinance(profile)
+}
+
+export function canViewMoney(profile) {
   return (
     isGerencia(profile) ||
-    (
-      isAdministracionRegional(profile) &&
-      profile?.region_code === "quinta_region"
-    )
+    isJefaturaRegion(profile) ||
+    isAsesorComercial(profile)
   )
+}
+
+export function canViewGlobalFinance(profile) {
+  return isGerencia(profile)
+}
+
+export function canViewProjectFinance(profile) {
+  return (
+    isGerencia(profile) ||
+    isJefaturaRegion(profile)
+  )
+}
+
+export function canViewKanbanMoney(profile) {
+  return canViewMoney(profile)
+}
+
+export function canRegisterProjectPayment(profile) {
+  return isGerencia(profile)
 }
 
 export function canViewTreasuryTotals(profile) {
@@ -64,7 +79,7 @@ export function canViewBankReconciliation(profile) {
 }
 
 export function canViewSensitiveFinance(profile) {
-  return isGerencia(profile)
+  return canViewGlobalFinance(profile)
 }
 
 export function canViewCommissions(profile) {
@@ -72,10 +87,7 @@ export function canViewCommissions(profile) {
 }
 
 export function canViewCommissionReports(profile) {
-  return (
-    isGerencia(profile) ||
-    isAdministracionRegional(profile)
-  )
+  return canViewCommissions(profile)
 }
 
 export function canPayProjectCommissions(profile) {
