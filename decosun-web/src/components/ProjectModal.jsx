@@ -515,9 +515,32 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
     )
   }
 
+  function hasShareablePublicStatusURL() {
+    if (!savedPublicStatusURL) {
+      alert("Este proyecto aún no tiene un enlace público guardado.")
+      return false
+    }
+
+    if (hasUnsavedClientChanges) {
+      alert(
+        "Guarda los cambios antes de compartir el seguimiento para que el cliente vea la información actualizada."
+      )
+      return false
+    }
+
+    return true
+  }
+
+  function openPublicStatusURL() {
+    if (!hasShareablePublicStatusURL()) {
+      return
+    }
+
+    window.open(savedPublicStatusURL, "_blank", "noreferrer")
+  }
+
   async function copyPublicStatusURL() {
-    if (!publicStatusURL) {
-      alert("Este proyecto aun no tiene enlace publico disponible.")
+    if (!hasShareablePublicStatusURL()) {
       return
     }
 
@@ -526,11 +549,11 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
         throw new Error("Clipboard no disponible")
       }
 
-      await navigator.clipboard.writeText(publicStatusURL)
+      await navigator.clipboard.writeText(savedPublicStatusURL)
       alert("Enlace copiado.")
     } catch (error) {
       console.error(error)
-      window.prompt("Copia manualmente este enlace:", publicStatusURL)
+      window.prompt("Copia manualmente este enlace:", savedPublicStatusURL)
     }
   }
 
@@ -542,15 +565,7 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
       return
     }
 
-    if (!savedPublicStatusURL) {
-      alert("Este proyecto aun no tiene enlace publico disponible.")
-      return
-    }
-
-    if (hasUnsavedClientChanges) {
-      alert(
-        "Primero guarda la ficha para que el cliente vea el estado publico actualizado."
-      )
+    if (!hasShareablePublicStatusURL()) {
       return
     }
 
@@ -753,10 +768,6 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
 
     alert("Comisión registrada en Tesorería.")
   }
-
-  const publicStatusURL = form?.public_token
-    ? `${window.location.origin}/estado/${form.public_token}`
-    : ""
 
   const savedPublicStatusURL = project?.public_token
     ? `${window.location.origin}/estado/${project.public_token}`
@@ -1243,29 +1254,28 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
               </label>
             )}
 
-            {!publicStatusURL && (
+            {!savedPublicStatusURL && (
               <div className="full-field legacy-panel">
-                Este proyecto aun no tiene enlace publico disponible.
+                Este proyecto aún no tiene seguimiento público activo.
               </div>
             )}
 
-            {publicStatusURL && (
+            {savedPublicStatusURL && (
               <div className="full-field public-link-box">
                 <span>Enlace publico</span>
-                <strong>{publicStatusURL}</strong>
+                <strong>{savedPublicStatusURL}</strong>
               </div>
             )}
 
-            {publicStatusURL && (
+            {savedPublicStatusURL && (
               <div className="full-field flex flex-wrap gap-3">
-                <a
-                  href={publicStatusURL}
-                  target="_blank"
-                  rel="noreferrer"
+                <button
+                  type="button"
                   className="primary-btn"
+                  onClick={openPublicStatusURL}
                 >
                   Abrir seguimiento
-                </a>
+                </button>
 
                 <button
                   type="button"
