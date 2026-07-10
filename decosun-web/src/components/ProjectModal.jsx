@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { supabase } from "../lib/supabase"
 import {
+  canAssignProjectAdvisor,
   canRegisterProjectPaymentForProject,
   canViewCommissions,
   canViewProjectFinance,
@@ -154,7 +155,8 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
   const isAdminRegional = profile?.role === "administracion_regional"
 
   const canEditInternal = isGerencia || isJefatura || isAdminRegional
-  const canSeeAdvisorTab = !isAdvisor
+  const canAssignAdvisor = canAssignProjectAdvisor(profile, project)
+  const canSeeAssignedAdvisor = canAssignAdvisor || (!isAdvisor && Boolean(project?.advisor_name))
   const canSeeFinance = canViewProjectFinance(profile)
   const canSeeCosts = isGerencia || isJefatura
   const canSeeCommissions = canViewCommissions(profile)
@@ -378,6 +380,8 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
   }
 
   function handleAdvisorChange(advisorId) {
+    if (!canAssignAdvisor) return
+
     if (advisorId === "__edgar__") {
       setForm((current) => ({
         ...current,
@@ -426,6 +430,8 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
   }
 
   function applySuggestedAdvisor() {
+    if (!canAssignAdvisor) return
+
     setForm((current) => {
       const territory = getTerritoryAssignment({
         city: current.city,
@@ -1106,7 +1112,7 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
               </div>
             </section>
 
-            {canSeeAdvisorTab && (
+            {canSeeAssignedAdvisor && (
               <section className="summary-card">
                 <div className="summary-card-heading">
                   <span>Responsable comercial</span>
@@ -1118,7 +1124,7 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
                   {form.advisor_region && <small>{form.advisor_region}</small>}
                 </div>
 
-                {suggestedAdvisorIsDifferent && (
+                {canAssignAdvisor && suggestedAdvisorIsDifferent && (
                   <div className="suggested-owner">
                     <span>Responsable sugerido</span>
                     <strong>{suggestedTerritory.advisor_name}</strong>
@@ -1133,25 +1139,27 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
                   </div>
                 )}
 
-                <div className="summary-grid">
-                  <label className="summary-wide">
-                    Asesor comercial
-                    <select
-                      value={advisorSelectValue}
-                      onChange={(e) => handleAdvisorChange(e.target.value)}
-                    >
-                      <option value="">Sin asesor asignado</option>
-                      <option value="__edgar__">Edgar Leighton</option>
+                {canAssignAdvisor && (
+                  <div className="summary-grid">
+                    <label className="summary-wide">
+                      Asesor comercial
+                      <select
+                        value={advisorSelectValue}
+                        onChange={(e) => handleAdvisorChange(e.target.value)}
+                      >
+                        <option value="">Sin asesor asignado</option>
+                        <option value="__edgar__">Edgar Leighton</option>
 
-                      {advisors.map((advisor) => (
-                        <option key={advisor.id} value={advisor.id}>
-                          {advisor.full_name} - {advisor.region_label || advisor.region_code}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                        {advisors.map((advisor) => (
+                          <option key={advisor.id} value={advisor.id}>
+                            {advisor.full_name} - {advisor.region_label || advisor.region_code}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
 
-                </div>
+                  </div>
+                )}
               </section>
             )}
 
@@ -1230,7 +1238,7 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
           </div>
         )}
 
-        {tab === "asesor" && canSeeAdvisorTab && (
+        {tab === "asesor" && canAssignAdvisor && (
           <div className="modal-grid">
             <label>
               Asesor comercial
@@ -1490,7 +1498,7 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
               <strong>Configuracion comercial asociada al proyecto.</strong>
             </div>
 
-            {canSeeAdvisorTab && (
+            {canAssignAdvisor && (
               <>
                 <label>
                   Asesor comercial

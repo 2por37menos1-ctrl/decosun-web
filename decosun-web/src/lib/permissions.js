@@ -88,6 +88,33 @@ export function canRegisterProjectPaymentForProject(profile, project) {
   return isEdgarIquique && northProjectRegions.includes(projectRegion)
 }
 
+export function canAssignProjectAdvisor(profile, project) {
+  if (isGerencia(profile)) return true
+  if (!isJefaturaRegion(profile)) return false
+
+  const profileRegion = profile?.region_code || ""
+  const projectRegion = project?.region_code || ""
+
+  if (!profileRegion || !projectRegion) return false
+  if (profileRegion === projectRegion) return true
+
+  const profileName = String(profile?.full_name || "").trim()
+  const isEdgarIquique =
+    profileRegion === "iquique" &&
+    ["Edgar", "Edgar Leighton"].includes(profileName)
+
+  const northProjectRegions = [
+    "iquique",
+    "norte",
+    "arica",
+    "tarapaca",
+    "calama",
+    "antofagasta",
+  ]
+
+  return isEdgarIquique && northProjectRegions.includes(projectRegion)
+}
+
 export function canViewTreasuryTotals(profile) {
   return isGerencia(profile)
 }
