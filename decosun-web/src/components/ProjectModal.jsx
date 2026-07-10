@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { supabase } from "../lib/supabase"
 import {
-  canRegisterProjectPayment,
+  canRegisterProjectPaymentForProject,
   canViewCommissions,
   canViewProjectFinance,
 } from "../lib/permissions"
@@ -26,6 +26,7 @@ const publicStatuses = [
   "Cotización enviada",
   "En seguimiento",
   "Pedido confirmado",
+  "A la espera de abono del cliente",
   "Preparación técnica",
   "En preparación",
   "En producción",
@@ -157,7 +158,7 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
   const canSeeFinance = canViewProjectFinance(profile)
   const canSeeCosts = isGerencia || isJefatura
   const canSeeCommissions = canViewCommissions(profile)
-  const canRegisterPayment = canRegisterProjectPayment(profile)
+  const canRegisterPayment = canRegisterProjectPaymentForProject(profile, project)
 
   useEffect(() => {
     if (!project) return
@@ -1175,37 +1176,13 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
 
         {tab === "operacion" && (
           <div className="modal-grid">
-            <label>
-              Fecha visita
-              <input
-                type="date"
-                value={form.visit_date || ""}
-                onChange={(e) => updateField("visit_date", e.target.value)}
-              />
-            </label>
+            <div className="full-field modal-section-heading">
+              <span>Instalacion y entrega</span>
+              <strong>Compromisos operativos para coordinar mecanismos y cortinas.</strong>
+            </div>
 
             <label>
-              Hora visita
-              <input
-                type="time"
-                value={form.visit_time || ""}
-                onChange={(e) => updateField("visit_time", e.target.value)}
-              />
-            </label>
-
-            <label>
-              Tecnico / responsable operativo
-              <input
-                value={form.technician_assigned}
-                disabled={isAdvisor}
-                onChange={(e) =>
-                  updateField("technician_assigned", e.target.value)
-                }
-              />
-            </label>
-
-            <label>
-              Medicion / fecha clave
+              Fecha instalacion de mecanismos
               <input
                 type="date"
                 value={form.key_date || ""}
@@ -1215,49 +1192,39 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
             </label>
 
             <label>
-              Fecha venta
+              Fecha entrega / instalacion de cortinas
               <input
                 type="date"
-                value={form.sale_date || ""}
-                disabled={isAdvisor}
-                onChange={(e) => updateField("sale_date", e.target.value)}
+                value={form.visit_date || ""}
+                onChange={(e) => updateField("visit_date", e.target.value)}
               />
             </label>
 
             <label>
-              Documento / facturacion
+              Hora compromiso
               <input
-                type="date"
-                value={form.invoice_date || ""}
-                disabled={isAdvisor}
-                onChange={(e) => updateField("invoice_date", e.target.value)}
+                type="time"
+                value={form.visit_time || ""}
+                onChange={(e) => updateField("visit_time", e.target.value)}
               />
             </label>
 
             <label className="full-field">
-              Dirección visita
+              Direccion instalacion / entrega
               <input
                 value={form.address}
                 onChange={(e) => updateField("address", e.target.value)}
-                placeholder="Dirección para Maps"
+                placeholder="Direccion para Maps"
               />
             </label>
 
             <div className="full-field flex flex-wrap gap-3">
               <button type="button" className="secondary-btn" onClick={openMaps}>
-                📍 Maps
+                Maps
               </button>
 
               <button type="button" className="secondary-btn" onClick={openCalendar}>
-                📅 Calendar
-              </button>
-
-              <button type="button" className="secondary-btn" onClick={openCall}>
-                📞 Llamar
-              </button>
-
-              <button type="button" className="secondary-btn" onClick={openWhatsApp}>
-                💬 WhatsApp
+                Calendar
               </button>
             </div>
           </div>
@@ -1393,7 +1360,7 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
             </div>
 
             <label>
-              Estado visible para cliente
+              Estado comercial del cliente
               <select
                 value={form.client_visible_status}
                 onChange={(e) =>
@@ -1510,6 +1477,13 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
               <span>Abono sugerido 50%</span>
               <strong>{money(Number(form.sale_value || 0) * 0.5)}</strong>
             </div>
+
+            {canSeeCommissions && (
+              <div className="full-field balance-box">
+                <span>Comision por abono</span>
+                <strong>Preparado visualmente para asociar comision a cada abono en una fase futura.</strong>
+              </div>
+            )}
 
             <div className="full-field modal-section-heading">
               <span>Asesor y comision</span>
