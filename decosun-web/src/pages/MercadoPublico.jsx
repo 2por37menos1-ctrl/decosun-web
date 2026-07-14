@@ -9,7 +9,7 @@ export default function MercadoPublico() {
     const { data, error } = await supabase
       .from("market_opportunities")
       .select("*")
-      .gte("days_left", 0)
+      .gt("closing_at", new Date().toISOString())
       .order("closing_at", { ascending: true });
 
     if (error) {
@@ -21,7 +21,29 @@ export default function MercadoPublico() {
   }
 
   async function handleScan() {
-    await syncRecommendedOpportunities();
+    setLoading(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke(
+        "escanear-mercado-publico"
+      );
+
+      if (error || data?.ok === false) {
+        console.error(error || data);
+        alert("No se pudo escanear Mercado Público desde el backend seguro.");
+        return;
+      }
+
+      await loadOpportunities();
+      alert(
+        `${data?.total || 0} oportunidades revisadas. ${data?.inserted_or_updated || 0} guardadas/actualizadas.`
+      );
+    } catch (error) {
+      console.error(error);
+      alert("No se pudo escanear Mercado Público desde el backend seguro.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
