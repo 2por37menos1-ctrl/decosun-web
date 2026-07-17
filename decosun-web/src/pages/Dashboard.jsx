@@ -15,7 +15,7 @@ import OperationsPanel from "../components/OperationsPanel"
 import AgendaPanel from "./AgendaPanel"
 import PurchaseRequests from "./PurchaseRequests"
 import Treasury from "./Treasury"
-import MercadoPublico from "./MercadoPublico"
+import RadarCompraAgil from "./RadarCompraAgil"
 
 import { supabase } from "../lib/supabase"
 import { createProjectHistory } from "../lib/projectHistory"
@@ -697,16 +697,18 @@ export default function Dashboard() {
             </button>
           )}
 
-          <button
-            className={
-              view === "mercado_publico"
-                ? "primary-btn"
-                : "secondary-btn"
-            }
-            onClick={() => navigatePanel("mercado_publico")}
-          >
-            Mercado Público
-          </button>
+          {isGerencia(profile) && (
+            <button
+              className={
+                view === "radar_compra_agil"
+                  ? "primary-btn"
+                  : "secondary-btn"
+              }
+              onClick={() => navigatePanel("radar_compra_agil")}
+            >
+              Radar Compra Ágil
+            </button>
+          )}
 
           {isAdvisor && (
             <button
@@ -1602,8 +1604,8 @@ export default function Dashboard() {
         <Treasury />
       )}
 
-      {view === "mercado_publico" && (
-        <MercadoPublico />
+      {view === "radar_compra_agil" && isGerencia(profile) && (
+        <RadarCompraAgil />
       )}
 
       <ProjectModal

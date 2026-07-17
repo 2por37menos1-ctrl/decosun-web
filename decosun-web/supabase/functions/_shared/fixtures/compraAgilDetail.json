@@ -1,0 +1,54 @@
+{
+  "success": "OK",
+  "trace": null,
+  "payload": {
+    "codigo": "1057539-229-COT26",
+    "nombre": "Segundo llamado cortinas blackout",
+    "descripcion": "Suministro e instalacion de cortinas blackout y roller screen.",
+    "estado": { "id_estado": 1, "codigo": "publicada", "glosa": "Publicada" },
+    "convocatoria": {
+      "estado_convocatoria": 2,
+      "descripcion": "Segundo llamado",
+      "fecha_cierre_primer_llamado": "2026-07-15T16:30:00Z",
+      "fecha_cierre_segundo_llamado": "2026-07-19T16:30:00Z"
+    },
+    "fechas": {
+      "fecha_publicacion": "2026-07-10T13:00:00Z",
+      "fecha_cierre": "2026-07-19T16:30:00Z",
+      "fecha_ultimo_cambio": "2026-07-16T09:00:00Z"
+    },
+    "entrega": { "direccion_entrega": "Avenida Central 123", "plazo_entrega_dias": 12 },
+    "documentos": [{ "id": "doc-2", "nombre": "especificaciones.pdf" }],
+    "presupuesto": {
+      "tipo_presupuesto": "Disponible",
+      "moneda": "CLP",
+      "presupuesto_estimado": 850000,
+      "monto_disponible": 900000,
+      "monto_disponible_clp": 900000
+    },
+    "orden_compra": { "id_orden_compra": 987654, "id_oc": 987654, "codigo_orden_compra": null },
+    "institucion": {
+      "organismo_comprador": "Municipalidad de Prueba",
+      "rut": "69.000.000-1",
+      "unidad_compra": "Abastecimiento",
+      "region": 5,
+      "nombre_region": "Valparaiso"
+    },
+    "productos_solicitados": [
+      {
+        "codigo_producto": 52131501,
+        "nombre": "Cortinas blackout",
+        "descripcion": "Incluye instalacion",
+        "cantidad": 8,
+        "unidad_medida": "EA"
+      }
+    ],
+    "proveedores_cotizando": [],
+    "resumen": { "total_ofertas_recibidas": 0, "total_demandas": 1 },
+    "flags": {
+      "considera_requisitos_medioambientales": false,
+      "considera_requisitos_impacto_social_economico": false
+    }
+  },
+  "errors": null
+}

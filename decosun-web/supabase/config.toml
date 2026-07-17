@@ -15,3 +15,9 @@ enabled = true
 verify_jwt = true
 import_map = "./functions/escanear-mercado-publico/deno.json"
 entrypoint = "./functions/escanear-mercado-publico/index.ts"
+
+[functions.escanear-compra-agil]
+enabled = true
+verify_jwt = true
+import_map = "./functions/escanear-compra-agil/deno.json"
+entrypoint = "./functions/escanear-compra-agil/index.ts"

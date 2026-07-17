@@ -1,0 +1,57 @@
+{
+  "success": "OK",
+  "trace": null,
+  "payload": {
+    "items": [
+      {
+        "codigo": "1057539-228-COT26",
+        "nombre": "Cortinas roller screen para oficinas",
+        "estado": { "id_estado": 1, "codigo": "publicada", "glosa": "Publicada" },
+        "convocatoria": { "estado_convocatoria": 1, "descripcion": "Primer llamado" },
+        "documentos": [{ "id": "doc-1", "nombre": "requisitos.pdf" }],
+        "fechas": {
+          "fecha_publicacion": "2026-07-14T13:00:00Z",
+          "fecha_cierre": "2026-07-20T18:00:00Z",
+          "fecha_ultimo_cambio": "2026-07-15T10:00:00Z"
+        },
+        "montos": { "moneda": "CLP", "monto_disponible": 1500000, "monto_disponible_clp": 1500000 },
+        "institucion": {
+          "organismo_comprador": "Servicio de Prueba",
+          "rut": "60.000.000-0",
+          "unidad_compra": "Administracion",
+          "region": 13,
+          "nombre_region": "Metropolitana"
+        },
+        "resumen": { "total_ofertas_recibidas": 1 }
+      },
+      {
+        "codigo": "1057539-229-COT26",
+        "nombre": "Segundo llamado cortinas blackout",
+        "estado": { "id_estado": 1, "codigo": "publicada", "glosa": "Publicada" },
+        "convocatoria": { "estado_convocatoria": 2, "descripcion": "Segundo llamado" },
+        "documentos": [],
+        "fechas": {
+          "fecha_publicacion": "2026-07-10T13:00:00Z",
+          "fecha_cierre": "2026-07-19T16:30:00Z",
+          "fecha_ultimo_cambio": "2026-07-16T09:00:00Z"
+        },
+        "montos": { "moneda": "CLP", "monto_disponible": 900000, "monto_disponible_clp": 900000 },
+        "institucion": {
+          "organismo_comprador": "Municipalidad de Prueba",
+          "rut": "69.000.000-1",
+          "unidad_compra": "Abastecimiento",
+          "region": 5,
+          "nombre_region": "Valparaiso"
+        },
+        "resumen": { "total_ofertas_recibidas": 0 }
+      }
+    ],
+    "paginacion": {
+      "total_paginas": 1,
+      "numero_pagina": 1,
+      "tamano_pagina": 50,
+      "total_resultados": 2
+    }
+  },
+  "errors": null
+}

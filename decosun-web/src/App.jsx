@@ -15,6 +15,7 @@ import Login from "./pages/Login";
 import Agenda from "./pages/Agenda";
 import ProjectStatusPublic from "./pages/ProjectStatusPublic";
 import MercadoPublico from "./pages/MercadoPublico";
+import RadarCompraAgil from "./pages/RadarCompraAgil";
 
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Academy = lazy(() => import("./pages/Academy"));
@@ -41,6 +42,7 @@ function AppContent() {
         <Route path="/estado/:token" element={<ProjectStatusPublic />} />
         <Route path="/login" element={<Login />} />
         <Route path="/panel/mercado-publico" element={<MercadoPublico />} />
+        <Route path="/panel/radar-compra-agil" element={<RadarCompraAgil />} />
 
         {/* Panel DecoSun */}
         <Route

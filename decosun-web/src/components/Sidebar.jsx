@@ -10,7 +10,7 @@ import {
   Users,
 } from "lucide-react"
 import { useProfile } from "../hooks/useProfile"
-import { canViewTreasury } from "../lib/permissions"
+import { canViewTreasury, isGerencia } from "../lib/permissions"
 
 const navItems = [
   { id: "inicio", label: "Dashboard", icon: LayoutDashboard },
@@ -18,7 +18,7 @@ const navItems = [
   { id: "proyectos", label: "Proyectos", icon: FolderKanban },
   { id: "finanzas", label: "Finanzas", icon: Receipt },
   { id: "operaciones", label: "Operaciones", icon: PackageCheck },
-  { id: "mercado_publico", label: "Mercado Publico", icon: Landmark },
+  { id: "radar_compra_agil", label: "Radar Compra Agil", icon: Landmark },
   { id: "clientes", label: "Clientes", icon: Users },
   { id: "configuracion", label: "Configuracion", icon: Settings },
 ]
@@ -61,6 +61,10 @@ export default function Sidebar() {
         {navItems.filter((item) => {
           if (item.id === "finanzas") {
             return canViewTreasury(profile)
+          }
+
+          if (item.id === "radar_compra_agil") {
+            return isGerencia(profile)
           }
 
           return true
