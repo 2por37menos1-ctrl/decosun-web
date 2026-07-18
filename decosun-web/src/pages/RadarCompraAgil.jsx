@@ -5,6 +5,24 @@ import { isGerencia } from "../lib/permissions"
 import { supabase } from "../lib/supabase"
 
 const PAGE_SIZE = 25
+const CHILE_REGION_OPTIONS = [
+  { value: 15, label: "Arica y Parinacota (XV)" },
+  { value: 1, label: "Tarapacá (I)" },
+  { value: 2, label: "Antofagasta (II)" },
+  { value: 3, label: "Atacama (III)" },
+  { value: 4, label: "Coquimbo (IV)" },
+  { value: 5, label: "Valparaíso (V)" },
+  { value: 13, label: "Región Metropolitana (RM)" },
+  { value: 6, label: "O'Higgins (VI)" },
+  { value: 7, label: "Maule (VII)" },
+  { value: 16, label: "Ñuble (XVI)" },
+  { value: 8, label: "Biobío (VIII)" },
+  { value: 9, label: "La Araucanía (IX)" },
+  { value: 14, label: "Los Ríos (XIV)" },
+  { value: 10, label: "Los Lagos (X)" },
+  { value: 11, label: "Aysén (XI)" },
+  { value: 12, label: "Magallanes (XII)" },
+]
 const EMPTY_FILTERS = {
   region: "",
   word: "",
@@ -178,7 +196,9 @@ export default function RadarCompraAgil() {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
   const regionOptions = useMemo(() => {
     const configured = config?.region_codes || []
-    return configured.length ? configured : Array.from({ length: 16 }, (_, index) => index + 1)
+    if (!configured.length) return CHILE_REGION_OPTIONS
+    const configuredValues = new Set(configured.map(Number))
+    return CHILE_REGION_OPTIONS.filter((region) => configuredValues.has(region.value))
   }, [config])
 
   function updateFilter(name, value) {
@@ -280,7 +300,10 @@ export default function RadarCompraAgil() {
 
       <div className="mb-4 grid gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-3 xl:grid-cols-6">
         <select value={filters.audit} onChange={(event) => updateFilter("audit", event.target.value)} className="rounded-lg border border-slate-300 p-2 text-sm"><option value="included">Incluidas vigentes</option><option value="excluded">Excluidas · auditor</option><option value="all">Todas las evaluadas</option></select>
-        <select value={filters.region} onChange={(event) => updateFilter("region", event.target.value)} className="rounded-lg border border-slate-300 p-2 text-sm"><option value="">Todas las regiones</option>{regionOptions.map((region) => <option key={region} value={region}>Region {region}</option>)}</select>
+        <div>
+          <select value={filters.region} onChange={(event) => updateFilter("region", event.target.value)} className="w-full rounded-lg border border-slate-300 p-2 text-sm"><option value="">Chile completo</option>{regionOptions.map((region) => <option key={region.value} value={region.value}>{region.label}</option>)}</select>
+          <p className="mt-1 text-xs text-slate-500">La región solo filtra la visualización. El Radar continúa evaluando oportunidades de todo Chile.</p>
+        </div>
         <input placeholder="Palabra" value={filters.word} onChange={(event) => updateFilter("word", event.target.value)} className="rounded-lg border border-slate-300 p-2 text-sm" />
         <select value={filters.product} onChange={(event) => updateFilter("product", event.target.value)} className="rounded-lg border border-slate-300 p-2 text-sm"><option value="">Todos los productos</option>{(config?.product_terms || []).map((product) => <option key={product} value={product}>{product}</option>)}</select>
         <select value={filters.priority} onChange={(event) => updateFilter("priority", event.target.value)} className="rounded-lg border border-slate-300 p-2 text-sm"><option value="">Toda prioridad</option><option value="alta">Alta</option><option value="media">Media</option><option value="baja">Baja</option></select>
