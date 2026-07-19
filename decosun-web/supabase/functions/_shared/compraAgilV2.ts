@@ -310,7 +310,7 @@ export function preserveExistingRecord(
     delivery_days: numberOrNull(existing.delivery_days) ?? candidate.delivery_days,
     purchase_order_id: numberOrNull(existing.purchase_order_id) ?? candidate.purchase_order_id,
     review_status: stringOrNull(existing.review_status) || "nueva",
-    detail_fetched_at: isoOrNull(existing.detail_fetched_at),
+    detail_fetched_at: candidate.detail_fetched_at ?? isoOrNull(existing.detail_fetched_at),
     raw_data: { ...existingRaw, ...candidate.raw_data },
   };
 }

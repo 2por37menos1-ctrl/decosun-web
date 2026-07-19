@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useProfile } from "../hooks/useProfile"
 import { formatCompraAgilScanError, structuredFunctionError } from "../lib/compraAgilError"
+import { executeCompraAgilScan, initialScanRequest, isResumableScan, scanButtonLabel } from "../lib/compraAgilScanClient"
 import { isGerencia } from "../lib/permissions"
 import { supabase } from "../lib/supabase"
 
@@ -94,7 +95,9 @@ export default function RadarCompraAgil() {
   const [selected, setSelected] = useState(null)
   const [error, setError] = useState("")
   const [notice, setNotice] = useState("")
+  const [scanProgress, setScanProgress] = useState(null)
   const [config, setConfig] = useState(null)
+  const [currentRun, setCurrentRun] = useState(null)
   const [configForm, setConfigForm] = useState({
     searchTerms: "",
     productTerms: "",
@@ -115,6 +118,19 @@ export default function RadarCompraAgil() {
       return
     }
     setConfig(data)
+    if (data.current_scan_run_id) {
+      const { data: runData, error: runError } = await supabase
+        .from("compra_agil_scan_runs")
+        .select("*")
+        .eq("id", data.current_scan_run_id)
+        .maybeSingle()
+      if (runError) {
+        setError(errorMessage(runError, "No se pudo cargar el progreso del escaneo."))
+      }
+      setCurrentRun(runData || null)
+    } else {
+      setCurrentRun(null)
+    }
     setConfigForm({
       searchTerms: (data.search_terms || []).join(", "),
       productTerms: (data.product_terms || []).join(", "),
@@ -211,10 +227,16 @@ export default function RadarCompraAgil() {
     setError("")
     setNotice("")
     try {
-      const { data, error: invokeError } = await supabase.functions.invoke("escanear-compra-agil", { body: {} })
+      const { data, error: invokeError } = await executeCompraAgilScan({
+        initialRequest: initialScanRequest(config, currentRun),
+        maxSegments: Number(config?.max_segments_per_scan) || 100,
+        onProgress: setScanProgress,
+        invoke: (body) => supabase.functions.invoke("escanear-compra-agil", { body }),
+      })
       if (invokeError || data?.success === false || data?.ok === false) {
         const details = await structuredFunctionError(data, invokeError)
         setError(formatCompraAgilScanError(details))
+        await loadConfig()
         return
       }
       setNotice(`Escaneo completado: ${data.unique_candidates || 0} candidatos, ${data.relevant || 0} incluidos y ${data.excluded || 0} excluidos.`)
@@ -257,6 +279,15 @@ export default function RadarCompraAgil() {
     await loadConfig()
   }
 
+  const resumableRun = isResumableScan(config, currentRun)
+  const detailReviewRequired = Boolean(
+    config?.current_scan_run_id &&
+    config?.last_scan_status === "failed" &&
+    (currentRun?.last_error_code || config?.last_error_code) === "detail_attempt_limit_reached",
+  )
+  const processedCandidates = Number(currentRun?.records_processed) || 0
+  const pendingCandidates = Math.max(0, (Number(currentRun?.unique_candidates) || 0) - processedCandidates)
+
   if (profileLoading) return <div className="p-6 text-slate-500">Validando acceso...</div>
   if (!allowed) {
     return <div className="p-6"><div className="rounded-xl border border-red-200 bg-red-50 p-5 text-red-800">No tienes permiso para acceder al Radar Compra Agil.</div></div>
@@ -270,13 +301,26 @@ export default function RadarCompraAgil() {
           <h1 className="text-2xl font-bold text-slate-900">Radar Compra Agil</h1>
           <p className="mt-1 text-sm text-slate-500">API publica Compra Agil V2 · acceso exclusivo gerencia</p>
         </div>
-        <button type="button" onClick={handleScan} disabled={scanning || Boolean(error && !config)} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
-          {scanning ? "Escaneando..." : "Escanear Compra Agil"}
+        <button type="button" onClick={handleScan} disabled={scanning || detailReviewRequired || Boolean(error && !config)} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
+          {scanButtonLabel(config, currentRun, scanning)}
         </button>
       </div>
 
       {error && <div className="mb-4 whitespace-pre-line rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</div>}
       {notice && <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{notice}</div>}
+      {config?.last_scan_status === "failed" && currentRun && (
+        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+          <div className="font-semibold">{resumableRun ? "Escaneo reanudable con progreso conservado" : "Escaneo detenido; requiere revisión"}</div>
+          <div className="mt-1">Candidatos procesados: {processedCandidates} · pendientes: {pendingCandidates}.</div>
+          <div>Último código fallido: {currentRun.last_error_external_id || currentRun.current_external_id || "-"}.</div>
+          <div>Motivo: {currentRun.last_error_message || config.last_error_message || "No informado"}</div>
+        </div>
+      )}
+      {scanning && scanProgress && (
+        <div className="mb-4 rounded-lg border border-indigo-200 bg-indigo-50 p-3 text-sm text-indigo-800">
+          Segmento {scanProgress.segment || 1} · fase {scanProgress.stage || scanProgress.phase || "listado"} · término {scanProgress.current_term || "-"} · página {scanProgress.page_number || 1} · requests {scanProgress.requests_used || 0} · candidatos {scanProgress.unique_candidates || 0} · procesados {scanProgress.records_processed || 0}
+        </div>
+      )}
 
       <div className="mb-6 grid gap-4 md:grid-cols-3">
         <Metric title="Vigentes" value={metrics.active} />

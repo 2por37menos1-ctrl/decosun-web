@@ -3,7 +3,8 @@ export type ScanStage =
   | "detail"
   | "database"
   | "authorization"
-  | "config";
+  | "config"
+  | "runtime";
 export type RequestType = "listing" | "detail";
 
 export type ScanContext = {
@@ -33,6 +34,7 @@ export type SanitizedScanFailure = {
 
 function safeText(value: unknown, maxLength: number) {
   if (typeof value !== "string") return null;
+  // deno-lint-ignore no-control-regex
   const sanitized = value.replace(/[\u0000-\u001f\u007f]+/g, " ").replace(
     /\s+/g,
     " ",
@@ -66,6 +68,16 @@ export function publicErrorMessage(errorCode: string, upstreamStatus?: number) {
       "El escaneo alcanzó su límite interno de solicitudes.",
     upstream_request_failed:
       "No fue posible completar la solicitud a Mercado Público.",
+    upstream_request_timeout:
+      "Mercado Público no respondió dentro del tiempo permitido.",
+    runtime_timeout: "La ejecución terminó antes de completar el escaneo.",
+    scan_segment_busy: "Otro segmento del escaneo sigue en ejecución.",
+    stale_scan_requires_resume:
+      "La ejecución anterior quedó interrumpida y requiere reanudación explícita.",
+    detail_attempt_limit_reached:
+      "El detalle alcanzó el máximo de intentos manuales y requiere revisión.",
+    scan_resume_required:
+      "Existe un escaneo fallido reanudable. Debe continuarse de forma explícita.",
     invalid_upstream_payload:
       "Mercado Público devolvió una respuesta no interpretable.",
     upstream_response_not_ok:

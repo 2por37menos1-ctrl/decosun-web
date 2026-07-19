@@ -4,6 +4,7 @@ const STAGE_LABELS = {
   database: "base de datos",
   authorization: "autorización",
   config: "configuración",
+  runtime: "ejecución",
 }
 
 export function formatCompraAgilScanError(details) {
