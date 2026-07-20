@@ -6,8 +6,15 @@ import verticalImg from "../assets/images/persiana-vertical-living.jpeg"
 import toldoImg from "../assets/images/toldo-proyectante-premium.png"
 import pergolaImg from "../assets/images/pergola-premium.png"
 import sucursalImg from "../assets/images/sucursal-iquique.jpeg"
-import telasImg from "../assets/images/telas-textura.jpg"
 import cierreCristalImg from "../assets/images/cierres-cristal/cierre-cristal-balcon-04.jpeg"
+import blackoutEduImg from "../assets/images/tipos-telas/blackout.png"
+import screenEduImg from "../assets/images/tipos-telas/screen.png"
+import translucidaEduImg from "../assets/images/tipos-telas/translucida.png"
+import duoTranslucidaAbiertaImg from "../assets/images/tipos-telas/duo-translucida-abierta.png"
+import duoTranslucidaCerradaImg from "../assets/images/tipos-telas/duo-translucida-cerrada.png"
+import duoSunoutAbiertaImg from "../assets/images/tipos-telas/duo-sunout-abierta.png"
+import duoSunoutCerradaImg from "../assets/images/tipos-telas/duo-sunout-cerrada.png"
+import duoCafeImg from "../assets/images/tipos-telas/duo-cafe.png"
 
 export default function Soluciones() {
   const soluciones = [
@@ -83,19 +90,85 @@ export default function Soluciones() {
         "Proyección de alto valor inmobiliario",
       ],
     },
+    // {
+    //   title: "Cierres de cristal para balcones y terrazas",
+    //   category: "Exterior · Cerramientos",
+    //   text: "Sistema transparente para balcones, terrazas y quinchos, pensado para extender el uso de espacios exteriores con protección, luminosidad y una vista despejada.",
+    //   image: cierreCristalImg,
+    //   note: "Producto comercializado bajo marca DecoSun.",
+    //   cta: "Cotizar cierre de cristal",
+    //   points: [
+    //     "Protección contra viento, polvo y lluvia ligera",
+    //     "Vista despejada y estética moderna",
+    //     "Mayor confort para terrazas y balcones",
+    //     "Instalación coordinada bajo respaldo DecoSun",
+    //   ],
+    // },
+  ]
+
+  const telasEducativas = [
     {
-      title: "Cierres de cristal para balcones y terrazas",
-      category: "Exterior · Cerramientos",
-      text: "Sistema transparente para balcones, terrazas y quinchos, pensado para extender el uso de espacios exteriores con protección, luminosidad y una vista despejada.",
-      image: cierreCristalImg,
-      note: "Producto comercializado bajo marca DecoSun.",
-      cta: "Cotizar cierre de cristal",
-      points: [
-        "Protección contra viento, polvo y lluvia ligera",
-        "Vista despejada y estética moderna",
-        "Mayor confort para terrazas y balcones",
-        "Instalación coordinada bajo respaldo DecoSun",
+      title: "BLACKOUT",
+      image: blackoutEduImg,
+      description:
+        "Tela opaca que bloquea completamente el paso de la luz, ideal para dormitorios y espacios que requieren máxima privacidad.",
+      indicators: [
+        { label: "Bloqueo de luz", value: "Alto" },
+        { label: "Privacidad", value: "Alta" },
+        { label: "Vista exterior", value: "No" },
       ],
+    },
+    {
+      title: "SCREEN",
+      image: screenEduImg,
+      description:
+        "Tela técnica microperforada que controla el calor y el deslumbramiento manteniendo la vista hacia el exterior durante el día.",
+      indicators: [
+        { label: "Control solar", value: "Alto" },
+        { label: "Privacidad diurna", value: "Media" },
+        { label: "Vista exterior", value: "Sí" },
+      ],
+    },
+    {
+      title: "TRANSLÚCIDO",
+      image: translucidaEduImg,
+      description:
+        "Tela que suaviza la entrada de luz natural entregando privacidad sin oscurecer completamente el ambiente.",
+      indicators: [
+        { label: "Entrada de luz", value: "Suave" },
+        { label: "Privacidad", value: "Media" },
+        { label: "Ambientes", value: "Luminosos" },
+      ],
+    },
+  ]
+
+  const duoComparatives = [
+    {
+      title: "DÚO translúcida",
+      image: duoTranslucidaAbiertaImg,
+      label: "Abierta",
+      text: "Las franjas permiten mayor entrada de luz.",
+    },
+    {
+      title: "DÚO translúcida",
+      image: duoTranslucidaCerradaImg,
+      label: "Cerrada",
+      text: "Las franjas se superponen aumentando la privacidad.",
+    },
+  ]
+
+  const duoSunComparatives = [
+    {
+      title: "DÚO sun out",
+      image: duoSunoutAbiertaImg,
+      label: "Abierta",
+      text: "Permite controlar la entrada de luz natural.",
+    },
+    {
+      title: "DÚO sun out",
+      image: duoSunoutCerradaImg,
+      label: "Cerrada",
+      text: "Entrega un mayor bloqueo de luz y privacidad.",
     },
   ]
 
@@ -201,6 +274,19 @@ export default function Soluciones() {
                   </p>
                 )}
 
+                {[
+                  "Cortinas Roller Screen",
+                  "Roller Blackout",
+                  "Roller DÚO",
+                ].includes(item.title) && (
+                  <Link
+                    to="/soluciones#tipos-telas"
+                    className="mt-6 inline-flex text-sm font-semibold text-slate-600 transition hover:text-amber-700"
+                  >
+                    Ver tipos y diferencias
+                  </Link>
+                )}
+
                 <Link to="/cotizar"
                   className="mt-7 inline-flex rounded-2xl bg-slate-950 px-5 py-3 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-amber-500 hover:text-black"
                 >
@@ -209,6 +295,189 @@ export default function Soluciones() {
               </div>
             </article>
           ))}
+        </div>
+      </section>
+
+      <section
+        id="tipos-telas"
+        className="scroll-mt-24 mx-auto max-w-7xl px-6 py-20 lg:px-8"
+      >
+        <div className="mx-auto max-w-3xl text-center">
+          <p className="text-sm font-bold uppercase tracking-[0.3em] text-amber-700">
+            Materiales y terminaciones
+          </p>
+
+          <h2 className="mt-4 text-4xl font-black tracking-tight text-slate-950 md:text-5xl">
+            Tipos de telas y estilos
+          </h2>
+
+          <p className="mt-5 text-lg leading-8 text-slate-600">
+            Elige en menos de 30 segundos la opción que mejor acompaña tu
+            espacio, tu luz y tu nivel de privacidad.
+          </p>
+        </div>
+
+        <div className="mt-14 grid gap-6 lg:grid-cols-3">
+          {[
+            {
+              title: "Quiero privacidad",
+              image: blackoutEduImg,
+              description:
+                "Ideal para dormitorios, salas de reuniones o ambientes que necesitan oscurecerse por completo.",
+              badge: "Blackout",
+            },
+            {
+              title: "Quiero luz y vista",
+              image: screenEduImg,
+              description:
+                "Perfecta para living, oficina o terraza cuando deseas controlar el sol sin perder la sensación de aire libre.",
+              badge: "Screen",
+            },
+            {
+              title: "Quiero equilibrio",
+              image: translucidaEduImg,
+              description:
+                "Una opción suave para quienes buscan luz natural, privacidad parcial y un ambiente más acogedor.",
+              badge: "Translúcido",
+            },
+          ].map((item) => (
+            <article
+              key={item.title}
+              className="group overflow-hidden rounded-[34px] border border-slate-200 bg-white shadow-lg transition duration-300 hover:-translate-y-1 hover:shadow-2xl"
+            >
+              <div className="overflow-hidden">
+                <img
+                  src={item.image}
+                  alt={item.title}
+                  className="h-72 w-full object-cover transition duration-500 group-hover:scale-105"
+                />
+              </div>
+
+              <div className="flex h-full flex-col p-7">
+                <div className="inline-flex w-fit rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-800">
+                  {item.badge}
+                </div>
+
+                <h3 className="mt-4 text-2xl font-black text-slate-950">
+                  {item.title}
+                </h3>
+
+                <p className="mt-4 text-base leading-7 text-slate-600">
+                  {item.description}
+                </p>
+              </div>
+            </article>
+          ))}
+        </div>
+
+        <div className="mt-16 grid gap-6 lg:grid-cols-2">
+          <div className="rounded-[34px] border border-slate-200 bg-white p-8 shadow-lg lg:p-10">
+            <p className="text-sm font-bold uppercase tracking-[0.3em] text-amber-700">
+              DÚO translúcida
+            </p>
+            <h3 className="mt-4 text-3xl font-black tracking-tight text-slate-950">
+              Elige la sensación que quieres tener
+            </h3>
+            <p className="mt-4 text-base leading-7 text-slate-600">
+              Si prefieres más luz, elige la opción abierta. Si buscas más calma,
+              la cerrada ofrece mayor privacidad.
+            </p>
+
+            <div className="mt-8 grid gap-6 md:grid-cols-2">
+              {duoComparatives.map((item) => (
+                <article
+                  key={`${item.label}-${item.title}`}
+                  className="overflow-hidden rounded-[28px] border border-slate-200 bg-slate-50"
+                >
+                  <img
+                    src={item.image}
+                    alt={`${item.title} ${item.label}`}
+                    className="h-64 w-full object-cover"
+                  />
+
+                  <div className="p-5">
+                    <div className="inline-flex rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-800">
+                      {item.label}
+                    </div>
+                    <p className="mt-3 text-sm leading-7 text-slate-600">
+                      {item.text}
+                    </p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-[34px] border border-slate-200 bg-white p-8 shadow-lg lg:p-10">
+            <p className="text-sm font-bold uppercase tracking-[0.3em] text-amber-700">
+              DÚO sun out
+            </p>
+            <h3 className="mt-4 text-3xl font-black tracking-tight text-slate-950">
+              Controla el sol sin renunciar al diseño
+            </h3>
+            <p className="mt-4 text-base leading-7 text-slate-600">
+              Ideal si buscas un equilibrio entre luz natural, confort visual y
+              una estética más limpia.
+            </p>
+
+            <div className="mt-8 grid gap-6 md:grid-cols-2">
+              {duoSunComparatives.map((item) => (
+                <article
+                  key={`${item.label}-${item.title}`}
+                  className="overflow-hidden rounded-[28px] border border-slate-200 bg-slate-50"
+                >
+                  <img
+                    src={item.image}
+                    alt={`${item.title} ${item.label}`}
+                    className="h-64 w-full object-cover"
+                  />
+
+                  <div className="p-5">
+                    <div className="inline-flex rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-800">
+                      {item.label}
+                    </div>
+                    <p className="mt-3 text-sm leading-7 text-slate-600">
+                      {item.text}
+                    </p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-16 overflow-hidden rounded-[34px] border border-slate-200 bg-amber-50 shadow-lg">
+          <div className="grid lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+            <img
+              src={duoCafeImg}
+              alt="DÚO Café"
+              className="h-[320px] w-full object-cover lg:h-[380px]"
+            />
+
+            <div className="p-8 lg:p-10">
+              <p className="text-sm font-bold uppercase tracking-[0.3em] text-amber-700">
+                Colores
+              </p>
+
+              <h3 className="mt-4 text-3xl font-black tracking-tight text-slate-950">
+                Elige el tono que mejor acompaña el espacio
+              </h3>
+
+              <p className="mt-5 text-lg leading-8 text-slate-700">
+                Los sistemas DÚO se adaptan a distintos ambientes con
+                terminaciones que se integran con la decoración.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-12 flex justify-center">
+          <Link
+            to="/cotizar"
+            className="inline-flex rounded-2xl bg-slate-950 px-7 py-4 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-amber-500 hover:text-black"
+          >
+            Cotizar estas soluciones
+          </Link>
         </div>
       </section>
 
@@ -255,37 +524,6 @@ export default function Soluciones() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-6 py-20 lg:px-8">
-        <div className="grid overflow-hidden rounded-[36px] border border-slate-200 bg-amber-50 shadow-xl lg:grid-cols-2">
-          <img
-            src={telasImg}
-            alt="Telas y texturas"
-            className="h-full min-h-[420px] w-full object-cover"
-          />
-
-          <div className="flex flex-col justify-center p-8 lg:p-12">
-            <p className="text-sm font-bold uppercase tracking-[0.3em] text-amber-700">
-              Materiales y terminaciones
-            </p>
-
-            <h2 className="mt-4 text-4xl font-black tracking-tight text-slate-950">
-              Cada proyecto requiere una solución adecuada
-            </h2>
-
-            <p className="mt-5 text-lg leading-8 text-slate-700">
-              La elección de tela, color, sistema y tipo de instalación influye
-              directamente en el resultado final. Por eso orientamos cada
-              proyecto según luz, privacidad, uso del espacio y estética.
-            </p>
-
-            <Link to="/cotizar"
-              className="mt-8 inline-flex w-fit rounded-2xl bg-slate-950 px-7 py-4 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-amber-500 hover:text-black"
-            >
-              Solicitar asesoría
-            </Link>
-          </div>
-        </div>
-      </section>
     </main>
   )
 }
