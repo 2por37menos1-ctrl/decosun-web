@@ -47,32 +47,22 @@ function timeAgo(dateString) {
 }
 
 function getProjectPaid(project) {
-  return Number(
-    project.amount_paid_cached != null
-      ? project.amount_paid_cached
-      : project.amount_paid || 0
-  )
+  return project.amount_paid_cached != null
+    ? Number(project.amount_paid_cached || 0)
+    : 0
 }
 
 function getProjectBalance(project) {
-  const paid = getProjectPaid(project)
-
-  return Number(
-    project.balance_cached != null
-      ? project.balance_cached
-      : Number(project.sale_value || 0) - paid
-  )
+  return project.balance_cached != null
+    ? Number(project.balance_cached || 0)
+    : 0
 }
 
 function getFinanceStatus(project) {
   if (project.finance_status != null) return project.finance_status
 
-  if (project.payment_status === "pagado") return "paid"
-  if (
-    project.payment_status === "parcial" ||
-    project.payment_status === "abonado"
-  ) {
-    return "partial"
+  if (project.amount_paid_cached == null || project.balance_cached == null) {
+    return "pending_reconciliation"
   }
 
   return "pending"
@@ -82,6 +72,7 @@ function formatFinanceStatus(status) {
   if (status === "paid") return "Pagado"
   if (status === "partial") return "Parcial"
   if (status === "overpaid") return "Overpaid"
+  if (status === "pending_reconciliation") return "Pendiente de reconciliación"
   return "Pendiente"
 }
 
@@ -173,11 +164,20 @@ export default function KanbanBoard({
                 const balance = getProjectBalance(project)
                 const financeStatus = getFinanceStatus(project)
                 const balanceTone = getBalanceTone(financeStatus, balance)
+                const hasFinanceCache =
+                  project.amount_paid_cached != null &&
+                  project.balance_cached != null
                 const advisor = project.advisor_name?.trim() || "Sin asesor"
                 const primaryName =
                   project.contact_name || project.title || "Sin cliente"
                 const quoteLabel =
                   project.quote_number || project.title || "Sin cotizacion"
+                const paidDisplay = hasFinanceCache
+                  ? compactMoney(paid)
+                  : "Pendiente reconciliación"
+                const balanceDisplay = hasFinanceCache
+                  ? compactMoney(balance)
+                  : "Pendiente reconciliación"
 
                 return (
                   <article
@@ -218,7 +218,7 @@ export default function KanbanBoard({
 
                         <div className={`balance-amount is-${balanceTone}`}>
                           <small>Saldo</small>
-                          <strong>{compactMoney(balance)}</strong>
+                          <strong>{balanceDisplay}</strong>
                         </div>
                       </div>
                     )}
@@ -232,7 +232,7 @@ export default function KanbanBoard({
                             {formatFinanceStatus(financeStatus)}
                           </small>
 
-                          <small>{compactMoney(paid)} cobrado</small>
+                          <small>{paidDisplay}</small>
                         </>
                       )}
 

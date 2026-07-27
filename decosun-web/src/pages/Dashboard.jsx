@@ -1,5 +1,5 @@
 import "../panel.css"
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 
 import DashboardLayout from "../layouts/DashboardLayout"
 import ExecutiveMetricCard from "../components/ExecutiveMetricCard"
@@ -16,9 +16,6 @@ import AgendaPanel from "./AgendaPanel"
 import PurchaseRequests from "./PurchaseRequests"
 import Treasury from "./Treasury"
 import RadarCompraAgil from "./RadarCompraAgil"
-
-import { supabase } from "../lib/supabase"
-import { createProjectHistory } from "../lib/projectHistory"
 
 import {
   canViewAgenda,
@@ -66,7 +63,6 @@ function formatMoney(value) {
 function DonutChart({ items, total }) {
   const radius = 44
   const circumference = 2 * Math.PI * radius
-  let offset = 0
 
   if (!items.length || total <= 0) {
     return (
@@ -88,13 +84,13 @@ function DonutChart({ items, total }) {
           strokeWidth="14"
         />
 
-        {items.map((item, index) => {
+        {items.reduce((circles, item, index) => {
           const percentage = item.sales / total
           const dash = percentage * circumference
-          const currentOffset = offset
-          offset += dash
+          const currentOffset = circles.offset
 
-          return (
+          circles.offset += dash
+          circles.nodes.push(
             <circle
               key={item.region}
               cx="60"
@@ -109,7 +105,8 @@ function DonutChart({ items, total }) {
               transform="rotate(-90 60 60)"
             />
           )
-        })}
+          return circles
+        }, { offset: 0, nodes: [] }).nodes}
 
         <text
           x="60"
@@ -184,7 +181,6 @@ export default function Dashboard() {
   const {
     projects,
     loading,
-    reloadProjects,
     updateProjectStatus,
     updateProject,
     archiveProject,
@@ -192,11 +188,9 @@ export default function Dashboard() {
 
   const {
     archivedProjects,
-    loadingArchived,
-    reloadArchivedProjects,
   } = useArchivedProjects(profile)
 
-  function navigatePanel(nextView) {
+  const navigatePanel = useCallback((nextView) => {
     if (nextView === "proyectos") {
       alert("Proyectos dedicado estará disponible pronto. Abriendo Comercial.")
       setView("comercial")
@@ -233,7 +227,7 @@ export default function Dashboard() {
     }
 
     setView(nextView)
-  }
+  }, [profile])
 
   useEffect(() => {
     function handlePanelNavigation(event) {
@@ -245,7 +239,7 @@ export default function Dashboard() {
     return () => {
       window.removeEventListener("decosun:panel-navigate", handlePanelNavigation)
     }
-  }, [profile])
+  }, [navigatePanel])
 
   useEffect(() => {
     window.dispatchEvent(
@@ -293,21 +287,15 @@ export default function Dashboard() {
   )
 
   function getProjectPaid(project) {
-    return Number(
-      project.amount_paid_cached != null
-        ? project.amount_paid_cached
-        : project.amount_paid || 0
-    )
+    return project.amount_paid_cached != null
+      ? Number(project.amount_paid_cached || 0)
+      : 0
   }
 
   function getProjectBalance(project) {
-    const paid = getProjectPaid(project)
-
-    return Number(
-      project.balance_cached != null
-        ? project.balance_cached
-        : Number(project.sale_value || 0) - paid
-    )
+    return project.balance_cached != null
+      ? Number(project.balance_cached || 0)
+      : 0
   }
 
   const visibleTotalSold = visibleSalesProjects.reduce(
@@ -324,6 +312,11 @@ export default function Dashboard() {
     (acc, project) => acc + getProjectBalance(project),
     0
   )
+
+  const projectsPendingReconciliation = visibleSalesProjects.filter(
+    (project) =>
+      project.amount_paid_cached == null || project.balance_cached == null
+  ).length
 
   const advisorCommission = visibleSalesProjects.reduce(
     (acc, project) => {
@@ -583,7 +576,6 @@ export default function Dashboard() {
 
       sale_value: cleanNumber(payload.sale_value),
       invoice_value: cleanNumber(payload.invoice_value),
-      amount_paid: cleanNumber(payload.amount_paid),
 
       capital_contribution: cleanNumber(payload.capital_contribution),
       management_fee_rate: cleanNumber(payload.management_fee_rate),
@@ -596,48 +588,11 @@ export default function Dashboard() {
       other_costs: cleanNumber(payload.other_costs),
     }
 
-    const previousProject = projects.find((p) => p.id === projectId)
-
-    const previousPaid = Number(previousProject?.amount_paid || 0)
-    const newPaid = Number(cleanPayload.amount_paid || 0)
-    const paymentDifference = newPaid - previousPaid
-
     const ok = await updateProject(projectId, cleanPayload)
 
     if (!ok) return
 
-    // Legacy amount_paid no longer creates treasury income.
-    // Real payments must use register_project_payment.
-
     setSelectedProject(null)
-  }
-
-  async function createTreasuryIncome(project, amount) {
-    if (!project || amount <= 0) return
-
-    const { error } = await supabase.from("treasury_movements").insert({
-      date: new Date().toISOString().slice(0, 10),
-      bank: "BCI",
-      description: `Pago cliente: ${project.title || "Proyecto"}`,
-      type: "ingreso",
-      amount,
-      category: "Ingreso cliente",
-      subcategory: project.payment_status || "Abono",
-      branch:
-        project.region_code === "iquique"
-          ? "Iquique"
-          : "Viña del Mar",
-      project_id: project.id,
-      person_name: project.contact_name || project.title || "",
-      notes: "Ingreso generado desde ficha de proyecto",
-    })
-
-    if (error) {
-      console.error(error)
-      alert(
-        "El proyecto se guardó, pero no se pudo crear el ingreso en Tesorería."
-      )
-    }
   }
 
   if (profileLoading || loading) {
@@ -819,6 +774,16 @@ export default function Dashboard() {
               <p>Vista compacta para decidir; el analisis vive en los modulos.</p>
             </div>
 
+            {projectsPendingReconciliation > 0 && (
+              <div className="full-field client-visible-note" style={{ marginBottom: "16px" }}>
+                <strong>Información financiera pendiente de reconciliación.</strong>
+                <p>
+                  {projectsPendingReconciliation} proyectos todavía no tienen la caché financiera completa.
+                  El dashboard muestra sólo datos del nuevo Motor Financiero y no mezcla acumulados legacy.
+                </p>
+              </div>
+            )}
+
             <div className="executive-compact-actions">
               <button
                 type="button"
@@ -842,59 +807,59 @@ export default function Dashboard() {
 
           {canSeeMoney && (
             <>
-          <section className="dashboard-section dashboard-section-compact">
-            <div className="section-heading compact">
-              <div>
-                <h2>Salud financiera</h2>
-                <p>Cuatro senales para entender caja y cobranza sin entrar al detalle.</p>
-              </div>
-            </div>
+              <section className="dashboard-section dashboard-section-compact">
+                <div className="section-heading compact">
+                  <div>
+                    <h2>Salud financiera</h2>
+                    <p>Cuatro senales para entender caja y cobranza sin entrar al detalle.</p>
+                  </div>
+                </div>
 
-            <div className="executive-metric-grid executive-metric-grid-primary">
-              <ExecutiveMetricCard
-                title="Venta mes"
-                value={formatMoney(visibleTotalSold)}
-                description="Venta comprometida actual."
-                status="neutral"
-                indicator="Venta"
-                compact
-              />
+                <div className="executive-metric-grid executive-metric-grid-primary">
+                  <ExecutiveMetricCard
+                    title="Venta mes"
+                    value={formatMoney(visibleTotalSold)}
+                    description="Venta comprometida actual."
+                    status="neutral"
+                    indicator="Venta"
+                    compact
+                  />
 
-              <ExecutiveMetricCard
-                title="Cobrado"
-                value={formatMoney(visibleTotalPaid)}
-                description={`${paymentProgress.toFixed(0)}% de avance.`}
-                status="positive"
-                indicator="Caja"
-                compact
-              />
+                  <ExecutiveMetricCard
+                    title="Cobrado"
+                    value={formatMoney(visibleTotalPaid)}
+                    description={`${paymentProgress.toFixed(0)}% de avance.`}
+                    status="positive"
+                    indicator="Caja"
+                    compact
+                  />
 
-              <ExecutiveMetricCard
-                title="Pendiente cobrar"
-                value={formatMoney(visibleBalance)}
-                description={`${pendingBalanceProjects.length} proyectos con saldo.`}
-                status={visibleBalance > 0 ? "warning" : "positive"}
-                indicator="Saldo"
-                compact
-              />
+                  <ExecutiveMetricCard
+                    title="Pendiente cobrar"
+                    value={formatMoney(visibleBalance)}
+                    description={`${pendingBalanceProjects.length} proyectos con saldo.`}
+                    status={visibleBalance > 0 ? "warning" : "positive"}
+                    indicator="Saldo"
+                    compact
+                  />
 
-              <ExecutiveMetricCard
-                title="Caja proyectada"
-                value="Sin datos"
-                description="Pendiente de configurar desde Finanzas."
-                status="neutral"
-                indicator="Futuro"
-                compact
-              />
-            </div>
-          </section>
+                  <ExecutiveMetricCard
+                    title="Caja proyectada"
+                    value="Sin datos"
+                    description="Pendiente de configurar desde Finanzas."
+                    status="neutral"
+                    indicator="Futuro"
+                    compact
+                  />
+                </div>
+              </section>
 
-          <div className="executive-mini-grid">
-            <section className="executive-mini-panel">
-              <div className="mini-panel-header">
-                <h3>Comercial</h3>
-                <span>{opportunityProjects.length} oportunidades</span>
-              </div>
+              <div className="executive-mini-grid">
+                <section className="executive-mini-panel">
+                  <div className="mini-panel-header">
+                    <h3>Comercial</h3>
+                    <span>{opportunityProjects.length} oportunidades</span>
+                  </div>
 
               <dl>
                 <div>
@@ -961,7 +926,7 @@ export default function Dashboard() {
                 </div>
               </dl>
             </section>
-          </div>
+              </div>
             </>
           )}
 

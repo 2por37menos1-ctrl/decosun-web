@@ -58,6 +58,46 @@ export function canViewProjectFinance(profile) {
   )
 }
 
+function isEdgarIquiqueFinanceScope(profile, project) {
+  const profileRegion = profile?.region_code || ""
+  const profileName = String(profile?.full_name || "").trim()
+  const projectRegion = project?.region_code || ""
+
+  if (!isJefaturaRegion(profile)) return false
+  if (profileRegion !== "iquique") return false
+
+  const isEdgarIquique = ["Edgar", "Edgar Leighton"].includes(profileName)
+  const northProjectRegions = [
+    "iquique",
+    "norte",
+    "arica",
+    "tarapaca",
+    "calama",
+    "antofagasta",
+  ]
+
+  return isEdgarIquique && northProjectRegions.includes(projectRegion)
+}
+
+export function canViewProjectFinanceForProject(profile, project) {
+  if (isGerencia(profile)) return true
+
+  if (
+    isJefaturaRegion(profile) &&
+    profile?.region_code === (project?.region_code || "")
+  ) {
+    return true
+  }
+
+  return isEdgarIquiqueFinanceScope(profile, project)
+}
+
+export function canViewProjectCommissionsForProject(profile, project) {
+  if (isGerencia(profile)) return true
+
+  return isEdgarIquiqueFinanceScope(profile, project)
+}
+
 export function canViewKanbanMoney(profile) {
   return canViewMoney(profile)
 }
@@ -69,23 +109,7 @@ export function canRegisterProjectPayment(profile) {
 export function canRegisterProjectPaymentForProject(profile, project) {
   if (isGerencia(profile)) return true
 
-  const projectRegion = project?.region_code || ""
-  const profileName = String(profile?.full_name || "").trim()
-  const isEdgarIquique =
-    isJefaturaRegion(profile) &&
-    profile?.region_code === "iquique" &&
-    ["Edgar", "Edgar Leighton"].includes(profileName)
-
-  const northProjectRegions = [
-    "iquique",
-    "norte",
-    "arica",
-    "tarapaca",
-    "calama",
-    "antofagasta",
-  ]
-
-  return isEdgarIquique && northProjectRegions.includes(projectRegion)
+  return isEdgarIquiqueFinanceScope(profile, project)
 }
 
 export function canAssignProjectAdvisor(profile, project) {

@@ -2,10 +2,12 @@ import { useEffect, useMemo, useState } from "react"
 import { supabase } from "../lib/supabase"
 import {
   canAssignProjectAdvisor,
+  canPayProjectCommissions,
+  canViewProjectCommissionsForProject,
   canRegisterProjectPaymentForProject,
-  canViewCommissions,
-  canViewProjectFinance,
+  canViewProjectFinanceForProject,
 } from "../lib/permissions"
+import CommissionPaymentModal from "./CommissionPaymentModal"
 import { registerProjectPayment } from "../lib/projectPayments"
 import { getTerritoryAssignment } from "../lib/territoryAssignment"
 
@@ -47,12 +49,20 @@ const regionOptions = [
   { value: "la_serena", label: "La Serena" },
 ]
 
+const EDGAR_ADVISOR_ID = "4a84c0a5-184e-4ca1-8cd5-406a1e2a0301"
+const EDGAR_ADVISOR_NAME = "Edgar Leighton"
+
 function money(value) {
   return `$${Number(value || 0).toLocaleString("es-CL")}`
 }
 
 function todayDate() {
   return new Date().toISOString().slice(0, 10)
+}
+
+function formatDate(value) {
+  if (!value) return "-"
+  return new Date(value).toLocaleDateString("es-CL")
 }
 
 function defaultCompanyName(project) {
@@ -63,21 +73,66 @@ function defaultCompanyName(project) {
 function getFinanceStatus(projectOrForm) {
   if (projectOrForm?.finance_status != null) return projectOrForm.finance_status
 
-  if (projectOrForm?.payment_status === "pagado") return "paid"
-  if (
-    projectOrForm?.payment_status === "parcial" ||
-    projectOrForm?.payment_status === "abonado"
-  ) {
-    return "partial"
-  }
-
   return "pending"
 }
 
 function formatFinanceStatus(status) {
   if (status === "paid") return "Pagado"
   if (status === "partial") return "Pago parcial"
+  if (status === "overpaid") return "Sobrepagado"
+  if (status === "pending_reconciliation") return "Pendiente de reconciliación"
   return "Pendiente"
+}
+
+function formatCommissionStatus(status) {
+  if (status === "generated") return "Pendiente"
+  if (status === "partially_paid") return "Parcialmente pagada"
+  if (status === "paid") return "Pagada"
+  if (status === "voided") return "Anulada"
+  if (status === "reversed") return "Reversada"
+  return status || "-"
+}
+
+function formatPercent(value) {
+  return `${Number(value || 0).toFixed(0)}%`
+}
+
+function hasFinanceCache(projectOrForm) {
+  return (
+    projectOrForm?.amount_paid_cached != null &&
+    projectOrForm?.balance_cached != null
+  )
+}
+
+function getProjectFinanceStatus(projectOrForm) {
+  if (!hasFinanceCache(projectOrForm)) {
+    return "pending_reconciliation"
+  }
+
+  return getFinanceStatus(projectOrForm)
+}
+
+function getProjectPaymentProgress(projectOrForm) {
+  const saleValue = Number(projectOrForm?.sale_value || 0)
+
+  if (!saleValue || !hasFinanceCache(projectOrForm)) return 0
+
+  return Math.max(
+    0,
+    Math.min(
+      100,
+      (Number(projectOrForm.amount_paid_cached || 0) / saleValue) * 100
+    )
+  )
+}
+
+function getPaymentReference(payment) {
+  return (
+    payment?.notes ||
+    payment?.idempotency_key ||
+    payment?.treasury_movement_id ||
+    "-"
+  )
 }
 
 function cleanPhone(phone) {
@@ -138,6 +193,11 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
   const [advisors, setAdvisors] = useState([])
   const [projectPayments, setProjectPayments] = useState([])
   const [loadingPayments, setLoadingPayments] = useState(false)
+  const [projectCommissions, setProjectCommissions] = useState([])
+  const [projectCommissionPayments, setProjectCommissionPayments] = useState([])
+  const [loadingCommissions, setLoadingCommissions] = useState(false)
+  const [projectCommissionError, setProjectCommissionError] = useState("")
+  const [selectedCommissionPayment, setSelectedCommissionPayment] = useState(null)
   const [newPayment, setNewPayment] = useState({
     paymentDate: todayDate(),
     amount: "",
@@ -157,9 +217,9 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
   const canEditInternal = isGerencia || isJefatura || isAdminRegional
   const canAssignAdvisor = canAssignProjectAdvisor(profile, project)
   const canSeeAssignedAdvisor = canAssignAdvisor || (!isAdvisor && Boolean(project?.advisor_name))
-  const canSeeFinance = canViewProjectFinance(profile)
-  const canSeeCosts = isGerencia || isJefatura
-  const canSeeCommissions = canViewCommissions(profile)
+  const canSeeFinance = canViewProjectFinanceForProject(profile, project)
+  const canSeeProjectCommissions = canViewProjectCommissionsForProject(profile, project)
+  const canPayProjectCommission = canPayProjectCommissions(profile)
   const canRegisterPayment = canRegisterProjectPaymentForProject(profile, project)
 
   useEffect(() => {
@@ -196,13 +256,9 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
 
       sale_value: project.sale_value || 0,
       invoice_value: project.invoice_value || 0,
-      amount_paid: project.amount_paid || 0,
       amount_paid_cached: project.amount_paid_cached || 0,
       balance_cached: project.balance_cached || 0,
       finance_status: project.finance_status || "pending",
-      payment_status: project.payment_status || "pendiente",
-      payment_type: project.payment_type || "pendiente",
-      payment_bank: project.payment_bank || "",
 
       technician_assigned: project.technician_assigned || "",
       key_date: project.key_date || "",
@@ -231,7 +287,7 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
       paymentDate: todayDate(),
       amount: "",
       companyName: defaultCompanyName(project),
-      bank: project.payment_bank || "",
+      bank: "",
       paymentMethod: "bank_transfer",
       paymentMilestone: "partial",
       notes: "",
@@ -243,17 +299,31 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
     } else {
       setProjectPayments([])
     }
-  }, [project, canSeeFinance])
+
+    if (canSeeProjectCommissions) {
+      loadProjectCommissions(project.id)
+    } else {
+      setProjectCommissions([])
+      setProjectCommissionPayments([])
+      setProjectCommissionError("")
+    }
+  }, [project, canSeeFinance, canSeeProjectCommissions])
 
   useEffect(() => {
     loadAdvisors()
   }, [])
 
   useEffect(() => {
-    if (!project?.id || !form || !canSeeFinance) return
+    if (!project?.id || !canSeeFinance) return
 
     loadProjectPayments(project.id)
   }, [project?.id, form?.amount_paid_cached, form?.balance_cached, form?.finance_status, canSeeFinance])
+
+  useEffect(() => {
+    if (!project?.id || !canSeeProjectCommissions) return
+
+    loadProjectCommissions(project.id)
+  }, [project?.id, canSeeProjectCommissions])
 
   async function loadProjectHistory(projectId) {
     setLoadingHistory(true)
@@ -280,7 +350,7 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
 
     const { data, error } = await supabase
       .from("project_payments")
-      .select("id, payment_date, amount, bank, payment_method, payment_milestone, status, created_at")
+      .select("id, payment_date, amount, company_name, bank, payment_method, payment_milestone, status, notes, idempotency_key, treasury_movement_id, created_at")
       .eq("project_id", projectId)
       .order("payment_date", { ascending: false })
       .order("created_at", { ascending: false })
@@ -294,6 +364,45 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
 
     setProjectPayments(data || [])
     setLoadingPayments(false)
+  }
+
+  async function loadProjectCommissions(projectId) {
+    setLoadingCommissions(true)
+    setProjectCommissionError("")
+
+    const [commissionsResponse, commissionPaymentsResponse] = await Promise.all([
+      supabase.rpc("get_project_commissions_for_project", {
+        p_project_id: projectId,
+      }),
+      supabase.rpc("get_project_commission_payments_for_project", {
+        p_project_id: projectId,
+      }),
+    ])
+
+    if (commissionsResponse.error || commissionPaymentsResponse.error) {
+      console.error(commissionsResponse.error || commissionPaymentsResponse.error)
+      setProjectCommissions([])
+      setProjectCommissionPayments([])
+      setProjectCommissionError(
+        commissionsResponse.error?.message ||
+          commissionPaymentsResponse.error?.message ||
+          "No se pudo cargar el historial de comisiones del proyecto."
+      )
+      setLoadingCommissions(false)
+      return
+    }
+
+    setProjectCommissions(commissionsResponse.data || [])
+    setProjectCommissionPayments(commissionPaymentsResponse.data || [])
+    setLoadingCommissions(false)
+  }
+
+  function canPayCommissionRow(commission) {
+    return (
+      canPayProjectCommission &&
+      ["generated", "partially_paid"].includes(commission.status) &&
+      Number(commission.balance_cached || 0) > 0
+    )
   }
 
   async function loadAdvisors() {
@@ -334,6 +443,29 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
 
     if (savingPayment) return
 
+    const paymentAmount = Number(newPayment.amount || 0)
+    const currentBalance = Number(project?.balance_cached || 0)
+
+    if (paymentAmount <= 0) {
+      alert("El monto debe ser mayor que cero.")
+      return
+    }
+
+    if (!project?.sale_value || Number(project.sale_value || 0) <= 0) {
+      alert("Este proyecto no tiene un valor de venta válido para registrar pagos.")
+      return
+    }
+
+    if (hasFinanceCache(project) && paymentAmount > currentBalance) {
+      alert("El monto no puede superar el saldo pendiente.")
+      return
+    }
+
+    if (!newPayment.companyName?.trim()) {
+      alert("Selecciona la empresa receptora antes de registrar el pago.")
+      return
+    }
+
     if (!newPayment.bank?.trim()) {
       alert("Selecciona o ingresa el banco receptor antes de registrar el pago.")
       return
@@ -344,7 +476,7 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
     try {
       const result = await registerProjectPayment({
         projectId: project.id,
-        amount: newPayment.amount,
+        amount: paymentAmount,
         paymentDate: newPayment.paymentDate,
         companyName: newPayment.companyName,
         bank: newPayment.bank,
@@ -364,6 +496,11 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
         }))
       }
 
+      await loadProjectPayments(project.id)
+      if (canSeeProjectCommissions) {
+        await loadProjectCommissions(project.id)
+      }
+
       setNewPayment((current) => ({
         ...current,
         amount: "",
@@ -381,22 +518,6 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
 
   function handleAdvisorChange(advisorId) {
     if (!canAssignAdvisor) return
-
-    if (advisorId === "__edgar__") {
-      setForm((current) => ({
-        ...current,
-        advisor_id: "",
-        advisor_name: "Edgar Leighton",
-        advisor_email: "",
-        advisor_region: current.region_code || "iquique",
-        advisor_commission_rate: 20,
-        advisor_commission_type: "base",
-        advisor_commission_amount: 0,
-        advisor_commission_status: "pendiente",
-      }))
-
-      return
-    }
 
     const advisor = advisors.find((item) => item.id === advisorId)
 
@@ -470,7 +591,9 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
     const cleanPayload = {
       ...form,
 
-      advisor_id: form.advisor_id || null,
+      advisor_id:
+        form.advisor_id ||
+        (form.advisor_name === EDGAR_ADVISOR_NAME ? EDGAR_ADVISOR_ID : null),
 
       key_date: form.key_date || null,
       sale_date: form.sale_date || null,
@@ -481,7 +604,6 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
 
       sale_value: Number(form.sale_value || 0),
       invoice_value: Number(form.invoice_value || 0),
-      amount_paid: Number(form.amount_paid || 0),
 
       capital_contribution: Number(form.capital_contribution || 0),
       management_fee_rate: Number(form.management_fee_rate || 0),
@@ -643,187 +765,6 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
     window.open(`https://wa.me/${phone}?text=${message}`, "_blank")
   }
 
-  const balance = useMemo(() => {
-    return Math.max(
-      Number(form?.sale_value || 0) - Number(form?.amount_paid || 0),
-      0
-    )
-  }, [form?.sale_value, form?.amount_paid])
-
-  const totalCosts = useMemo(() => {
-    if (!form) return 0
-
-    return (
-      Number(form.fabric_cost || 0) +
-      Number(form.motor_cost || 0) +
-      Number(form.mechanism_cost || 0) +
-      Number(form.installation_cost || 0) +
-      Number(form.transport_cost || 0) +
-      Number(form.other_costs || 0)
-    )
-  }, [
-    form?.fabric_cost,
-    form?.motor_cost,
-    form?.mechanism_cost,
-    form?.installation_cost,
-    form?.transport_cost,
-    form?.other_costs,
-  ])
-
-  const estimatedMargin = Number(form?.sale_value || 0) - totalCosts
-
-  const managementFee =
-    Number(form?.sale_value || 0) *
-    (Number(form?.management_fee_rate || 0) / 100)
-
-  function savePaymentAmount(amount, status, type) {
-    const saleValue = Number(form.sale_value || 0)
-    const paymentAmount = Number(amount || 0)
-
-    if (saleValue <= 0) {
-      alert("Primero ingresa el valor del proyecto.")
-      return
-    }
-
-    if (paymentAmount < 0) {
-      alert("El abono no puede ser negativo.")
-      return
-    }
-
-    if (paymentAmount > saleValue) {
-      alert("El abono no puede superar el valor del proyecto.")
-      return
-    }
-
-    setForm((current) => ({
-      ...current,
-      amount_paid: paymentAmount,
-      payment_status: status,
-      payment_type: type,
-    }))
-
-    onSave(project.id, {
-      ...form,
-      amount_paid: paymentAmount,
-      payment_status: status,
-      payment_type: type,
-
-      key_date: form.key_date || null,
-      sale_date: form.sale_date || null,
-      invoice_date: form.invoice_date || null,
-      closed_date: form.closed_date || null,
-      visit_date: form.visit_date || null,
-      visit_time: form.visit_time || null,
-    })
-  }
-
-  function registerInitialPayment() {
-    const saleValue = Number(form.sale_value || 0)
-    const initialPayment = Math.round(saleValue * 0.5)
-
-    savePaymentAmount(initialPayment, "abonado", "abono_50")
-  }
-
-  function registerManualPayment() {
-    savePaymentAmount(
-      Number(form.amount_paid || 0),
-      Number(form.amount_paid || 0) >= Number(form.sale_value || 0)
-        ? "pagado"
-        : "abonado",
-      "abono_manual"
-    )
-  }
-
-  function registerFinalPayment() {
-    const saleValue = Number(form.sale_value || 0)
-
-    savePaymentAmount(saleValue, "pagado", "pagado_total")
-  }
-
-  function calculateAdvisorCommission() {
-    if (form.advisor_commission_type === "sin_comision") return 0
-
-    if (form.advisor_commission_type === "especial") {
-      return Number(form.advisor_commission_amount || 0)
-    }
-
-    return Math.round(
-      Number(form.sale_value || 0) *
-      (Number(form.advisor_commission_rate || 0) / 100)
-    )
-  }
-
-  async function registerCommissionInTreasury() {
-    const commissionAmount = calculateAdvisorCommission()
-
-    if (!form.advisor_name) {
-      alert("Primero asigna un asesor comercial.")
-      return
-    }
-
-    if (commissionAmount <= 0) {
-      alert("La comisión calculada debe ser mayor a cero.")
-      return
-    }
-
-    const confirmRegister = window.confirm(
-      `¿Registrar comisión de ${form.advisor_name} por ${money(
-        commissionAmount
-      )} en Tesorería?`
-    )
-
-    if (!confirmRegister) return
-
-    const { error: movementError } = await supabase
-      .from("treasury_movements")
-      .insert({
-        date: new Date().toISOString().slice(0, 10),
-        company_name: form.region_code === "iquique" ? "Decosun Spa" : "Decosun Group SpA",
-        bank: form.payment_bank || "BCI",
-        description: `Comisión asesor - ${form.title || "Proyecto"}`,
-        type: "egreso",
-        amount: commissionAmount,
-        category: "Comisión",
-        subcategory: "Comisión asesor comercial",
-        branch: form.region_code === "iquique" ? "Iquique" : "Viña del Mar",
-        person_name: form.advisor_name,
-        notes: `Proyecto: ${form.quote_number || project.id}`,
-        source_module: "project_commission",
-        project_id: project.id,
-        reconciliation_status: "pendiente",
-      })
-
-    if (movementError) {
-      console.error(movementError)
-      alert("No se pudo registrar la comisión en Tesorería.")
-      return
-    }
-
-    const { error: projectError } = await supabase
-      .from("projects")
-      .update({
-        commission_registered: true,
-        advisor_commission_status: "registrada",
-        advisor_commission_amount: commissionAmount,
-      })
-      .eq("id", project.id)
-
-    if (projectError) {
-      console.error(projectError)
-      alert("La comisión se registró en Tesorería, pero no se pudo marcar el proyecto.")
-      return
-    }
-
-    setForm((current) => ({
-      ...current,
-      commission_registered: true,
-      advisor_commission_status: "registrada",
-      advisor_commission_amount: commissionAmount,
-    }))
-
-    alert("Comisión registrada en Tesorería.")
-  }
-
   const savedPublicStatusURL = project?.public_token
     ? `${window.location.origin}/estado/${project.public_token}`
     : ""
@@ -848,7 +789,7 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
 
   const advisorSelectValue =
     form?.advisor_id ||
-    (form?.advisor_name === "Edgar Leighton" ? "__edgar__" : "")
+    (form?.advisor_name === EDGAR_ADVISOR_NAME ? EDGAR_ADVISOR_ID : "")
 
   const suggestedAdvisorIsDifferent =
     Boolean(suggestedTerritory?.advisor_name) &&
@@ -863,6 +804,30 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
       : form?.source === "agenda"
         ? "Observaciones agenda"
         : "Notas internas"
+
+  const financeStatus = getProjectFinanceStatus(form)
+  const financeProgress = getProjectPaymentProgress(form)
+  const financePendingReconciliation = !hasFinanceCache(form)
+  const financePaymentList = projectPayments.filter((payment) => payment.status !== "voided")
+  const projectCommissionGeneratedTotal = projectCommissions.reduce(
+    (total, item) => total + Number(item.commission_amount || 0),
+    0
+  )
+  const projectCommissionPaidTotal = projectCommissions.reduce(
+    (total, item) => total + Number(item.paid_amount_cached || 0),
+    0
+  )
+  const projectCommissionPendingTotal = projectCommissions.reduce(
+    (total, item) => total + Number(item.balance_cached || 0),
+    0
+  )
+
+  async function handleCommissionPaidInProject() {
+    if (!project?.id) return
+
+    await loadProjectCommissions(project.id)
+    alert("Pago de comisión registrado correctamente.")
+  }
 
   if (!project || !form) return null
 
@@ -926,26 +891,6 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
               onClick={() => setTab("compras")}
             >
               Compras
-            </button>
-          )}
-
-          {false && canSeeCommissions && (
-            <button
-              type="button"
-              className={tab === "comisiones" ? "active" : ""}
-              onClick={() => setTab("comisiones")}
-            >
-              Config. comisión estimada / Capital
-            </button>
-          )}
-
-          {false && canSeeCosts && (
-            <button
-              type="button"
-              className={tab === "costos" ? "active" : ""}
-              onClick={() => setTab("costos")}
-            >
-              Costos
             </button>
           )}
 
@@ -1148,7 +1093,6 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
                         onChange={(e) => handleAdvisorChange(e.target.value)}
                       >
                         <option value="">Sin asesor asignado</option>
-                        <option value="__edgar__">Edgar Leighton</option>
 
                         {advisors.map((advisor) => (
                           <option key={advisor.id} value={advisor.id}>
@@ -1280,76 +1224,6 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
               />
             </label>
 
-            {canSeeCommissions && (
-              <>
-                <div className="full-field balance-box">
-                  <span>Configuración de comisión estimada</span>
-                  <strong>El pago real de comisiones se gestiona desde Finanzas &gt; Comisiones.</strong>
-                </div>
-
-                <label>
-                  % comisión base estimada
-                  <input
-                    type="number"
-                    value={form.advisor_commission_rate}
-                    onChange={(e) =>
-                      updateField("advisor_commission_rate", e.target.value)
-                    }
-                  />
-                </label>
-
-                <label>
-                  Tipo de comisión estimada
-                  <select
-                    value={form.advisor_commission_type}
-                    onChange={(e) =>
-                      updateField("advisor_commission_type", e.target.value)
-                    }
-                  >
-                    <option value="base">Base</option>
-                    <option value="especial">Especial</option>
-                    <option value="sin_comision">Sin comisión</option>
-                  </select>
-                </label>
-
-                <label>
-                  Monto especial estimado
-                  <input
-                    type="number"
-                    value={form.advisor_commission_amount}
-                    onChange={(e) =>
-                      updateField("advisor_commission_amount", e.target.value)
-                    }
-                  />
-                </label>
-
-                <label>
-                  Estado legacy no financiero
-                  <small>Legacy no financiero. El pago real se gestiona desde Finanzas &gt; Comisiones.</small>
-                  <select
-                    value={form.advisor_commission_status}
-                    disabled
-                  >
-                    <option value="pendiente">Pendiente legacy</option>
-                    <option value="pagada">Pagada legacy</option>
-                  </select>
-                </label>
-
-                <div className="balance-box">
-                  <span>Comisión estimada</span>
-                  <strong>
-                    {money(
-                      form.advisor_commission_type === "sin_comision"
-                        ? 0
-                        : form.advisor_commission_type === "base"
-                          ? Number(form.sale_value || 0) *
-                          (Number(form.advisor_commission_rate || 0) / 100)
-                          : Number(form.advisor_commission_amount || 0)
-                    )}
-                  </strong>
-                </div>
-              </>
-            )}
           </div>
         )}
 
@@ -1449,8 +1323,18 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
           <div className="modal-grid">
             <div className="full-field modal-section-heading">
               <span>Finance Engine</span>
-              <strong>Pagos confirmados y saldo desde el motor financiero.</strong>
+              <strong>Abonos reales, saldo oficial y trazabilidad por proyecto.</strong>
             </div>
+
+            {financePendingReconciliation && (
+              <div className="full-field client-visible-note">
+                <strong>Información financiera pendiente de reconciliación.</strong>
+                <p>
+                  Este proyecto todavía no tiene todo su historial financiero reconciliado en el Motor Financiero.
+                  Se muestra únicamente información oficial del nuevo motor y no se usan campos legacy.
+                </p>
+              </div>
+            )}
 
             <div className="balance-box finance-focus">
               <span>Valor venta</span>
@@ -1458,7 +1342,7 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
             </div>
 
             <div className="balance-box finance-focus">
-              <span>Recibido confirmado</span>
+              <span>Total abonado</span>
               <strong>{money(form.amount_paid_cached)}</strong>
             </div>
 
@@ -1468,230 +1352,13 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
             </div>
 
             <div className="balance-box finance-focus">
+              <span>Porcentaje pagado</span>
+              <strong>{formatPercent(financeProgress)}</strong>
+            </div>
+
+            <div className="balance-box finance-focus">
               <span>Estado financiero</span>
-              <strong>{formatFinanceStatus(getFinanceStatus(form))}</strong>
-            </div>
-
-            <label>
-              Valor aceptado / OC
-              <input
-                type="number"
-                value={form.sale_value}
-                onChange={(e) => updateField("sale_value", e.target.value)}
-              />
-            </label>
-
-            <div className="balance-box">
-              <span>Abono sugerido 50%</span>
-              <strong>{money(Number(form.sale_value || 0) * 0.5)}</strong>
-            </div>
-
-            {canSeeCommissions && (
-              <div className="full-field balance-box">
-                <span>Comision por abono</span>
-                <strong>Preparado visualmente para asociar comision a cada abono en una fase futura.</strong>
-              </div>
-            )}
-
-            <div className="full-field modal-section-heading">
-              <span>Asesor y comision</span>
-              <strong>Configuracion comercial asociada al proyecto.</strong>
-            </div>
-
-            {canAssignAdvisor && (
-              <>
-                <label>
-                  Asesor comercial
-                  <select
-                    value={form.advisor_id || ""}
-                    onChange={(e) => handleAdvisorChange(e.target.value)}
-                  >
-                    <option value="">Sin asesor asignado</option>
-
-                    {advisors.map((advisor) => (
-                      <option key={advisor.id} value={advisor.id}>
-                        {advisor.full_name} - {advisor.region_label || advisor.region_code}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label>
-                  Nombre asesor
-                  <input
-                    value={form.advisor_name}
-                    onChange={(e) => updateField("advisor_name", e.target.value)}
-                  />
-                </label>
-
-                <label>
-                  Region asesor
-                  <input
-                    value={form.advisor_region}
-                    onChange={(e) => updateField("advisor_region", e.target.value)}
-                  />
-                </label>
-              </>
-            )}
-
-            {canSeeCommissions && (
-              <>
-                <label>
-                  % comision estimada
-                  <input
-                    type="number"
-                    value={form.advisor_commission_rate}
-                    onChange={(e) =>
-                      updateField("advisor_commission_rate", e.target.value)
-                    }
-                  />
-                </label>
-
-                <label>
-                  Tipo comision
-                  <select
-                    value={form.advisor_commission_type}
-                    onChange={(e) =>
-                      updateField("advisor_commission_type", e.target.value)
-                    }
-                  >
-                    <option value="base">Base</option>
-                    <option value="especial">Especial</option>
-                    <option value="sin_comision">Sin comision</option>
-                  </select>
-                </label>
-
-                <div className="balance-box">
-                  <span>Comision estimada</span>
-                  <strong>{money(calculateAdvisorCommission())}</strong>
-                </div>
-              </>
-            )}
-
-            {canSeeCosts && (
-              <>
-                <div className="full-field modal-section-heading legacy-heading">
-                  <span>Costos manuales legacy / referencia</span>
-                  <strong>
-                    Los costos reales deben venir desde Compras e Inventario.
-                  </strong>
-                </div>
-
-                <label className="legacy-field">
-                  Tela
-                  <input
-                    type="number"
-                    value={form.fabric_cost}
-                    onChange={(e) => updateField("fabric_cost", e.target.value)}
-                  />
-                </label>
-
-                <label className="legacy-field">
-                  Motores
-                  <input
-                    type="number"
-                    value={form.motor_cost}
-                    onChange={(e) => updateField("motor_cost", e.target.value)}
-                  />
-                </label>
-
-                <label className="legacy-field">
-                  Mecanismos
-                  <input
-                    type="number"
-                    value={form.mechanism_cost}
-                    onChange={(e) =>
-                      updateField("mechanism_cost", e.target.value)
-                    }
-                  />
-                </label>
-
-                <div className="balance-box legacy-field">
-                  <span>Total costos manuales</span>
-                  <strong>{money(totalCosts)}</strong>
-                </div>
-
-                <div className="balance-box legacy-field">
-                  <span>Margen estimado manual</span>
-                  <strong>{money(estimatedMargin)}</strong>
-                </div>
-              </>
-            )}
-
-            <div className="full-field balance-box legacy-panel">
-              <span>Información histórica de pagos</span>
-              <strong>Los nuevos pagos se registran desde Nuevo registro de pagos.</strong>
-            </div>
-
-            <label className="legacy-field">
-              Abono registrado anteriormente
-              <input
-                type="number"
-                value={form.amount_paid}
-                onChange={(e) => updateField("amount_paid", e.target.value)}
-                disabled
-              />
-            </label>
-
-            <div className="balance-box legacy-field">
-              <span>Saldo pendiente</span>
-              <strong>{money(balance)}</strong>
-            </div>
-
-            <label className="legacy-field">
-              Estado anterior
-              <select
-                value={form.payment_status}
-                onChange={(e) => updateField("payment_status", e.target.value)}
-                disabled
-              >
-                <option value="pendiente">Pendiente</option>
-                <option value="abonado">Abonado</option>
-                <option value="pagado">Pagado</option>
-                <option value="orden_compra">Orden de compra</option>
-              </select>
-            </label>
-
-            <label className="legacy-field">
-              Banco registrado anteriormente
-              <input
-                value={form.payment_bank}
-                onChange={(e) => updateField("payment_bank", e.target.value)}
-                disabled
-              />
-            </label>
-
-            <div className="full-field flex flex-wrap gap-3 legacy-field">
-              <button
-                type="button"
-                className="secondary-btn"
-                onClick={registerInitialPayment}
-                disabled
-              >
-                Registrar abono 50%
-              </button>
-
-              <button
-                type="button"
-                className="secondary-btn"
-                onClick={registerManualPayment}
-                disabled
-              >
-                Guardar abono manual
-              </button>
-
-              <button
-                type="button"
-                className="primary-btn"
-                onClick={registerFinalPayment}
-                disabled
-              >
-                Registrar saldo final
-              </button>
-            </div>
-
-            <div className="full-field">
-              <h3>Cartola financiera (Beta)</h3>
+              <strong>{formatFinanceStatus(financeStatus)}</strong>
             </div>
 
             <div className="full-field treasury-table">
@@ -1700,33 +1367,35 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
                   <tr>
                     <th>Fecha</th>
                     <th>Monto</th>
-                    <th>Banco</th>
-                    <th>Metodo</th>
                     <th>Hito</th>
+                    <th>Empresa</th>
+                    <th>Banco / cuenta</th>
+                    <th>Referencia</th>
                     <th>Estado</th>
                   </tr>
                 </thead>
                 <tbody>
                   {loadingPayments && (
                     <tr>
-                      <td colSpan="6">Cargando pagos...</td>
+                      <td colSpan="7">Cargando abonos...</td>
                     </tr>
                   )}
 
-                  {!loadingPayments && projectPayments.length === 0 && (
+                  {!loadingPayments && financePaymentList.length === 0 && (
                     <tr>
-                      <td colSpan="6">Sin pagos registrados en el motor financiero.</td>
+                      <td colSpan="7">Sin abonos registrados en el Motor Financiero.</td>
                     </tr>
                   )}
 
                   {!loadingPayments &&
-                    projectPayments.map((payment) => (
+                    financePaymentList.map((payment) => (
                       <tr key={payment.id}>
                         <td>{payment.payment_date || "-"}</td>
                         <td>{money(payment.amount)}</td>
-                        <td>{payment.bank || "-"}</td>
-                        <td>{payment.payment_method || "-"}</td>
                         <td>{payment.payment_milestone || "-"}</td>
+                        <td>{payment.company_name || "-"}</td>
+                        <td>{payment.bank || "-"}</td>
+                        <td>{getPaymentReference(payment)}</td>
                         <td>{payment.status || "-"}</td>
                       </tr>
                     ))}
@@ -1734,11 +1403,178 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
               </table>
             </div>
 
+            {canSeeProjectCommissions && (
+              <>
+                <div className="full-field">
+                  <h3>Comisiones del proyecto</h3>
+                  <p className="muted-text">
+                    Gerencia puede registrar pagos desde esta ficha. El pago usa el motor oficial y mantiene trazabilidad de Tesorería.
+                  </p>
+                </div>
+
+                {projectCommissionError && (
+                  <div className="full-field client-visible-note">
+                    <strong>No se pudo cargar la trazabilidad de comisiones.</strong>
+                    <p>{projectCommissionError}</p>
+                  </div>
+                )}
+
+                <div className="balance-box finance-focus">
+                  <span>Total comisión generada</span>
+                  <strong>{money(projectCommissionGeneratedTotal)}</strong>
+                </div>
+
+                <div className="balance-box finance-focus">
+                  <span>Total comisión pagada</span>
+                  <strong>{money(projectCommissionPaidTotal)}</strong>
+                </div>
+
+                <div className="balance-box finance-focus">
+                  <span>Total comisión pendiente</span>
+                  <strong>{money(projectCommissionPendingTotal)}</strong>
+                </div>
+
+                <div className="full-field treasury-table">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Fecha generación</th>
+                        <th>Asesor</th>
+                        <th>Tipo / tasa</th>
+                        <th>Abono origen</th>
+                        <th>Comisión</th>
+                        <th>Pagado</th>
+                        <th>Saldo</th>
+                        <th>Último pago</th>
+                        <th>Estado</th>
+                        {canPayProjectCommission && <th>Acción</th>}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {loadingCommissions && (
+                        <tr>
+                          <td colSpan={canPayProjectCommission ? "10" : "9"}>
+                            Cargando comisiones del proyecto...
+                          </td>
+                        </tr>
+                      )}
+
+                      {!loadingCommissions && projectCommissions.length === 0 && (
+                        <tr>
+                          <td colSpan={canPayProjectCommission ? "10" : "9"}>
+                            Sin comisiones generadas para este proyecto.
+                          </td>
+                        </tr>
+                      )}
+
+                      {!loadingCommissions &&
+                        projectCommissions.map((commission) => (
+                          <tr key={commission.project_commission_id}>
+                            <td>{formatDate(commission.generated_at)}</td>
+                            <td>{commission.advisor_name || "Sin asesor"}</td>
+                            <td>
+                              {commission.commission_type || "-"}
+                              {commission.commission_rate
+                                ? ` / ${Number(commission.commission_rate)}%`
+                                : ""}
+                            </td>
+                            <td>
+                              {formatDate(commission.payment_date)} · {money(commission.payment_amount)}
+                            </td>
+                            <td>{money(commission.commission_amount)}</td>
+                            <td>{money(commission.paid_amount_cached)}</td>
+                            <td>{money(commission.balance_cached)}</td>
+                            <td>{formatDate(commission.last_payment_date)}</td>
+                            <td>{formatCommissionStatus(commission.status)}</td>
+                            {canPayProjectCommission && (
+                              <td>
+                                {canPayCommissionRow(commission) ? (
+                                  <button
+                                    type="button"
+                                    className="secondary-btn"
+                                    onClick={() =>
+                                      setSelectedCommissionPayment(commission)
+                                    }
+                                  >
+                                    Registrar pago
+                                  </button>
+                                ) : (
+                                  "-"
+                                )}
+                              </td>
+                            )}
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="full-field treasury-table">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Fecha pago comisión</th>
+                        <th>Monto</th>
+                        <th>Empresa/Banco</th>
+                        <th>Método</th>
+                        <th>Estado</th>
+                        <th>Referencia</th>
+                        <th>Tesorería</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {loadingCommissions && (
+                        <tr>
+                          <td colSpan="7">Cargando pagos de comisión...</td>
+                        </tr>
+                      )}
+
+                      {!loadingCommissions &&
+                        projectCommissionPayments.length === 0 && (
+                          <tr>
+                            <td colSpan="7">Sin pagos de comisión registrados para este proyecto.</td>
+                          </tr>
+                        )}
+
+                      {!loadingCommissions &&
+                        projectCommissionPayments.map((payment) => (
+                          <tr key={payment.project_commission_payment_id}>
+                            <td>{formatDate(payment.payout_date)}</td>
+                            <td>{money(payment.payout_amount)}</td>
+                            <td>
+                              {payment.payout_company_name || "-"}
+                              {" / "}
+                              {payment.payout_bank || "-"}
+                            </td>
+                            <td>{payment.payout_method || "-"}</td>
+                            <td>{payment.payout_status || "-"}</td>
+                            <td>{payment.payout_reference || "-"}</td>
+                            <td>{payment.treasury_movement_id || "-"}</td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <CommissionPaymentModal
+                  open={Boolean(selectedCommissionPayment)}
+                  commission={selectedCommissionPayment}
+                  title="Registrar pago de comisión"
+                  subtitle="Pago desde la ficha del proyecto usando pay_project_commission."
+                  confirmLabel="Registrar pago"
+                  onClose={() => setSelectedCommissionPayment(null)}
+                  onPaid={handleCommissionPaidInProject}
+                />
+              </>
+            )}
+
             {canRegisterPayment && (
               <>
                 <div className="full-field">
-                  <h3>Nuevo registro de pagos</h3>
-                  <p className="muted-text">Beta - registra pagos como eventos financieros trazables.</p>
+                  <h3>Registrar abono</h3>
+                  <p className="muted-text">
+                    El pago se registra como evento financiero trazable y crea su movimiento de Tesorería una sola vez.
+                  </p>
                 </div>
 
                 <label>
@@ -1756,33 +1592,38 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
                   Monto
                   <input
                     type="number"
+                    min="1"
                     value={newPayment.amount}
                     onChange={(e) =>
                       updateNewPaymentField("amount", e.target.value)
                     }
+                    disabled={savingPayment}
                   />
                 </label>
 
                 <label>
-                  Empresa
+                  Empresa receptora
                   <select
                     value={newPayment.companyName}
                     onChange={(e) =>
                       updateNewPaymentField("companyName", e.target.value)
                     }
+                    disabled={savingPayment}
                   >
+                    <option value="">Seleccionar empresa</option>
                     <option value="Decosun Group SpA">Decosun Group SpA</option>
                     <option value="Decosun Spa">Decosun Spa</option>
                   </select>
                 </label>
 
                 <label>
-                  Banco
+                  Banco / cuenta
                   <select
                     value={newPayment.bank}
                     onChange={(e) =>
                       updateNewPaymentField("bank", e.target.value)
                     }
+                    disabled={savingPayment}
                   >
                     <option value="">Seleccionar banco</option>
                     <option value="BCI">BCI</option>
@@ -1802,6 +1643,7 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
                     onChange={(e) =>
                       updateNewPaymentField("paymentMethod", e.target.value)
                     }
+                    disabled={savingPayment}
                   >
                     <option value="bank_transfer">Transferencia bancaria</option>
                     <option value="cash">Efectivo</option>
@@ -1812,28 +1654,31 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
                 </label>
 
                 <label>
-                  Hito de pago
+                  Hito / tipo de pago
                   <select
                     value={newPayment.paymentMilestone}
                     onChange={(e) =>
                       updateNewPaymentField("paymentMilestone", e.target.value)
                     }
+                    disabled={savingPayment}
                   >
                     <option value="initial_50">initial_50</option>
                     <option value="final_50">final_50</option>
                     <option value="partial">partial</option>
                     <option value="full">full</option>
+                    <option value="manual">manual</option>
                   </select>
                 </label>
 
                 <label className="full-field">
-                  Notas
+                  Referencia u observación
                   <textarea
                     rows="3"
                     value={newPayment.notes}
                     onChange={(e) =>
                       updateNewPaymentField("notes", e.target.value)
                     }
+                    disabled={savingPayment}
                   />
                 </label>
 
@@ -1844,132 +1689,11 @@ export default function ProjectModal({ project, profile, onClose, onSave }) {
                     onClick={submitNewPayment}
                     disabled={savingPayment}
                   >
-                    {savingPayment ? "Registrando..." : "Registrar pago"}
+                    {savingPayment ? "Registrando..." : "Registrar abono"}
                   </button>
                 </div>
               </>
             )}
-          </div>
-        )}
-
-        {tab === "comisiones" && canSeeCommissions && (
-          <div className="modal-grid">
-            <div className="full-field balance-box">
-              <span>Comisiones estimadas</span>
-              <strong>El pago real de comisiones se gestiona desde Finanzas &gt; Comisiones.</strong>
-            </div>
-
-            <label>
-              % manejo gerencia
-              <input
-                type="number"
-                value={form.management_fee_rate}
-                onChange={(e) =>
-                  updateField("management_fee_rate", e.target.value)
-                }
-              />
-            </label>
-
-            <div className="balance-box">
-              <span>Manejo gerencia estimado</span>
-              <strong>{money(managementFee)}</strong>
-            </div>
-
-            <label>
-              Capital aportado
-              <input
-                type="number"
-                value={form.capital_contribution}
-                onChange={(e) =>
-                  updateField("capital_contribution", e.target.value)
-                }
-              />
-            </label>
-
-            <label>
-              Origen capital
-              <input
-                value={form.capital_partner}
-                onChange={(e) => updateField("capital_partner", e.target.value)}
-              />
-            </label>
-
-            <label className="full-field">
-              Notas capital / comisiones estimadas
-              <textarea
-                rows="4"
-                value={form.capital_notes}
-                onChange={(e) => updateField("capital_notes", e.target.value)}
-              />
-            </label>
-          </div>
-        )}
-
-        {tab === "costos" && canSeeCosts && (
-          <div className="modal-grid">
-            <label>
-              Tela
-              <input
-                type="number"
-                value={form.fabric_cost}
-                onChange={(e) => updateField("fabric_cost", e.target.value)}
-              />
-            </label>
-
-            <label>
-              Motores
-              <input
-                type="number"
-                value={form.motor_cost}
-                onChange={(e) => updateField("motor_cost", e.target.value)}
-              />
-            </label>
-
-            <label>
-              Mecanismos
-              <input
-                type="number"
-                value={form.mechanism_cost}
-                onChange={(e) => updateField("mechanism_cost", e.target.value)}
-              />
-            </label>
-
-            <label>
-              Instalación
-              <input
-                type="number"
-                value={form.installation_cost}
-                onChange={(e) => updateField("installation_cost", e.target.value)}
-              />
-            </label>
-
-            <label>
-              Transporte
-              <input
-                type="number"
-                value={form.transport_cost}
-                onChange={(e) => updateField("transport_cost", e.target.value)}
-              />
-            </label>
-
-            <label>
-              Otros costos
-              <input
-                type="number"
-                value={form.other_costs}
-                onChange={(e) => updateField("other_costs", e.target.value)}
-              />
-            </label>
-
-            <div className="balance-box">
-              <span>Total costos</span>
-              <strong>{money(totalCosts)}</strong>
-            </div>
-
-            <div className="balance-box">
-              <span>Margen estimado</span>
-              <strong>{money(estimatedMargin)}</strong>
-            </div>
           </div>
         )}
 

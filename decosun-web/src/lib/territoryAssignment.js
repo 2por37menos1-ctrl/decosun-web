@@ -20,7 +20,7 @@ const advisors = {
     owner_profile_name: "Juan Francisco Palma",
   },
   edgar: {
-    advisor_id: null,
+    advisor_id: "4a84c0a5-184e-4ca1-8cd5-406a1e2a0301",
     advisor_name: "Edgar Leighton",
     owner_profile_name: "Edgar Leighton",
   },
