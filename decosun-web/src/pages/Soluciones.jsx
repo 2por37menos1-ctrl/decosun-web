@@ -298,6 +298,35 @@ export default function Soluciones() {
         </div>
       </section>
 
+      <section className="mx-auto max-w-7xl px-6 pb-20 lg:px-8">
+        <div className="overflow-hidden rounded-[34px] bg-slate-950 text-white shadow-xl">
+          <div className="grid lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+            <img
+              src={screenImg}
+              alt="Cortina roller preparada para una solución de motorización"
+              className="h-72 w-full object-cover lg:h-full"
+            />
+            <div className="p-8 lg:p-12">
+              <p className="text-sm font-bold uppercase tracking-[0.3em] text-amber-400">
+                Motorización de cortinas
+              </p>
+              <h2 className="mt-4 text-3xl font-black tracking-tight md:text-4xl">
+                Transforma tu cortina actual
+              </h2>
+              <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-300">
+                Transforma cortinas roller manuales en sistemas motorizados con control remoto y configuración profesional.
+              </p>
+              <Link
+                to="/motorizacion"
+                className="mt-7 inline-flex min-h-12 items-center rounded-2xl bg-amber-500 px-6 py-3 text-sm font-black uppercase tracking-wide text-slate-950 transition hover:bg-amber-400"
+              >
+                Conocer motorización →
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section
         id="tipos-telas"
         className="scroll-mt-24 mx-auto max-w-7xl px-6 py-20 lg:px-8"

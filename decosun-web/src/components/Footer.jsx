@@ -63,6 +63,13 @@ export default function Footer() {
               </Link>
 
               <Link
+                to="/motorizacion"
+                className="transition hover:text-amber-300"
+              >
+                Motorización
+              </Link>
+
+              <Link
                 to="/proyectos"
                 className="transition hover:text-amber-300"
               >
