@@ -8,22 +8,19 @@ import {
   sanitizeScanFailure,
   type ScanContext,
   ScanError,
-  upstreamScanError,
 } from "../_shared/compraAgilDiagnostics.ts";
 import {
   detailAttemptState,
-  fetchWithTimeout,
   heartbeatIsStale,
   nextListingCursor,
-  requestFailureCode,
   requestTimeoutMs,
   safeRunProgress,
   segmentPolicy,
   shouldStopSegment,
 } from "../_shared/compraAgilScanState.ts";
+import { fetchCompraAgilWithRetry } from "../_shared/compraAgilRequest.ts";
 import {
   evaluateOpportunity,
-  mapHttpError,
   mergeDetail,
   normalizeListItem,
   preliminaryExclusion,
@@ -504,56 +501,40 @@ serve(async (req) => {
       context: ScanContext,
       detailAttemptNumber = 0,
     ) => {
-      if (requestCount >= maximumTotalRequests) {
-        throw new ScanError("request_budget_exhausted", 429, context);
-      }
-      const { data: number, error: beginError } = await supabase.rpc(
-        "compra_agil_begin_request",
-        {
-          p_run_id: runId,
-          p_lease_token: leaseToken,
-          p_stage: context.stage,
-          p_request_type: context.requestType,
-          p_search_term: context.searchTerm || null,
-          p_page_number: context.pageNumber || null,
-          p_external_id: context.externalId || null,
-        },
-      );
-      if (beginError || !Number.isInteger(number)) {
-        throw new ScanError("scan_progress_update_failed", 500, {
-          stage: "database",
-        });
-      }
-      requestCount = Number(number);
-      segmentRequests += 1;
-      let response: Response;
       const timeoutMs = requestTimeoutMs(context.requestType, policy);
-      try {
-        response = await fetchWithTimeout(url, {
-          headers: { accept: "application/json", ticket },
-        }, timeoutMs);
-      } catch (error) {
-        const timeout = error instanceof DOMException &&
-          error.name === "AbortError";
-        throw new ScanError(
-          requestFailureCode({
-            timedOut: timeout,
-            requestType: context.requestType,
-            detailAttemptNumber,
-            maxDetailAttempts: policy.maxDetailAttempts,
-          }),
-          timeout ? 504 : 502,
-          { ...context, requestNumber: requestCount },
-        );
-      }
-      if (!response.ok) {
-        throw upstreamScanError(
-          mapHttpError(response.status),
-          response.status,
-          requestCount,
-          context,
-        );
-      }
+      const { response } = await fetchCompraAgilWithRetry({
+        url,
+        headers: { accept: "application/json", ticket },
+        context,
+        timeoutMs,
+        detailAttemptNumber,
+        maxDetailAttempts: policy.maxDetailAttempts,
+        beforeAttempt: async () => {
+          if (requestCount >= maximumTotalRequests) {
+            throw new ScanError("request_budget_exhausted", 429, context);
+          }
+          const { data: number, error: beginError } = await supabase.rpc(
+            "compra_agil_begin_request",
+            {
+              p_run_id: runId,
+              p_lease_token: leaseToken,
+              p_stage: context.stage,
+              p_request_type: context.requestType,
+              p_search_term: context.searchTerm || null,
+              p_page_number: context.pageNumber || null,
+              p_external_id: context.externalId || null,
+            },
+          );
+          if (beginError || !Number.isInteger(number)) {
+            throw new ScanError("scan_progress_update_failed", 500, {
+              stage: "database",
+            });
+          }
+          requestCount = Number(number);
+          segmentRequests += 1;
+          return requestCount;
+        },
+      });
       const payload = await response.json().catch(() => null);
       try {
         return unwrapApiPayload(payload);

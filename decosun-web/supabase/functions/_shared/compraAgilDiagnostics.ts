@@ -15,6 +15,7 @@ export type ScanContext = {
   pageNumber?: number;
   externalId?: string;
   upstreamStatus?: number;
+  retryCount?: number;
 };
 
 export type SanitizedScanFailure = {
@@ -30,6 +31,7 @@ export type SanitizedScanFailure = {
   external_id: string | null;
   upstream_status: number | null;
   requests_used: number;
+  retry_count: number;
 };
 
 function safeText(value: unknown, maxLength: number) {
@@ -142,6 +144,7 @@ export function sanitizeScanFailure(
     external_id: safeText(context.externalId, 100),
     upstream_status: upstreamStatus,
     requests_used: Math.max(0, Number(requestsUsed) || 0),
+    retry_count: Math.max(0, Number(context.retryCount) || 0),
   };
 }
 
@@ -163,6 +166,7 @@ export function failurePersistence(
       upstream_status: failure.upstream_status,
       message: failure.message,
       requests_used: failure.requests_used,
+      retry_count: failure.retry_count,
     },
     last_error_code: failure.error_code,
     last_error_stage: failure.stage,

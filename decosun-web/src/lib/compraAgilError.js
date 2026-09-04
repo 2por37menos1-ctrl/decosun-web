@@ -18,6 +18,7 @@ export function formatCompraAgilScanError(details) {
   if (details.page_number) lines.push(`Página: ${details.page_number}.`)
   if (details.external_id) lines.push(`Código: ${details.external_id}.`)
   if (details.request_number) lines.push(`Request: ${details.request_number}.`)
+  if (details.retry_count) lines.push(`Reintentos: ${details.retry_count}.`)
   return lines.join("\n")
 }
 

@@ -24,6 +24,7 @@ Deno.test("HTTP 500 listing failure is sanitized with precise request context", 
   assertEquals(failure.external_id, null);
   assertEquals(failure.upstream_status, 500);
   assertEquals(failure.requests_used, 9);
+  assertEquals(failure.retry_count, 0);
   assertEquals(
     failure.message,
     "Mercado Público respondió HTTP 500 durante el escaneo.",
@@ -76,6 +77,7 @@ Deno.test("frontend formats structured listing failure", () => {
     search_term: "cortina roller",
     page_number: 1,
     request_number: 9,
+    retry_count: 2,
   });
 
   assertEquals(
@@ -87,6 +89,7 @@ Deno.test("frontend formats structured listing failure", () => {
       "Término: cortina roller.",
       "Página: 1.",
       "Request: 9.",
+      "Reintentos: 2.",
     ].join("\n"),
   );
 });
