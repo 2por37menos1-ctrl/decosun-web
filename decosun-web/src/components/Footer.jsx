@@ -69,6 +69,10 @@ export default function Footer() {
                 Motorización
               </Link>
 
+              <Link to="/mantencion" className="transition hover:text-amber-300">
+                Mantención
+              </Link>
+
               <Link
                 to="/proyectos"
                 className="transition hover:text-amber-300"
@@ -115,7 +119,7 @@ export default function Footer() {
       </div>
 
       <div className="border-t border-white/10">
-        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-6 py-6 text-sm text-slate-500 md:flex-row md:items-center md:justify-between lg:px-8">
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-6 pb-24 pt-6 text-sm text-slate-500 md:flex-row md:items-center md:justify-between lg:px-8">
           <p>
             © 2026 DecoSun · Decoración y control solar
           </p>

@@ -9,6 +9,7 @@ import WhatsAppButton from "./components/WhatsAppButton";
 import Home from "./pages/Home";
 import Soluciones from "./pages/Soluciones";
 import Motorizacion from "./pages/Motorizacion";
+import Mantencion from "./pages/Mantencion";
 import Proyectos from "./pages/Proyectos";
 import Nosotros from "./pages/Nosotros";
 import Cotizar from "./pages/Cotizar";
@@ -37,6 +38,7 @@ function AppContent() {
         <Route path="/" element={<Home />} />
         <Route path="/soluciones" element={<Soluciones />} />
         <Route path="/motorizacion" element={<Motorizacion />} />
+        <Route path="/mantencion" element={<Mantencion />} />
         <Route path="/proyectos" element={<Proyectos />} />
         <Route path="/nosotros" element={<Nosotros />} />
         <Route path="/cotizar" element={<Cotizar />} />

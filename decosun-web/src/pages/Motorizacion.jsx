@@ -1,80 +1,60 @@
 import { createElement, useEffect, useState } from "react"
 import { motion, useReducedMotion } from "framer-motion"
+import { Link } from "react-router-dom"
+import WhatsAppButton from "../components/WhatsAppButton"
 import {
   BatteryCharging,
   ChevronDown,
   CircleCheck,
-  Gauge,
-  Heart,
-  Layers3,
   Radio,
   Settings2,
   ShieldCheck,
-  SlidersHorizontal,
   Sparkles,
   Wrench,
 } from "lucide-react"
-import bedroomImage from "../assets/images/roller-blackout-dormitorio.jpg"
-import apartmentImage from "../assets/images/home-sunscreen-comedor.jpg"
 import officeImage from "../assets/images/corporativo-oficina.jpeg"
-import windowsImage from "../assets/images/roller-sunscreen-vista.jpg"
-import secondHomeImage from "../assets/images/home-sunscreen-terraza2.jpg"
-import technicianPlaceholder from "../assets/images/sucursal-iquique03.jpg"
 
 const MotionDiv = motion.div
 
-const heroOptions = [
-  { id: 1, label: "Coastal Kitchen", src: "/img/motorizacion-hero/motorization-hero-01-coastal-kitchen.png", objectPosition: "center center" },
-  { id: 2, label: "Coastal Living", src: "/img/motorizacion-hero/motorization-hero-02-coastal-living.png", objectPosition: "center center" },
-  { id: 3, label: "Real Balcony", src: "/img/motorizacion-hero/motorization-hero-03-real-balcony.png", objectPosition: "center center" },
-  { id: 4, label: "Urban Balcony", src: "/img/motorizacion-hero/motorization-hero-04-urban-balcony.png", objectPosition: "center center" },
-  { id: 5, label: "Bedroom Ocean", src: "/img/motorizacion-hero/motorization-hero-05-bedroom-ocean.png", objectPosition: "center center" },
-  { id: 6, label: "Ocean Living", src: "/img/motorizacion-hero/motorization-hero-06-ocean-living.png", objectPosition: "center center" },
-  { id: 7, label: "Corner Ocean", src: "/img/motorizacion-hero/motorization-hero-07-corner-ocean.png", objectPosition: "center center" },
-]
-
-const whatsappUrl = `https://wa.me/56929307614?text=${encodeURIComponent(
-  "Hola DecoSun, quiero saber si mis cortinas pueden motorizarse. Les envío una fotografía para evaluación.",
-)}`
-
-const heroBenefits = [
-  [BatteryCharging, "Batería recargable"],
-  [Radio, "Control remoto"],
-  [Heart, "Posición favorita"],
-  [Layers3, "Una o varias cortinas"],
-  [SlidersHorizontal, "Movimiento configurable"],
-]
-
 const integrationFeatures = [
   [Settings2, "Motor integrado"],
-  [BatteryCharging, "Batería recargable"],
+  [BatteryCharging, "Batería recargable según sistema"],
   [Radio, "Control remoto"],
 ]
 
 const steps = [
-  "Evaluamos tu cortina",
-  "Instalamos el motor dentro del tubo",
-  "Configuramos límites y posición favorita",
-  "Controlas mediante control remoto",
-  "Disfrutas mayor comodidad cada día",
+  {
+    title: "Conversión a motor",
+    text: "Retiramos el mecanismo manual e integramos el motor tubular dentro del tubo de la cortina.",
+    alt: "Técnico DecoSun integrando un motor tubular en el tubo de una cortina Roller existente",
+  },
+  {
+    title: "Reinstalación",
+    text: "Volvemos a instalar la Roller con un sistema limpio y sin cadena.",
+    alt: "Técnico DecoSun reinstalando una cortina Roller motorizada sin cadena manual",
+  },
+  {
+    title: "Configuración",
+    text: "Configuramos el sistema y su conectividad cuando la solución instalada lo permite.",
+    alt: "Técnico DecoSun vinculando una cortina Roller desde un smartphone durante la configuración",
+  },
+  {
+    title: "Disfruta el control",
+    text: "Controla tus cortinas de forma cómoda mediante control remoto o las opciones disponibles para tu sistema.",
+    alt: "Persona usando un control remoto para accionar cortinas Roller en un living con vista al mar",
+  },
 ]
 
 const benefits = [
-  [Radio, "Control sin esfuerzo", "Sube, detén o baja tu cortina con un toque."],
-  [Heart, "Tu posición favorita", "Guarda una posición intermedia para volver a ella fácilmente."],
-  [Layers3, "Una o varias cortinas", "Control individual o conjunto según la configuración."],
-  [Gauge, "Movimiento configurable", "Diferentes velocidades y modo por impulsos permiten un ajuste más preciso."],
-  [BatteryCharging, "Batería recargable", "Motor con batería integrada y sistema de carga."],
-  [Settings2, "Configuración que permanece", "Los límites y posiciones configuradas quedan almacenados en el sistema."],
+  ["Control remoto", "Sube, detén o baja tu cortina cómodamente mediante un mando."],
+  ["Control desde smartphone", "Disponible cuando la solución instalada permite conectividad WiFi."],
+  ["Motor integrado", "El motor tubular queda alojado dentro del tubo de la cortina."],
+  ["Sin cadena", "La motorización reemplaza el mecanismo manual para un resultado visual más limpio."],
+  ["Automatización", "Mayor comodidad en el control de la entrada de luz, según las opciones de tu sistema."],
 ]
 
-const applications = [
-  [windowsImage, "Grandes ventanales", "Comodidad en cortinas de mayores dimensiones."],
-  [bedroomImage, "Dormitorios", "Apertura y cierre sin tener que levantarte."],
-  [apartmentImage, "Departamentos", "Control práctico y elegante para el uso diario."],
-  [officeImage, "Oficinas", "Acciona múltiples cortinas de forma coordinada."],
-  [secondHomeImage, "Segunda vivienda", "Mayor comodidad y una experiencia de uso más simple."],
-]
+// Funciones ya descritas en esta landing: su disponibilidad depende del sistema.
+const configurationFeatures = ["Posición favorita", "Control individual o conjunto", "Velocidades y modo por impulsos", "Memoria de límites y posiciones"]
 
 const servicePillars = [
   [CircleCheck, "Evaluación técnica", "Revisamos tu cortina y recomendamos la solución adecuada."],
@@ -111,124 +91,115 @@ function Reveal({ children, className = "", delay = 0 }) {
 
 function WhatsAppLink({ children, className = "" }) {
   return (
-    <a
-      href={whatsappUrl}
-      target="_blank"
-      rel="noreferrer"
-      className={`inline-flex min-h-12 items-center justify-center rounded-2xl bg-amber-500 px-7 py-4 text-center text-sm font-black uppercase tracking-wide text-slate-950 shadow-lg shadow-amber-500/20 transition duration-300 hover:-translate-y-0.5 hover:bg-amber-400 focus:outline-none focus:ring-4 focus:ring-amber-300/50 ${className}`}
-      aria-label={`${children} (abre WhatsApp en una pestaña nueva)`}
+    <WhatsAppButton
+      inline
+      message="Hola DecoSun, quiero saber si mis cortinas pueden motorizarse. Les envío una fotografía para evaluación."
+      className={className}
     >
       {children}
-    </a>
+    </WhatsAppButton>
+  )
+}
+
+function MotorizationPhoto({ step, priority = false, sizes = "(min-width: 1280px) 608px, (min-width: 1024px) calc((100vw - 112px) / 2), calc(100vw - 48px)" }) {
+  return (
+    <img
+      src={`/img/motorizacion/${step}MT-1280.jpg`}
+      srcSet={`/img/motorizacion/${step}MT-640.jpg 640w, /img/motorizacion/${step}MT-1280.jpg 1280w`}
+      sizes={sizes}
+      width="1536"
+      height="1024"
+      alt={steps[step - 1].alt}
+      loading={priority ? "eager" : "lazy"}
+      fetchPriority={priority ? "high" : "auto"}
+      decoding="async"
+      className="block h-auto w-full rounded-[28px] bg-slate-100 lg:rounded-[36px]"
+    />
   )
 }
 
 export default function Motorizacion() {
   const [showSpecs, setShowSpecs] = useState(false)
-  const [selectedHero, setSelectedHero] = useState(3)
-  const activeHero = heroOptions.find((option) => option.id === selectedHero) || heroOptions[2]
 
   useEffect(() => {
     const previousTitle = document.title
-    const description = "Motorización de cortinas roller DecoSun. Transforma tus cortinas manuales con control remoto, batería recargable, instalación profesional y soporte especializado."
-    let meta = document.querySelector('meta[name="description"]')
-    const previousDescription = meta?.getAttribute("content") || ""
+    const description = "Motorización profesional de cortinas Roller con motor tubular, control remoto y opciones WiFi. Transforma tus cortinas existentes con DecoSun."
+    const existingMeta = document.querySelector('meta[name="description"]')
+    const meta = existingMeta || document.createElement("meta")
+    const previousDescription = meta.getAttribute("content")
 
     document.title = "Motorización de Cortinas Roller | DecoSun"
-    if (!meta) {
-      meta = document.createElement("meta")
-      meta.setAttribute("name", "description")
-      document.head.appendChild(meta)
-    }
+    meta.setAttribute("name", "description")
+    if (!existingMeta) document.head.appendChild(meta)
     meta.setAttribute("content", description)
+    window.scrollTo(0, 0)
 
     return () => {
       document.title = previousTitle
-      if (meta) meta.setAttribute("content", previousDescription)
+      if (!existingMeta) meta.remove()
+      else if (previousDescription === null) meta.removeAttribute("content")
+      else meta.setAttribute("content", previousDescription)
     }
   }, [])
 
   return (
-    <main className="overflow-x-clip bg-white text-slate-950">
-      <section className="relative min-h-[88svh] overflow-hidden bg-slate-950 px-6 pb-16 pt-28 text-white lg:px-8 lg:pb-20 lg:pt-32">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_25%,rgba(245,158,11,0.12),transparent_36%)]" />
-        <div className="relative mx-auto grid min-h-[calc(88svh-9rem)] max-w-7xl gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
-          <Reveal>
-            <p className="text-xs font-black uppercase tracking-[0.32em] text-amber-400 sm:text-sm">Motorización DecoSun</p>
-            <h1 className="mt-5 text-4xl font-black uppercase leading-[0.98] tracking-tight sm:text-5xl lg:text-6xl xl:text-7xl">
-              Tu cortina actual.<br /><span className="text-amber-400">Ahora motorizada.</span>
+    <main className="bg-white text-slate-950">
+      <section aria-labelledby="motorizacion-title" className="bg-slate-950 px-6 pb-16 pt-28 text-white lg:px-8 lg:pb-20 lg:pt-36">
+        <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-center lg:gap-12">
+          <div className="min-w-0">
+            <p className="text-xs font-black uppercase tracking-[0.25em] text-amber-400 sm:text-sm">Tecnología para tu espacio · DecoSun</p>
+            <h1 id="motorizacion-title" className="mt-5 text-[clamp(1.875rem,4.4vw,3.75rem)] font-black uppercase leading-[1.03] tracking-tight">
+              <span className="text-amber-400">Motorización</span><br />de cortinas Roller
             </h1>
-            <p className="mt-6 max-w-xl text-base leading-7 text-slate-300 sm:text-lg sm:leading-8">
-              La solución DecoSun para transformar cortinas roller manuales en sistemas motorizados con control remoto, batería recargable y configuración profesional.
-            </p>
-            <div className="mt-7 grid max-w-xl grid-cols-2 gap-3 sm:grid-cols-3">
-              {heroBenefits.map(([Icon, label]) => (
-                <div key={label} className="flex items-center gap-2 text-xs font-semibold text-slate-200 sm:text-sm">
-                  {createElement(Icon, { className: "h-4 w-4 shrink-0 text-amber-400", "aria-hidden": true })}{label}
-                </div>
-              ))}
-            </div>
-            <WhatsAppLink className="mt-9 w-full sm:w-auto">Quiero motorizar mis cortinas</WhatsAppLink>
-            <p className="mt-3 max-w-md text-sm leading-6 text-slate-400">Envíanos una foto de tu cortina y evaluamos la solución adecuada.</p>
-          </Reveal>
-
-          <Reveal className="relative" delay={0.12}>
-            <div className="absolute -inset-4 rounded-[42px] bg-amber-400/10 blur-2xl" />
-            <div className="relative overflow-hidden rounded-[32px] border border-white/10 shadow-2xl lg:rounded-[42px]">
-              <img
-                src={activeHero.src}
-                alt={`Ambiente ${activeHero.label} con cortinas roller motorizadas`}
-                className="h-[420px] w-full object-cover sm:h-[560px] lg:h-[650px]"
-                style={{ objectPosition: activeHero.objectPosition }}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/65 via-transparent to-transparent" />
-              <p className="absolute bottom-5 left-5 right-5 text-sm font-semibold text-white/90">Comodidad integrada, sin alterar la estética de tu espacio.</p>
-            </div>
-
-            {/* TEMP HERO REVIEW SELECTOR */}
-            {/* Remove before production once final hero is approved. */}
-            <div className="relative mt-4" aria-label="Selector temporal de imagen principal">
-              <p className="mb-2 text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">Revisión de hero · {activeHero.label}</p>
-              <div className="flex max-w-full gap-2 overflow-x-auto pb-1" role="group" aria-label="Opciones de imagen del hero">
-                {heroOptions.map((option) => (
-                  <button
-                    key={option.id}
-                    type="button"
-                    onClick={() => setSelectedHero(option.id)}
-                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border text-xs font-black transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 ${
-                      selectedHero === option.id
-                        ? "border-amber-400 bg-amber-400 text-slate-950"
-                        : "border-white/15 bg-white/5 text-slate-300 hover:border-amber-400/70 hover:text-amber-300"
-                    }`}
-                    aria-label={`Mostrar opción ${String(option.id).padStart(2, "0")}: ${option.label}`}
-                    aria-pressed={selectedHero === option.id}
-                    title={option.label}
-                  >
-                    {String(option.id).padStart(2, "0")}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </Reveal>
+            <p className="mt-7 text-xl font-semibold leading-snug sm:text-2xl">Transforma tus cortinas actuales<br />en cortinas motorizadas.</p>
+            <p className="mt-5 text-base leading-7 text-slate-300">Motor tubular integrado · Control remoto · WiFi</p>
+            <p className="mt-2 text-base font-semibold text-white">Sin cadenas. Integración discreta.</p>
+            <p className="mt-4 max-w-lg text-sm leading-6 text-slate-400">Evaluamos la compatibilidad de tu Roller existente. Las opciones WiFi dependen de la solución instalada.</p>
+            <WhatsAppLink className="mt-7 w-full sm:w-auto">Cotiza tu motorización</WhatsAppLink>
+            <a href="#proceso-motorizacion" className="mt-5 flex min-h-11 w-fit items-center gap-3 text-sm font-bold text-white underline decoration-amber-400 underline-offset-8 hover:text-amber-300 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-amber-400">De manual a motorizada <span aria-hidden="true">↓</span></a>
+          </div>
+          <figure className="min-w-0">
+            <MotorizationPhoto step={4} priority sizes="(min-width: 1280px) 650px, (min-width: 1024px) 50vw, calc(100vw - 48px)" />
+            <figcaption className="mt-4 border-l-2 border-amber-400 pl-4 text-sm leading-6 text-slate-300">Más comodidad. El control de la luz, en tus manos.</figcaption>
+          </figure>
         </div>
       </section>
 
       <section className="px-6 py-20 lg:px-8 lg:py-28">
         <div className="mx-auto max-w-7xl">
-          <Reveal className="max-w-2xl">
-            <p className="text-sm font-black uppercase tracking-[0.28em] text-amber-700">Un proceso claro</p>
-            <h2 className="mt-4 text-4xl font-black tracking-tight md:text-5xl">¿Cómo funciona?</h2>
-            <p className="mt-4 text-lg text-slate-600">Tecnología que se adapta a tu cortina actual.</p>
-          </Reveal>
-          <div className="relative mt-14 grid gap-5 lg:grid-cols-5">
-            <div className="absolute left-[10%] right-[10%] top-7 hidden h-px bg-amber-300 lg:block" />
-            {steps.map((step, index) => (
-              <Reveal key={step} className="relative flex gap-4 rounded-3xl border border-slate-200 bg-white p-5 lg:block lg:border-0 lg:p-0" delay={index * 0.05}>
-                <span className="relative z-10 flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-slate-950 text-sm font-black text-amber-400 ring-8 ring-white">{String(index + 1).padStart(2, "0")}</span>
-                <p className="self-center font-bold leading-6 text-slate-800 lg:mt-6 lg:pr-5">{step}</p>
-              </Reveal>
+          <Reveal><p className="text-sm font-black uppercase tracking-[0.25em] text-amber-700">Comodidad cotidiana</p><h2 className="mt-4 text-3xl font-black uppercase tracking-tight sm:text-4xl lg:text-5xl">Beneficios que cambian tu día</h2></Reveal>
+          <dl className="mt-10 grid gap-x-10 sm:grid-cols-2 lg:grid-cols-3">
+            {benefits.map(([title, text]) => (
+              <div key={title} className="border-t border-slate-200 py-6">
+                <dt className="text-lg font-black uppercase">{title}</dt>
+                <dd className="mt-3 leading-7 text-slate-600">{text}</dd>
+              </div>
             ))}
-          </div>
+          </dl>
+        </div>
+      </section>
+
+      <section id="proceso-motorizacion" aria-labelledby="proceso-title" className="scroll-mt-28 px-6 py-20 lg:px-8 lg:py-28">
+        <div className="mx-auto max-w-7xl">
+          <Reveal className="max-w-3xl">
+            <p className="text-sm font-black uppercase tracking-[0.25em] text-amber-700">Tu cortina actual. Una nueva experiencia.</p>
+            <h2 id="proceso-title" className="mt-4 text-3xl font-black uppercase tracking-tight sm:text-4xl lg:text-5xl">De manual a motorizada</h2>
+            <p className="mt-5 text-lg leading-8 text-slate-600">Transformamos tu Roller existente en un sistema más cómodo e inteligente. El primer paso es evaluar su compatibilidad técnica.</p>
+          </Reveal>
+          <ol className="mt-12 grid gap-x-12 gap-y-14 lg:grid-cols-2">
+            {steps.map((step, index) => (
+              <li key={step.title}>
+                <MotorizationPhoto step={index + 1} />
+                <div className="mt-6 flex items-start gap-5">
+                  <span className="text-3xl font-black sm:text-4xl tracking-tight text-amber-600" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
+                  <div>
+                    <h3 className="text-xl font-black uppercase tracking-tight sm:text-2xl">{step.title}</h3>
+                    <p className="mt-3 max-w-xl text-base leading-7 text-slate-600 sm:text-lg sm:leading-8">{step.text}</p>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ol>
         </div>
       </section>
 
@@ -236,13 +207,14 @@ export default function Motorizacion() {
         <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
           <Reveal>
             <p className="text-sm font-black uppercase tracking-[0.28em] text-amber-700">Integración discreta</p>
-            <h2 className="mt-4 text-4xl font-black leading-tight tracking-tight md:text-5xl">
-              La tecnología queda oculta.<br />La comodidad, no.
+            <h2 className="mt-4 text-3xl font-black sm:text-4xl leading-tight tracking-tight md:text-5xl">
+              La tecnología se integra en la cortina.
             </h2>
             <p className="mt-5 max-w-xl text-lg leading-8 text-slate-600">
-              El motor se instala dentro del tubo de tu cortina roller, manteniendo prácticamente intacta su apariencia.
+              El motor tubular queda alojado dentro del tubo de tu Roller, manteniendo una apariencia limpia y eliminando la cadena manual.
             </p>
 
+            <p className="mt-4 text-sm leading-6 text-slate-500">La alimentación y las opciones de control se definen según el sistema compatible con tu cortina.</p>
             <div className="mt-9 space-y-4">
               {integrationFeatures.map(([Icon, label]) => (
                 <div key={label} className="flex items-center gap-4 border-b border-slate-200 pb-4 last:border-0 last:pb-0">
@@ -255,51 +227,26 @@ export default function Motorizacion() {
             </div>
           </Reveal>
 
-          <Reveal className="relative overflow-hidden rounded-[32px] bg-slate-900 shadow-xl lg:rounded-[40px]" delay={0.08}>
-            <img
-              src="/img/roller-sunscreen-dormitorio.jpg"
-              alt="Cortinas roller instaladas en un dormitorio con vista al mar"
-              className="h-[380px] w-full object-cover sm:h-[500px] lg:h-[590px]"
-              style={{ objectPosition: "68% center" }}
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/35 via-transparent to-slate-950/10" />
-
-            <div className="absolute right-[7%] top-[19%] flex max-w-[12rem] items-start gap-2 sm:right-[10%] sm:top-[16%] sm:max-w-none">
-              <div className="mt-2 h-2.5 w-2.5 shrink-0 rounded-full bg-amber-400 ring-4 ring-slate-950/30" />
-              <div>
-                <div className="h-px w-12 bg-amber-400/90 sm:w-20" />
-                <p className="mt-2 rounded-lg bg-slate-950/80 px-3 py-2 text-[10px] font-black uppercase leading-4 tracking-[0.12em] text-white backdrop-blur-sm sm:text-xs">
-                  Motor integrado dentro del tubo
-                </p>
-              </div>
-            </div>
+          <Reveal delay={0.08}>
+            <MotorizationPhoto step={1} sizes="(min-width: 1280px) 740px, (min-width: 1024px) 60vw, calc(100vw - 48px)" />
           </Reveal>
-        </div>
-      </section>
-
-      <section className="px-6 py-20 lg:px-8 lg:py-28">
-        <div className="mx-auto max-w-7xl">
-          <Reveal className="text-center"><p className="text-sm font-black uppercase tracking-[0.3em] text-amber-700">Comodidad cotidiana</p><h2 className="mt-4 text-4xl font-black uppercase tracking-tight md:text-5xl">Beneficios que cambian tu día</h2></Reveal>
-          <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {benefits.map(([Icon, title, text], index) => (
-              <Reveal key={title} className="rounded-[28px] border border-slate-200 p-7" delay={(index % 3) * 0.05}>
-                {createElement(Icon, { className: "h-7 w-7 text-amber-600", "aria-hidden": true })}<h3 className="mt-5 text-xl font-black">{title}</h3><p className="mt-3 leading-7 text-slate-600">{text}</p>
-              </Reveal>
-            ))}
-          </div>
         </div>
       </section>
 
       <section className="bg-slate-950 px-6 py-20 text-white lg:px-8 lg:py-28">
         <div className="mx-auto max-w-7xl">
-          <Reveal><p className="text-sm font-black uppercase tracking-[0.3em] text-amber-400">Aplicaciones</p><h2 className="mt-4 text-4xl font-black uppercase tracking-tight md:text-5xl">Especialmente útil en</h2></Reveal>
-          <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
-            {applications.map(([image, title, text], index) => (
-              <Reveal key={title} className={`group overflow-hidden rounded-[26px] border border-white/10 bg-white/5 ${index === 4 ? "sm:col-span-2 lg:col-span-1" : ""}`} delay={index * 0.04}>
-                <img src={image} alt={`${title}: aplicación de cortinas roller motorizables`} className="h-52 w-full object-cover transition duration-500 group-hover:scale-105" />
-                <div className="p-5"><h3 className="font-black">{title}</h3><p className="mt-2 text-sm leading-6 text-slate-400">{text}</p></div>
-              </Reveal>
-            ))}
+          <Reveal><p className="text-sm font-black uppercase tracking-[0.25em] text-amber-400">Hogar + oficinas</p><h2 className="mt-4 text-3xl font-black uppercase tracking-tight sm:text-4xl lg:text-5xl">El control se adapta a tu espacio</h2></Reveal>
+          <div className="mt-12 grid gap-12 lg:grid-cols-2">
+            <article>
+              <MotorizationPhoto step={4} />
+              <h3 className="mt-6 text-2xl font-black uppercase">Hogar</h3>
+              <p className="mt-3 max-w-xl text-lg leading-8 text-slate-300">En el living, dormitorio o departamento: ajusta la luz sin levantarte y disfruta de una integración discreta en tus espacios cotidianos.</p>
+            </article>
+            <article>
+              <img src={officeImage} alt="Cortina Roller Dúo instalada en una oficina" width="960" height="1280" loading="lazy" decoding="async" className="aspect-[3/2] h-auto w-full rounded-[28px] object-cover lg:rounded-[36px]" />
+              <h3 className="mt-6 text-2xl font-black uppercase">Oficinas / proyectos</h3>
+              <p className="mt-3 max-w-xl text-lg leading-8 text-slate-300">Control de la luz para espacios de trabajo. Evaluamos las cortinas existentes y las opciones de accionamiento individual o conjunto según el sistema.</p>
+            </article>
           </div>
         </div>
       </section>
@@ -307,15 +254,13 @@ export default function Motorizacion() {
       <section className="px-6 py-20 lg:px-8 lg:py-28">
         <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
           <div>
-            <Reveal><p className="text-sm font-black uppercase tracking-[0.3em] text-amber-700">Servicio integral</p><h2 className="mt-4 text-4xl font-black uppercase tracking-tight md:text-5xl">La solución DecoSun</h2><p className="mt-4 text-lg text-slate-600">Respaldo, experiencia y servicio profesional.</p></Reveal>
+            <Reveal><p className="text-sm font-black uppercase tracking-[0.3em] text-amber-700">Servicio integral</p><h2 className="mt-4 text-3xl font-black sm:text-4xl uppercase tracking-tight md:text-5xl">La solución DecoSun</h2><p className="mt-4 text-lg text-slate-600">Respaldo, experiencia y servicio profesional.</p></Reveal>
             <div className="mt-9 grid gap-5 sm:grid-cols-2">
               {servicePillars.map(([Icon, title, text]) => <Reveal key={title} className="rounded-3xl bg-slate-50 p-6">{createElement(Icon, { className: "h-6 w-6 text-amber-600", "aria-hidden": true })}<h3 className="mt-4 font-black">{title}</h3><p className="mt-2 text-sm leading-6 text-slate-600">{text}</p></Reveal>)}
             </div>
           </div>
-          <Reveal className="overflow-hidden rounded-[36px] bg-slate-100">
-            {/* TODO: reemplazar con fotografía oficial de un técnico DecoSun instalando una motorización. */}
-            <img src={technicianPlaceholder} alt="Espacio de referencia para futura fotografía oficial del servicio técnico DecoSun" className="h-[480px] w-full object-cover" />
-            <p className="px-5 py-4 text-xs text-slate-500">Imagen referencial. Pendiente fotografía oficial del servicio de motorización.</p>
+          <Reveal>
+            <MotorizationPhoto step={2} />
           </Reveal>
         </div>
       </section>
@@ -323,21 +268,30 @@ export default function Motorizacion() {
       <section className="bg-slate-50 px-6 py-16 lg:px-8">
         <div className="mx-auto max-w-5xl rounded-[32px] border border-slate-200 bg-white p-7 sm:p-10">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-            <div><p className="text-sm font-black uppercase tracking-[0.25em] text-amber-700">Información técnica</p><h2 className="mt-3 text-2xl font-black sm:text-3xl">Datos esenciales de la solución</h2><p className="mt-3 text-slate-600">Capacidad sujeta a evaluación técnica según tela, peso, tubo y configuración.</p></div>
-            <button type="button" onClick={() => setShowSpecs((current) => !current)} aria-expanded={showSpecs} aria-controls="motorization-specs" className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-2xl border border-slate-300 px-5 py-3 text-sm font-black uppercase tracking-wide transition hover:border-amber-500 hover:text-amber-700 focus:outline-none focus:ring-4 focus:ring-amber-300/40">
-              {showSpecs ? "Ocultar especificaciones" : "Ver especificaciones técnicas"}<ChevronDown className={`h-4 w-4 transition ${showSpecs ? "rotate-180" : ""}`} />
+            <div><p className="text-sm font-black uppercase tracking-[0.25em] text-amber-700">Información técnica</p><h2 className="mt-3 text-2xl font-black sm:text-3xl">Datos esenciales de la solución</h2><p className="mt-3 text-slate-600">Solución con batería recargable. Confirmamos la compatibilidad y las prestaciones según tela, peso, tubo y sistema instalado. Las opciones WiFi pueden tener especificaciones diferentes.</p></div>
+            <button type="button" onClick={() => setShowSpecs((current) => !current)} aria-expanded={showSpecs} aria-controls="motorization-specs" className="inline-flex min-h-12 w-full min-w-0 items-center sm:w-auto sm:max-w-xs justify-center gap-2 rounded-2xl border border-slate-300 px-5 py-3 text-sm font-black uppercase tracking-wide transition-colors hover:border-amber-500 hover:text-amber-700 focus:outline-none focus:ring-4 focus:ring-amber-300/40">
+              {showSpecs ? "Ocultar especificaciones" : "Ver especificaciones técnicas"}<ChevronDown className={`h-4 w-4 shrink-0 transition motion-reduce:transition-none ${showSpecs ? "rotate-180" : ""}`} />
             </button>
           </div>
-          {showSpecs && <div id="motorization-specs" className="mt-8 grid gap-px overflow-hidden rounded-2xl border border-slate-200 bg-slate-200 sm:grid-cols-2">{technicalSpecs.map(([label, value]) => <div key={label} className="flex justify-between gap-4 bg-white p-4 text-sm"><span className="font-semibold text-slate-600">{label}</span><span className="text-right font-black text-slate-900">{value}</span></div>)}</div>}
+          {showSpecs && (
+            <div id="motorization-specs" className="mt-8">
+              <dl className="grid gap-px overflow-hidden rounded-2xl border border-slate-200 bg-slate-200 sm:grid-cols-2">
+                {technicalSpecs.map(([label, value]) => <div key={label} className="flex flex-col gap-2 bg-white p-4 text-sm"><dt className="font-semibold text-slate-600">{label}</dt><dd className="font-black text-slate-900">{value}</dd></div>)}
+              </dl>
+              <h3 className="mt-6 font-black">Opciones de configuración</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-600">Disponibilidad según la solución instalada. La conectividad WiFi se evalúa por separado.</p>
+              <ul className="mt-3 grid list-inside list-disc gap-3 text-sm text-slate-600 sm:grid-cols-2">{configurationFeatures.map((feature) => <li key={feature}>{feature}</li>)}</ul>
+            </div>
+          )}
         </div>
       </section>
 
       <section className="px-6 py-20 lg:px-8 lg:py-28">
         <Reveal className="mx-auto max-w-5xl overflow-hidden rounded-[36px] bg-slate-950 px-6 py-14 text-center text-white shadow-2xl sm:px-10 lg:py-20">
-          <p className="text-sm font-black uppercase tracking-[0.3em] text-amber-400">Evaluación sin compromiso</p>
-          <h2 className="mx-auto mt-5 max-w-3xl text-4xl font-black uppercase tracking-tight md:text-5xl">¿Tu cortina puede motorizarse?</h2>
+          <Link to="/" aria-label="DecoSun.cl — ir al inicio" className="inline-block text-3xl font-black tracking-tight focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-amber-400 sm:text-4xl">DECO<span className="text-amber-400">SUN</span>.CL</Link>
+          <h2 className="mx-auto mt-5 max-w-3xl text-3xl font-black sm:text-4xl uppercase tracking-tight md:text-5xl">¿Tu cortina puede motorizarse?</h2>
           <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-slate-300">Envíanos una fotografía por WhatsApp y evaluamos la mejor solución para tu caso.</p>
-          <WhatsAppLink className="mt-8 w-full sm:w-auto">Enviar foto por WhatsApp</WhatsAppLink>
+          <WhatsAppLink className="mt-8 w-full sm:w-auto">Cotiza tu motorización</WhatsAppLink>
           <p className="mx-auto mt-4 max-w-xl text-sm leading-6 text-slate-400">Si puedes, incluye una fotografía completa de la cortina y otra del mecanismo lateral.</p>
         </Reveal>
       </section>

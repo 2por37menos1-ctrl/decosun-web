@@ -8,7 +8,7 @@ export default function Navbar() {
   const [solutionsOpen, setSolutionsOpen] = useState(false)
   const [mobileSolutionsOpen, setMobileSolutionsOpen] = useState(false)
   const location = useLocation()
-  const solutionsActive = location.pathname === "/soluciones" || location.pathname === "/motorizacion"
+  const solutionsActive = ["/soluciones", "/motorizacion", "/mantencion"].includes(location.pathname)
 
   const linkClass = ({ isActive }) =>
     `transition duration-300 hover:text-amber-300 ${
@@ -27,7 +27,7 @@ export default function Navbar() {
           <img src={logo} alt="Decosun" className="h-10 w-auto lg:h-16" />
         </Link>
 
-        <nav className="hidden items-center gap-7 text-sm font-semibold tracking-wide md:flex">
+        <nav className="hidden items-center gap-7 text-sm font-semibold tracking-wide xl:flex">
           <NavLink to="/" className={linkClass}>
             Inicio
           </NavLink>
@@ -65,10 +65,9 @@ export default function Navbar() {
                   <NavLink to="/motorizacion" onClick={() => setSolutionsOpen(false)} className="block rounded-2xl px-4 py-3 text-white/85 transition hover:bg-white/10 hover:text-amber-300">
                     Motorización
                   </NavLink>
-                  <div className="flex items-center justify-between rounded-2xl px-4 py-3 text-slate-500" aria-disabled="true">
-                    <span>Mantención y reparación</span>
-                    <span className="rounded-full bg-white/5 px-2 py-1 text-[10px] uppercase tracking-wide">Próximamente</span>
-                  </div>
+                  <NavLink to="/mantencion" onClick={() => setSolutionsOpen(false)} className="block rounded-2xl px-4 py-3 text-white/85 transition hover:bg-white/10 hover:text-amber-300">
+                    Mantención
+                  </NavLink>
                 </div>
               </div>
             )}
@@ -105,7 +104,7 @@ export default function Navbar() {
         <button
           type="button"
           onClick={() => setOpen((prev) => !prev)}
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white md:hidden"
+          className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white xl:hidden"
           aria-label="Abrir menú"
         >
           <span className="text-xl leading-none">
@@ -115,7 +114,7 @@ export default function Navbar() {
       </div>
 
       {open && (
-        <div className="mx-auto mt-3 max-w-7xl rounded-[28px] border border-white/10 bg-slate-950/90 p-5 shadow-2xl backdrop-blur-2xl md:hidden">
+        <div className="mx-auto mt-3 max-w-7xl rounded-[28px] border border-white/10 bg-slate-950/90 p-5 shadow-2xl backdrop-blur-2xl xl:hidden">
           <div className="flex flex-col gap-4 text-sm font-semibold uppercase tracking-wide text-white">
             <NavLink to="/" onClick={closeMenu} className={linkClass}>
               Inicio
@@ -136,9 +135,7 @@ export default function Navbar() {
                   <NavLink to="/soluciones" onClick={closeMenu} className="min-h-11 rounded-xl px-3 py-3 text-white/80 transition hover:bg-white/5 hover:text-amber-300">Ver todas las soluciones</NavLink>
                   <NavLink to="/soluciones" onClick={closeMenu} className="min-h-11 rounded-xl px-3 py-3 text-white/80 transition hover:bg-white/5 hover:text-amber-300">Cortinas y control solar</NavLink>
                   <NavLink to="/motorizacion" onClick={closeMenu} className="min-h-11 rounded-xl px-3 py-3 text-white/80 transition hover:bg-white/5 hover:text-amber-300">Motorización</NavLink>
-                  <div className="flex min-h-11 items-center justify-between rounded-xl px-3 py-3 text-slate-500">
-                    <span>Mantención y reparación</span><span className="text-[10px] uppercase">Próximamente</span>
-                  </div>
+                  <NavLink to="/mantencion" onClick={closeMenu} className="min-h-11 rounded-xl px-3 py-3 text-white/80 transition hover:bg-white/5 hover:text-amber-300">Mantención</NavLink>
                 </div>
               )}
             </div>
