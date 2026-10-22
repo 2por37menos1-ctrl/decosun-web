@@ -1,6 +1,7 @@
 import { createElement, useEffect, useState } from "react"
 import { motion, useReducedMotion } from "framer-motion"
 import { Link } from "react-router-dom"
+import BrandSupport from "../components/BrandSupport"
 import WhatsAppButton from "../components/WhatsAppButton"
 import {
   BatteryCharging,
@@ -79,7 +80,7 @@ function Reveal({ children, className = "", delay = 0 }) {
   return (
     <MotionDiv
       className={className}
-      initial={reduceMotion ? false : { opacity: 0, y: 24 }}
+      initial={false}
       whileInView={reduceMotion ? {} : { opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.18 }}
       transition={{ duration: 0.55, delay }}
@@ -121,27 +122,7 @@ function MotorizationPhoto({ step, priority = false, sizes = "(min-width: 1280px
 export default function Motorizacion() {
   const [showSpecs, setShowSpecs] = useState(false)
 
-  useEffect(() => {
-    const previousTitle = document.title
-    const description = "Motorización profesional de cortinas Roller con motor tubular, control remoto y opciones WiFi. Transforma tus cortinas existentes con DecoSun."
-    const existingMeta = document.querySelector('meta[name="description"]')
-    const meta = existingMeta || document.createElement("meta")
-    const previousDescription = meta.getAttribute("content")
-
-    document.title = "Motorización de Cortinas Roller | DecoSun"
-    meta.setAttribute("name", "description")
-    if (!existingMeta) document.head.appendChild(meta)
-    meta.setAttribute("content", description)
-    window.scrollTo(0, 0)
-
-    return () => {
-      document.title = previousTitle
-      if (!existingMeta) meta.remove()
-      else if (previousDescription === null) meta.removeAttribute("content")
-      else meta.setAttribute("content", previousDescription)
-    }
-  }, [])
-
+  useEffect(() => { window.scrollTo(0, 0) }, [])
   return (
     <main className="bg-white text-slate-950">
       <section aria-labelledby="motorizacion-title" className="bg-slate-950 px-6 pb-16 pt-28 text-white lg:px-8 lg:pb-20 lg:pt-36">
@@ -151,9 +132,9 @@ export default function Motorizacion() {
             <h1 id="motorizacion-title" className="mt-5 text-[clamp(1.875rem,4.4vw,3.75rem)] font-black uppercase leading-[1.03] tracking-tight">
               <span className="text-amber-400">Motorización</span><br />de cortinas Roller
             </h1>
-            <p className="mt-7 text-xl font-semibold leading-snug sm:text-2xl">Transforma tus cortinas actuales<br />en cortinas motorizadas.</p>
+            <p className="mt-7 text-xl font-semibold leading-snug sm:text-2xl">Motoriza tus cortinas actuales<br />o elige nuevas roller a medida.</p>
             <p className="mt-5 text-base leading-7 text-slate-300">Motor tubular integrado · Control remoto · WiFi</p>
-            <p className="mt-2 text-base font-semibold text-white">Sin cadenas. Integración discreta.</p>
+            <p className="mt-2 text-base font-semibold text-white">5 años de garantía en motores · 1 año en instalación.</p>
             <p className="mt-4 max-w-lg text-sm leading-6 text-slate-400">Evaluamos la compatibilidad de tu Roller existente. Las opciones WiFi dependen de la solución instalada.</p>
             <WhatsAppLink className="mt-7 w-full sm:w-auto">Cotiza tu motorización</WhatsAppLink>
             <a href="#proceso-motorizacion" className="mt-5 flex min-h-11 w-fit items-center gap-3 text-sm font-bold text-white underline decoration-amber-400 underline-offset-8 hover:text-amber-300 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-amber-400">De manual a motorizada <span aria-hidden="true">↓</span></a>
@@ -295,6 +276,19 @@ export default function Motorizacion() {
           <p className="mx-auto mt-4 max-w-xl text-sm leading-6 text-slate-400">Si puedes, incluye una fotografía completa de la cortina y otra del mecanismo lateral.</p>
         </Reveal>
       </section>
+      <section className="mx-auto max-w-5xl px-6 py-16" aria-labelledby="motorization-faq-title">
+        <h2 id="motorization-faq-title" className="text-3xl font-black">Preguntas sobre motorización de cortinas roller</h2>
+        <div className="mt-8 divide-y divide-slate-200">
+          {[
+            ["¿Se puede motorizar una cortina que ya tengo?", "Evaluamos la tela, el peso, el tubo y los componentes de tu roller para confirmar si es compatible y qué adaptación necesita. Puedes enviarnos fotografías para iniciar la evaluación."],
+            ["¿Puedo encargar cortinas nuevas motorizadas?", "Sí. También confeccionamos cortinas roller a medida y evaluamos la motorización compatible con el producto elegido."],
+            ["¿Todas las cortinas se controlan por WiFi?", "No. El control remoto y las opciones de conectividad dependen del motor y de la solución instalada. Confirmamos las funciones disponibles antes de preparar tu propuesta."],
+            ["¿Qué garantía tiene la motorización?", "Los motores suministrados por DecoSun tienen 5 años de garantía y la instalación, 1 año. Al intervenir una cortina existente, estos plazos no otorgan una nueva garantía a la cortina anterior."],
+            ["¿Dónde puedo solicitar el servicio?", "Atendemos en Iquique, la Región de Valparaíso y Santiago. También contamos con técnicos certificados por DecoSun en Arica, Copiapó, Vallenar, La Serena, Concepción y Temuco. Consulta disponibilidad para tu ubicación."],
+          ].map(([question, answer]) => <details key={question} className="py-5"><summary className="cursor-pointer text-lg font-bold">{question}</summary><p className="mt-4 leading-7 text-slate-600">{answer}</p></details>)}
+        </div>
+      </section>
+      <BrandSupport motorization />
     </main>
   )
 }

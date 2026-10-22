@@ -3,117 +3,65 @@ import { Link } from "react-router-dom"
 import { useEffect, useState } from "react"
 
 import { supabase } from "../lib/supabase"
-import PromoVideoModal from "../components/PromoVideoModal"
+import BrandSupport from "../components/BrandSupport"
+import { coverageCities } from "../lib/siteSeo"
 
-import heroLogo from "../assets/images/logo-horizontal.png"
+import heroLogo from "../assets/images/seo/logo-horizontal.png"
 
-import hero1 from "../assets/images/home-03.jpg"
-import hero2 from "../assets/images/black-outcalido.jpg"
-import hero3 from "../assets/images/home-02.jpg"
-import hero4 from "../assets/images/home-sunscreen-comedor.jpg"
-import hero5 from "../assets/images/home-sunscreen-terraza.jpg"
-import hero6 from "../assets/images/roller-doble02.jpg"
-import hero7 from "../assets/images/screen-02.jpeg"
+import hero2 from "../assets/images/seo/black-outcalido.jpg"
 
 import rollerImg from "../assets/images/screen-02.jpeg"
-import toldoImg from "../assets/images/toldo-proyectante-premium.png"
-import duoImg from "../assets/images/duo-03.jpg"
-import pergolaImg from "../assets/images/pergola-premium.png"
-import redImg from "../assets/images/sucursal-iquique03.jpg"
-import cierreCristalHomeImg from "../assets/images/cierres-cristal/cierre-cristal-balcon-03.jpeg"
+import verticalImg from "../assets/images/persiana-vertical-living.jpeg"
+import duoImg from "../assets/images/seo/duo-03.jpg"
+
+import redImg from "../assets/images/seo/sucursal-iquique03.jpg"
+
+const MotionDiv = motion.div
+const MotionArticle = motion.article
 
 export default function Home() {
-  const heroImages = [hero1, hero2, hero3, hero4, hero5, hero6, hero7]
-  const [currentHero, setCurrentHero] = useState(0)
-
-  const [activity, setActivity] = useState({
-    active_projects: 0,
-    active_regions: 0,
-    closed_last_30_days: 0,
-    scheduled_visits: 0,
-  })
+  const [activity, setActivity] = useState(null)
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentHero((prev) =>
-        prev === heroImages.length - 1 ? 0 : prev + 1
-      )
-    }, 6500)
-
-    return () => clearInterval(interval)
-  }, [heroImages.length])
-
-  useEffect(() => {
+    let cancelled = false
+    async function loadActivity() {
+      const { data, error } = await supabase.from("public_site_activity").select("*").single()
+      if (!cancelled && !error && data) setActivity(data)
+    }
     loadActivity()
+    return () => { cancelled = true }
   }, [])
 
-  async function loadActivity() {
-    const { data, error } = await supabase
-      .from("public_site_activity")
-      .select("*")
-      .single()
-
-    if (error) {
-      console.error(error)
-      return
-    }
-
-    setActivity(data)
-  }
-
   const soluciones = [
-    {
-      title: "Cortinas Roller Screen",
-      text: "Control solar, privacidad y luminosidad natural para espacios modernos.",
-      image: rollerImg,
-    },
-    {
-      title: "Toldos Proyectantes",
-      text: "Protección exterior para terrazas, balcones y espacios al aire libre.",
-      image: toldoImg,
-    },
-    {
-      title: "Roller DÚO",
-      text: "Diseño decorativo y regulación flexible de luz en un solo sistema.",
-      image: duoImg,
-    },
-    {
-      title: "Pérgolas Bioclimáticas",
-      text: "Diseño exterior premium para terrazas de alto valor.",
-      image: pergolaImg,
-    },
-    {
-      title: "Cierres de cristal para balcones y terrazas",
-      text: "Sistema transparente para proteger espacios exteriores del viento, polvo y lluvia ligera, manteniendo vista, luminosidad y una terminación limpia bajo marca DecoSun.",
-      image: cierreCristalHomeImg,
-      cta: "Cotizar cierre de cristal",
-      to: "/cotizar",
-    },
+    { title: "Motorización de cortinas roller", text: "Transforma tus cortinas existentes o encarga nuevas roller motorizadas. Compatibilidad sujeta a evaluación técnica.", image: "/img/motorizacion/4MT-640.jpg", to: "/motorizacion", cta: "Conocer motorización →" },
+    { title: "Roller blackout a medida", text: "Oscurecimiento y privacidad para dormitorios y espacios de descanso.", image: hero2, to: "/soluciones#roller-blackout" },
+    { title: "Roller sunscreen a medida", text: "Control de luz y reflejos, con conexión visual al exterior.", image: rollerImg, to: "/soluciones#roller-sunscreen" },
+    { title: "Cortinas roller DÚO", text: "Franjas translúcidas y opacas para regular la luz y la privacidad.", image: duoImg, to: "/soluciones#roller-duo" },
+    { title: "Persianas verticales", text: "Control direccional de luz para oficinas y grandes ventanales.", image: verticalImg, to: "/soluciones#persianas-verticales" },
+    { title: "Mantención y limpieza de roller", text: "Revisión de mecanismos y limpieza de telas sunscreen, con retiro y reinstalación según evaluación.", image: "/img/mantencion/3M-640.jpg", to: "/mantencion" },
   ]
 
   return (
     <main className="bg-white text-slate-950">
-      <PromoVideoModal />
+
 
       {/* HERO */}
       <section className="relative min-h-screen overflow-hidden bg-slate-950">
-        {heroImages.map((image, index) => (
-          <img
-            key={image}
-            src={image}
-            alt="Decosun control solar"
-            className={`absolute inset-0 h-full w-full object-cover scale-[1.03] transition-all duration-[7000ms] ${
-              index === currentHero ? "opacity-75 scale-100" : "opacity-0 scale-105"
-            }`}
-          />
-        ))}
+        <img
+          src="/img/motorizacion/4MT-1280.jpg"
+          srcSet="/img/motorizacion/4MT-640.jpg 640w, /img/motorizacion/4MT-1280.jpg 1280w"
+          sizes="100vw"
+          width="1536" height="1024" fetchPriority="high" decoding="async"
+          alt="Control remoto de cortinas roller motorizadas en un living"
+          className="absolute inset-0 h-full w-full object-cover opacity-75"
+        />
 
         <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/75 to-slate-950/20" />
         <div className="absolute inset-0 bg-black/25" />
 
         <div className="relative z-10 mx-auto flex min-h-screen max-w-7xl items-center px-6 pt-20 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 28 }}
+          <MotionDiv
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.9, ease: "easeOut" }}
             className="max-w-3xl lg:ml-4"
@@ -130,25 +78,25 @@ export default function Home() {
               CONTROL SOLAR · AUTOMATIZACIÓN · CONFORT
             </p>
 
-            <h1 className="mt-6 text-5xl font-black leading-[1.05] tracking-tight text-white md:text-7xl">
-              Soluciones inteligentes
+            <h1 className="mt-6 text-[clamp(2rem,6vw,4.5rem)] font-black leading-[1.05] tracking-tight text-white">
+              Motorización de cortinas
               <span className="block text-amber-400">
-                para transformar tus espacios.
+                y roller a medida.
               </span>
             </h1>
 
             <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-200">
-              Desde sistemas motorizados hasta protección solar y cerramientos
-              modernos: asesoramos, fabricamos e instalamos soluciones DecoSun
-              con terminaciones profesionales.
+              Motoriza tus cortinas o elige roller blackout, sunscreen y DÚO
+              confeccionadas a medida. Atención en Iquique, la Región de
+              Valparaíso y Santiago, con respaldo técnico regional DecoSun.
             </p>
 
             <div className="mt-9 flex flex-wrap gap-4">
               <Link
-                to="/cotizar"
+                to="/motorizacion"
                 className="rounded-2xl bg-amber-500 px-7 py-4 text-sm font-bold uppercase tracking-wide text-slate-950 shadow-lg transition duration-300 hover:-translate-y-1 hover:bg-amber-400"
               >
-                Cotizar ahora
+                Conocer motorización
               </Link>
 
               <Link
@@ -180,7 +128,7 @@ export default function Home() {
                 </div>
               ))}
             </div>
-          </motion.div>
+          </MotionDiv>
         </div>
       </section>
 
@@ -197,10 +145,10 @@ export default function Home() {
             </h2>
           </div>
 
-          <div className="mt-12 grid gap-7 md:grid-cols-2 lg:grid-cols-5">
+          <div className="mt-12 grid gap-7 md:grid-cols-2 lg:grid-cols-3">
             {soluciones.map((item) => (
-              <motion.article
-                initial={{ opacity: 0, y: 40 }}
+              <MotionArticle
+                initial={false}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.7, ease: "easeOut" }}
@@ -210,6 +158,7 @@ export default function Home() {
                 <img
                   src={item.image}
                   alt={item.title}
+                  loading="lazy" decoding="async"
                   className="h-56 w-full object-cover transition duration-700 group-hover:scale-105"
                 />
 
@@ -229,7 +178,7 @@ export default function Home() {
                     {item.cta || "Ver más →"}
                   </Link>
                 </div>
-              </motion.article>
+              </MotionArticle>
             ))}
           </div>
         </div>
@@ -262,36 +211,36 @@ export default function Home() {
             </Link>
           </div>
 
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-5 sm:grid-cols-2">
             {[
               ["+10", "años de experiencia"],
-              ["2", "sucursales activas"],
-              ["3ª", "sucursal en proyección"],
-              ["+10", "zonas con presencia comercial"],
+              ["Iquique", "tienda con atención al público"],
+              ["V Región", "taller y atención en terreno"],
+              ["Santiago", "fábrica principal"],
             ].map(([number, label]) => (
-              <motion.div
+              <MotionDiv
                 key={label}
-                initial={{ opacity: 0, y: 30 }}
+                initial={false}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.7, ease: "easeOut" }}
                 className="rounded-[32px] border border-white/5 bg-white/[0.06] p-7 text-center shadow-2xl backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:bg-white/[0.08]"
               >
-                <p className="text-5xl font-black tracking-tight text-amber-400">
+                <p className="text-2xl font-black tracking-tight text-amber-400">
                   {number}
                 </p>
 
                 <p className="mt-3 text-sm font-semibold uppercase tracking-wide text-slate-200">
                   {label}
                 </p>
-              </motion.div>
+              </MotionDiv>
             ))}
           </div>
         </div>
       </section>
 
       {/* DECOSUN EN MOVIMIENTO */}
-      <section className="bg-white px-6 py-20 lg:px-8">
+      {activity && <section className="bg-white px-6 py-20 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="mx-auto max-w-3xl text-center">
             <p className="text-sm font-bold uppercase tracking-[0.3em] text-amber-700">
@@ -312,12 +261,12 @@ export default function Home() {
             {[
               [activity.active_projects, "proyectos activos"],
               [activity.active_regions, "regiones activas"],
-              [activity.closed_last_30_days, "proyectos finalizados"],
+              [activity.closed_last_30_days, "proyectos finalizados en los últimos 30 días"],
               [activity.scheduled_visits, "visitas programadas"],
             ].map(([number, label]) => (
-              <motion.div
+              <MotionDiv
                 key={label}
-                initial={{ opacity: 0, y: 30 }}
+                initial={false}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.7, ease: "easeOut" }}
@@ -330,7 +279,7 @@ export default function Home() {
                 <p className="mt-3 text-sm font-semibold uppercase tracking-wide text-slate-700">
                   {label}
                 </p>
-              </motion.div>
+              </MotionDiv>
             ))}
           </div>
 
@@ -341,6 +290,7 @@ export default function Home() {
         </div>
       </section>
 
+      }
       {/* COTIZADOR */}
       <section className="bg-amber-50 px-6 py-20 lg:px-8">
         <div className="mx-auto max-w-7xl">
@@ -427,26 +377,14 @@ export default function Home() {
             </h2>
 
             <p className="mt-5 text-lg leading-8 text-slate-300">
-              DecoSun expande su presencia mediante sucursales y
-              asesores regionales, entregando soporte técnico, garantías,
-              herramientas de venta y productos fabricados con terminaciones
-              profesionales.
+              Tienda en Iquique, taller sin atención al público en la V Región
+              y fábrica principal en Santiago. Nuestra red de técnicos
+              certificados por DecoSun cuenta con formación, pruebas en terreno
+              y respaldo continuo de la marca.
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
-              {[
-                "Arica",
-                "Iquique",
-                "Calama",
-                "Tocopilla",
-                "Antofagasta",
-                "Copiapó",
-                "Vallenar",
-                "La Serena",
-                "V Región",
-                "Santiago",
-                "Temuco",
-              ].map((city) => (
+              {coverageCities.map((city) => (
                 <span
                   key={city}
                   className="rounded-full border border-white/10 bg-white/10 px-4 py-2 text-sm font-medium text-slate-200 backdrop-blur-md"
@@ -474,6 +412,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+      <BrandSupport />
     </main>
   )
 }

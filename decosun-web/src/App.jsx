@@ -6,6 +6,9 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import WhatsAppButton from "./components/WhatsAppButton";
 
+import Seo from "./components/Seo";
+import Garantia from "./pages/Garantia";
+import NotFound from "./pages/NotFound";
 import Home from "./pages/Home";
 import Soluciones from "./pages/Soluciones";
 import Motorizacion from "./pages/Motorizacion";
@@ -31,6 +34,7 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-white text-slate-800">
+      <Seo />
       {!isPanel && !isPublicStatus && <Navbar />}
 
       <Routes>
@@ -41,6 +45,8 @@ function AppContent() {
         <Route path="/mantencion" element={<Mantencion />} />
         <Route path="/proyectos" element={<Proyectos />} />
         <Route path="/nosotros" element={<Nosotros />} />
+        <Route path="/garantia" element={<Garantia />} />
+        <Route path="*" element={<NotFound />} />
         <Route path="/cotizar" element={<Cotizar />} />
         <Route path="/agenda" element={<Agenda />} />
         <Route path="/estado/:token" element={<ProjectStatusPublic />} />

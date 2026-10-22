@@ -1,19 +1,62 @@
 {
-  "headers": [
+  "routes": [
     {
-      "source": "/assets/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
-        }
-      ]
+      "src": "/assets/(.*)",
+      "headers": {
+        "Cache-Control": "public, max-age=31536000, immutable"
+      },
+      "continue": true
+    },
+    {
+      "src": "/motorizacion/?",
+      "dest": "/motorizacion/index.html"
+    },
+    {
+      "src": "/soluciones/?",
+      "dest": "/soluciones/index.html"
+    },
+    {
+      "src": "/mantencion/?",
+      "dest": "/mantencion/index.html"
+    },
+    {
+      "src": "/proyectos/?",
+      "dest": "/proyectos/index.html"
+    },
+    {
+      "src": "/nosotros/?",
+      "dest": "/nosotros/index.html"
+    },
+    {
+      "src": "/garantia/?",
+      "dest": "/garantia/index.html"
+    },
+    {
+      "src": "/(?:cotizar|agenda|login)/?",
+      "dest": "/app.html",
+      "headers": {
+        "X-Robots-Tag": "noindex, follow"
+      }
+    },
+    {
+      "src": "/(?:panel|estado)(?:/.*)?",
+      "dest": "/app.html",
+      "headers": {
+        "X-Robots-Tag": "noindex, follow"
+      }
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/.*",
+      "dest": "/404.html",
+      "status": 404,
+      "headers": {
+        "X-Robots-Tag": "noindex, follow"
+      }
     }
   ],
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/"
-    }
-  ]
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist"
 }

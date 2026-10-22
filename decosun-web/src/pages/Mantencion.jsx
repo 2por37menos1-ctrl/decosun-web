@@ -1,5 +1,6 @@
 import { useEffect } from "react"
 import { Link } from "react-router-dom"
+import BrandSupport from "../components/BrandSupport"
 import WhatsAppButton from "../components/WhatsAppButton"
 
 const steps = [
@@ -66,25 +67,7 @@ function QuoteButton() {
 }
 
 export default function Mantencion() {
-  useEffect(() => {
-    const previousTitle = document.title
-    const existingMeta = document.querySelector('meta[name="description"]')
-    const meta = existingMeta || document.createElement("meta")
-    const previousDescription = meta.getAttribute("content")
-    document.title = "Mantención de Cortinas Roller | DecoSun"
-    meta.setAttribute("name", "description")
-    meta.setAttribute("content", "Servicio profesional de mantención, limpieza y reparación de cortinas Roller para oficinas, edificios e instituciones. DecoSun.")
-    if (!existingMeta) document.head.appendChild(meta)
-    window.scrollTo(0, 0)
-
-    return () => {
-      document.title = previousTitle
-      if (!existingMeta) meta.remove()
-      else if (previousDescription === null) meta.removeAttribute("content")
-      else meta.setAttribute("content", previousDescription)
-    }
-  }, [])
-
+  useEffect(() => { window.scrollTo(0, 0) }, [])
   return (
     <main className="bg-white text-slate-950">
       <section aria-labelledby="mantencion-title" className="bg-slate-950 px-6 pb-16 pt-28 text-white lg:px-8 lg:pb-20 lg:pt-36">
@@ -95,7 +78,7 @@ export default function Mantencion() {
               <span className="text-amber-400">Mantención</span><br />de cortinas Roller
             </h1>
             <p className="mt-7 text-xl font-semibold leading-snug sm:text-2xl">Tu espacio siempre<br />en las mejores condiciones.</p>
-            <p className="mt-5 max-w-lg text-base leading-7 text-slate-300 sm:text-lg">Servicio profesional de limpieza, revisión y mantención para oficinas, edificios y espacios corporativos.</p>
+            <p className="mt-5 max-w-lg text-base leading-7 text-slate-300 sm:text-lg">Mantención de mecanismos y limpieza de telas roller sunscreen. Evaluamos cada cortina y coordinamos el retiro, trabajo en taller y reinstalación para oficinas, edificios e instituciones.</p>
             <div className="mt-8 flex flex-col items-stretch gap-5 sm:items-start">
               <QuoteButton />
               <a href="#proceso-mantencion" className="inline-flex min-h-11 items-center justify-center gap-4 text-sm font-bold uppercase tracking-wide text-white underline decoration-amber-400 underline-offset-8 hover:text-amber-300 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-amber-400">Conoce el proceso <span aria-hidden="true">↓</span></a>
@@ -178,6 +161,7 @@ export default function Mantencion() {
           <div className="mt-8"><QuoteButton /></div>
         </div>
       </section>
+      <BrandSupport />
     </main>
   )
 }

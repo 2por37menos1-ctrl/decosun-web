@@ -1,12 +1,11 @@
 import { Link } from "react-router-dom"
 import screenImg from "../assets/images/screen-02.jpeg"
-import blackoutImg from "../assets/images/black-outcalido.jpg"
-import duoImg from "../assets/images/duo-03.jpg"
+import blackoutImg from "../assets/images/seo/black-outcalido.jpg"
+import duoImg from "../assets/images/seo/duo-03.jpg"
 import verticalImg from "../assets/images/persiana-vertical-living.jpeg"
 import toldoImg from "../assets/images/toldo-proyectante-premium.png"
 import pergolaImg from "../assets/images/pergola-premium.png"
 import sucursalImg from "../assets/images/sucursal-iquique.jpeg"
-import cierreCristalImg from "../assets/images/cierres-cristal/cierre-cristal-balcon-04.jpeg"
 import blackoutEduImg from "../assets/images/tipos-telas/blackout.png"
 import screenEduImg from "../assets/images/tipos-telas/screen.png"
 import translucidaEduImg from "../assets/images/tipos-telas/translucida.png"
@@ -19,6 +18,7 @@ import duoCafeImg from "../assets/images/tipos-telas/duo-cafe.png"
 export default function Soluciones() {
   const soluciones = [
     {
+      id: "roller-sunscreen",
       title: "Cortinas Roller Screen",
       category: "Interior · Control solar",
       text: "Permiten regular la entrada de luz, reducir reflejos y mantener una conexión visual con el exterior. Son ideales para livings, terrazas cerradas, oficinas y espacios con vista.",
@@ -31,6 +31,7 @@ export default function Soluciones() {
       ],
     },
     {
+      id: "roller-blackout",
       title: "Roller Blackout",
       category: "Interior · Privacidad",
       text: "Diseñadas para oscurecer ambientes y entregar mayor privacidad. Son una excelente alternativa para dormitorios, salas de reuniones, home office y espacios que requieren control total de luz.",
@@ -43,6 +44,7 @@ export default function Soluciones() {
       ],
     },
     {
+      id: "roller-duo",
       title: "Roller DÚO",
       category: "Diseño · Regulación de luz",
       text: "Un sistema decorativo y funcional que alterna franjas translúcidas y opacas, permitiendo regular luz y privacidad con una estética contemporánea.",
@@ -55,6 +57,7 @@ export default function Soluciones() {
       ],
     },
     {
+      id: "persianas-verticales",
       title: "Persianas Verticales",
       category: "Corporativo · Grandes ventanales",
       text: "Una solución práctica para ventanales amplios, oficinas, consultas, salas de reuniones e instituciones. Permiten orientar la luz y mantener una imagen sobria y profesional.",
@@ -104,42 +107,6 @@ export default function Soluciones() {
     //     "Instalación coordinada bajo respaldo DecoSun",
     //   ],
     // },
-  ]
-
-  const telasEducativas = [
-    {
-      title: "BLACKOUT",
-      image: blackoutEduImg,
-      description:
-        "Tela opaca que bloquea completamente el paso de la luz, ideal para dormitorios y espacios que requieren máxima privacidad.",
-      indicators: [
-        { label: "Bloqueo de luz", value: "Alto" },
-        { label: "Privacidad", value: "Alta" },
-        { label: "Vista exterior", value: "No" },
-      ],
-    },
-    {
-      title: "SCREEN",
-      image: screenEduImg,
-      description:
-        "Tela técnica microperforada que controla el calor y el deslumbramiento manteniendo la vista hacia el exterior durante el día.",
-      indicators: [
-        { label: "Control solar", value: "Alto" },
-        { label: "Privacidad diurna", value: "Media" },
-        { label: "Vista exterior", value: "Sí" },
-      ],
-    },
-    {
-      title: "TRANSLÚCIDO",
-      image: translucidaEduImg,
-      description:
-        "Tela que suaviza la entrada de luz natural entregando privacidad sin oscurecer completamente el ambiente.",
-      indicators: [
-        { label: "Entrada de luz", value: "Suave" },
-        { label: "Privacidad", value: "Media" },
-        { label: "Ambientes", value: "Luminosos" },
-      ],
-    },
   ]
 
   const duoComparatives = [
@@ -236,7 +203,7 @@ export default function Soluciones() {
         <div className="mt-14 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
           {soluciones.map((item) => (
             <article
-              key={item.title}
+              key={item.title} id={item.id} style={{ scrollMarginTop: "7rem" }}
               className="group overflow-hidden rounded-[34px] border border-slate-200 bg-white shadow-lg transition duration-300 hover:-translate-y-1 hover:shadow-2xl"
             >
               <div className="relative overflow-hidden">
