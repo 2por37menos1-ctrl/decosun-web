@@ -1,5 +1,6 @@
-import logo from "../assets/images/logo-horizontal.png"
+import logo from "../assets/images/seo/logo-horizontal.png"
 import { Link } from "react-router-dom"
+import { coverageCities } from "../lib/siteSeo"
 
 export default function Footer() {
   return (
@@ -21,15 +22,7 @@ export default function Footer() {
           </p>
 
           <div className="mt-6 flex flex-wrap gap-3">
-            {[
-              "Arica",
-              "Iquique",
-              "Antofagasta",
-              "La Serena",
-              "V región",
-              "Santiago",
-              "Temuco",
-            ].map((city) => (
+            {coverageCities.map((city) => (
               <span
                 key={city}
                 className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300 backdrop-blur-md"
@@ -70,8 +63,9 @@ export default function Footer() {
               </Link>
 
               <Link to="/mantencion" className="transition hover:text-amber-300">
-                Mantención
+                Mantención y limpieza
               </Link>
+              <Link to="/garantia" className="transition hover:text-amber-300">Garantía y postventa</Link>
 
               <Link
                 to="/proyectos"

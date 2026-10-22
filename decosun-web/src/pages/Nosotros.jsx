@@ -1,4 +1,4 @@
-import React from "react"
+import BrandSupport from "../components/BrandSupport"
 import { Link } from "react-router-dom"
 
 export default function Nosotros() {
@@ -207,6 +207,7 @@ export default function Nosotros() {
           </p>
         </div>
       </section>
+      <BrandSupport />
     </main>
   );
 }

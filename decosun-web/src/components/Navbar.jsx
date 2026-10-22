@@ -1,5 +1,5 @@
 import { useState } from "react"
-import logo from "../assets/images/logo-horizontal.png"
+import logo from "../assets/images/seo/logo-horizontal.png"
 import { Link, NavLink, useLocation } from "react-router-dom"
 import { ChevronDown } from "lucide-react"
 
@@ -30,6 +30,10 @@ export default function Navbar() {
         <nav className="hidden items-center gap-7 text-sm font-semibold tracking-wide xl:flex">
           <NavLink to="/" className={linkClass}>
             Inicio
+          </NavLink>
+
+          <NavLink to="/motorizacion" className={linkClass}>
+            Motorización
           </NavLink>
 
           <div
@@ -106,6 +110,7 @@ export default function Navbar() {
           onClick={() => setOpen((prev) => !prev)}
           className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white xl:hidden"
           aria-label="Abrir menú"
+          aria-expanded={open}
         >
           <span className="text-xl leading-none">
             {open ? "×" : "☰"}
@@ -118,6 +123,10 @@ export default function Navbar() {
           <div className="flex flex-col gap-4 text-sm font-semibold uppercase tracking-wide text-white">
             <NavLink to="/" onClick={closeMenu} className={linkClass}>
               Inicio
+            </NavLink>
+
+            <NavLink to="/motorizacion" onClick={closeMenu} className={linkClass}>
+              Motorización
             </NavLink>
 
             <div>

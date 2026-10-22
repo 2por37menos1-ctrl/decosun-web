@@ -5,12 +5,16 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "node scripts/build-seo.mjs",
     "lint": "eslint .",
     "test:optimizer": "node --test src/lib/cuttingOptimizer.test.js",
-    "preview": "vite preview"
+    "preview": "node scripts/preview-seo.mjs",
+    "test:seo": "node --test scripts/seo.test.mjs",
+    "preview:seo": "node scripts/preview-seo.mjs"
   },
   "dependencies": {
+    "@emailjs/browser": "4.4.1",
+    "@supabase/supabase-js": "2.105.4",
     "@tailwindcss/vite": "^4.2.4",
     "framer-motion": "^12.39.0",
     "lucide-react": "^1.16.0",
