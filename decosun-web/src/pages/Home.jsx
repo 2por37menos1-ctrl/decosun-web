@@ -34,11 +34,11 @@ export default function Home() {
 
   const soluciones = [
     { title: "Motorización de cortinas roller", text: "Transforma tus cortinas existentes o encarga nuevas roller motorizadas. Compatibilidad sujeta a evaluación técnica.", image: "/img/motorizacion/4MT-640.jpg", to: "/motorizacion", cta: "Conocer motorización →" },
+    { title: "Mantención y limpieza de roller", text: "Revisión de mecanismos y limpieza de telas sunscreen, con retiro y reinstalación según evaluación.", image: "/img/mantencion/3M-640.jpg", to: "/mantencion", cta: "Conocer mantención →" },
     { title: "Roller blackout a medida", text: "Oscurecimiento y privacidad para dormitorios y espacios de descanso.", image: hero2, to: "/soluciones#roller-blackout" },
     { title: "Roller sunscreen a medida", text: "Control de luz y reflejos, con conexión visual al exterior.", image: rollerImg, to: "/soluciones#roller-sunscreen" },
     { title: "Cortinas roller DÚO", text: "Franjas translúcidas y opacas para regular la luz y la privacidad.", image: duoImg, to: "/soluciones#roller-duo" },
     { title: "Persianas verticales", text: "Control direccional de luz para oficinas y grandes ventanales.", image: verticalImg, to: "/soluciones#persianas-verticales" },
-    { title: "Mantención y limpieza de roller", text: "Revisión de mecanismos y limpieza de telas sunscreen, con retiro y reinstalación según evaluación.", image: "/img/mantencion/3M-640.jpg", to: "/mantencion" },
   ]
 
   return (
@@ -79,16 +79,17 @@ export default function Home() {
             </p>
 
             <h1 className="mt-6 text-[clamp(2rem,6vw,4.5rem)] font-black leading-[1.05] tracking-tight text-white">
-              Motorización de cortinas
+              Soluciones inteligentes
               <span className="block text-amber-400">
-                y roller a medida.
+                para transformar tus espacios.
               </span>
             </h1>
 
             <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-200">
-              Motoriza tus cortinas o elige roller blackout, sunscreen y DÚO
-              confeccionadas a medida. Atención en Iquique, la Región de
-              Valparaíso y Santiago, con respaldo técnico regional DecoSun.
+              Motorizamos tus cortinas y cuidamos las que ya tienes con
+              mantención de roller y limpieza de telas sunscreen. También
+              confeccionamos cortinas a medida, con asesoría, instalación
+              y respaldo técnico DecoSun.
             </p>
 
             <div className="mt-9 flex flex-wrap gap-4">
@@ -100,10 +101,10 @@ export default function Home() {
               </Link>
 
               <Link
-                to="/soluciones"
+                to="/mantencion"
                 className="rounded-2xl border border-white/30 bg-white/10 px-7 py-4 text-sm font-bold uppercase tracking-wide text-white backdrop-blur-md transition duration-300 hover:bg-white/20"
               >
-                Ver soluciones
+                Mantención y limpieza
               </Link>
             </div>
 
