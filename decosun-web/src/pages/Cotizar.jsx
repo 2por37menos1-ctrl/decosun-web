@@ -2,7 +2,9 @@ import bgCotizador from "../assets/images/telas-textura01.jpg"
 import { supabase } from "../lib/supabase"
 import { getTerritoryAssignment } from "../lib/territoryAssignment"
 import logoSolo from "../assets/images/logo-vertical.png"
-import { useMemo, useState } from "react"
+import SmartQuote from "../components/SmartQuote"
+import { insertQuoteRows } from "../lib/smartQuote"
+import { useMemo, useState, useRef } from "react"
 import emailjs from "@emailjs/browser"
 
 function formatCLP(value) {
@@ -29,6 +31,7 @@ const calculableProducts = {
 }
 
 const requestOnlyProducts = {
+  honeycomb: "Cortinas Plisadas Honeycomb",
   toldoProyectante: "Toldo proyectante",
   toldoVertical: "Toldo vertical",
   cierreTerraza: "Cierres de cristal para terrazas y balcones",
@@ -149,6 +152,10 @@ export default function Cotizar() {
     DSNIQQ: { label: "DSNIQQ", percent: 15 },
   }
 
+  const [advanced, setAdvanced] = useState(false)
+  const [guidedControl, setGuidedControl] = useState("")
+  const savePending = useRef(null)
+  const pendingProject = useRef(null)
   const [quoteNumber, setQuoteNumber] = useState("COT-PENDIENTE")
   const [savedProject, setSavedProject] = useState(null)
   const [saving, setSaving] = useState(false)
@@ -168,6 +175,7 @@ export default function Cotizar() {
   const condicionesSucursal = condiciones[form.sucursal]
 
   function handleFormChange(event) {
+    if (pendingProject.current) return
     const { name, value } = event.target
 
     setSavedProject(null)
@@ -180,6 +188,7 @@ export default function Cotizar() {
   }
 
   function handleMeasureChange(id, field, value) {
+    if (pendingProject.current) return
     setSavedProject(null)
     setQuoteNumber("COT-PENDIENTE")
 
@@ -203,12 +212,14 @@ export default function Cotizar() {
   }
 
   function addMeasureRow(tipo = "rollerSimple") {
+    if (pendingProject.current) return
     setSavedProject(null)
     setQuoteNumber("COT-PENDIENTE")
     setMeasures((prev) => [...prev, createMeasureRow(tipo)])
   }
 
   function removeMeasureRow(id) {
+    if (pendingProject.current) return
     setSavedProject(null)
     setQuoteNumber("COT-PENDIENTE")
 
@@ -258,7 +269,7 @@ export default function Cotizar() {
 
     const rows = measures.map((item, index) => {
       const category = getProductCategory(item.tipo)
-      const cantidad = Number(item.cantidad)
+      const cantidad = guidedControl === "smart" && item.tipo === "motorizacionIntegrada" ? measures.filter(row => !row.tipo.startsWith("motorizacion")).reduce((sum, row) => sum + Number(row.cantidad || 0), 0) : Number(item.cantidad)
       const price = prices[form.sucursal]?.[item.tipo] ?? 0
 
       const baseRow = {
@@ -279,7 +290,7 @@ export default function Cotizar() {
       }
 
       if (category === "solicitud") {
-        const valid = cantidad > 0
+        const valid = Number.isInteger(cantidad) && cantidad > 0
         return {
           ...baseRow,
           valid,
@@ -289,7 +300,7 @@ export default function Cotizar() {
       }
 
       if (category === "motor") {
-        const valid = cantidad > 0
+        const valid = Number.isInteger(cantidad) && cantidad > 0
         if (!valid) return baseRow
 
         const subtotal = price * cantidad
@@ -313,7 +324,7 @@ export default function Cotizar() {
         !Number.isNaN(cantidad) &&
         ancho > 0 &&
         alto > 0 &&
-        cantidad > 0
+        Number.isInteger(cantidad) && cantidad > 0 && Number.isFinite(ancho) && Number.isFinite(alto)
 
       if (!valid) return baseRow
 
@@ -368,9 +379,9 @@ export default function Cotizar() {
       hasValidRows: validRows.length > 0,
       hasRequestRows: requestRows.length > 0,
     }
-  }, [form, measures])
+  }, [form, measures, guidedControl])
 
-  function buildQuoteDetails(quoteNumberToUse = quoteNumber) {
+  function buildQuoteDetails() {
     return result.rows
       .filter((row) => row.valid)
       .map((row, index) => {
@@ -425,7 +436,13 @@ export default function Cotizar() {
       .join("\n")
   }
 
-  async function saveQuoteToSupabase() {
+  function saveQuoteToSupabase() {
+    if (savePending.current) return savePending.current
+    savePending.current = persistQuote().finally(() => { savePending.current = null })
+    return savePending.current
+  }
+
+  async function persistQuote() {
     if (savedProject?.quoteNumber) return savedProject
 
     try {
@@ -433,15 +450,15 @@ export default function Cotizar() {
 
       const validRows = result.rows.filter((row) => row.valid)
 
-      if (validRows.length === 0) {
-        alert("Debes ingresar al menos un producto válido.")
+      if (validRows.length !== result.rows.length || validRows.length === 0 || !form.nombre.trim() || form.telefono.replace(/\D/g, "").length < 8 || !form.zona || (form.zona === "otra" && !form.ciudadExtra.trim())) {
+        alert("Completa nombre, teléfono, ubicación y todos los productos con medidas y cantidades válidas.")
         setSaving(false)
         return false
       }
 
       const branch = form.sucursal === "iquique" ? "iquique" : "vina"
 
-      const { data: realQuoteNumber, error: quoteError } = await supabase.rpc(
+      const { data: realQuoteNumber, error: quoteError } = pendingProject.current ? { data: pendingProject.current.quoteNumber, error: null } : await supabase.rpc(
         "next_quote_number",
         { p_branch: branch }
       )
@@ -453,14 +470,14 @@ export default function Cotizar() {
         return false
       }
 
-      const publicToken = crypto.randomUUID()
-      const projectId = crypto.randomUUID()
+      const publicToken = pendingProject.current?.publicToken || crypto.randomUUID()
+      const projectId = pendingProject.current?.projectId || crypto.randomUUID()
 
       const summary = validRows
         .map((row) => {
           const locationText = row.ubicacion ? ` · Ubicación: ${row.ubicacion}` : ""
           const measureText =
-            row.category === "calculable" ? ` · ${row.ancho}x${row.alto}` : ""
+            row.category === "calculable" || row.productKey === "honeycomb" ? ` · ${row.ancho}x${row.alto}` : ""
           const valueText =
             row.category === "solicitud"
               ? " · Solicitar valores a DecoSun"
@@ -476,7 +493,7 @@ export default function Cotizar() {
         sucursal: form.sucursal,
       })
 
-      const { error: projectError } = await supabase.from("projects").insert([
+      const projectPayload = [
         {
           id: projectId,
           title: `${realQuoteNumber} · ${form.nombre || "Cliente web"}`,
@@ -501,7 +518,10 @@ export default function Cotizar() {
           advisor_region: territory.region_code,
           client_visible_status: "Cotización recibida",
         },
-      ])
+      ]
+      const previousAttempt = pendingProject.current
+      pendingProject.current = { projectId, publicToken, quoteNumber: realQuoteNumber }
+      const { error: projectError } = await insertQuoteRows(supabase, "projects", projectPayload, projectId, Boolean(previousAttempt))
 
       if (projectError) {
         console.error(projectError)
@@ -513,19 +533,18 @@ export default function Cotizar() {
       const measurementRows = validRows.map((row) => ({
         project_id: projectId,
         product_type: row.productKey,
-        width: row.category === "calculable" ? row.ancho : null,
-        height: row.category === "calculable" ? row.alto : null,
+        width: row.category === "calculable" || row.productKey === "honeycomb" ? Number(row.ancho) || null : null,
+        height: row.category === "calculable" || row.productKey === "honeycomb" ? Number(row.alto) || null : null,
         quantity: row.cantidad,
         fabric: row.ubicacion || null,
       }))
 
-      const { error: measurementError } = await supabase
-        .from("project_measurements")
-        .insert(measurementRows)
+      const { error: measurementError } = await insertQuoteRows(supabase, "project_measurements", measurementRows, projectId, Boolean(previousAttempt))
 
       if (measurementError) {
         console.error(measurementError)
-        alert("Proyecto creado, pero hubo error guardando medidas.")
+        alert("Proyecto creado, pero no se completaron las medidas. Reintenta sin cerrar esta página.")
+        return false
       }
 
       const saved = {
@@ -544,6 +563,8 @@ export default function Cotizar() {
       alert("Error conectando con Supabase")
       setSaving(false)
       return false
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -602,8 +623,23 @@ export default function Cotizar() {
     window.open(whatsappURL, "_blank", "noopener,noreferrer")
   }
 
+  function configure(product, control, room) {
+    if (pendingProject.current) return
+    setGuidedControl(control)
+    setSavedProject(null)
+    setMeasures(previous => {
+      const windows = previous.filter(row => !row.tipo.startsWith("motorizacion"))
+      const configured = (windows.length ? windows : [createMeasureRow()]).map(row => ({ ...row, tipo: product, ubicacion: row.ubicacion || room }))
+      if (control === "smart") configured.push(createMeasureRow("motorizacionIntegrada"))
+      return configured
+    })
+  }
+
+  if (!advanced) return <SmartQuote form={form} measures={measures} result={result} changeForm={handleFormChange} changeMeasure={handleMeasureChange} addRow={addMeasureRow} removeRow={removeMeasureRow} configure={configure} save={saveQuoteToSupabase} saving={saving} locked={Boolean(pendingProject.current)} savedProject={savedProject} advanced={() => { setMeasures(previous => previous.map((row, index) => ({ ...row, cantidad: result.rows[index].cantidad }))); setGuidedControl(""); setAdvanced(true) }} prices={prices} />
+
   return (
     <main className="relative overflow-hidden bg-slate-950">
+      <button type="button" onClick={() => setAdvanced(false)} className="relative z-10 mt-28 ml-6 rounded bg-amber-400 px-5 py-3">Volver al cotizador guiado</button>
       <img
         src={bgCotizador}
         alt="Cotizador Decosun"
@@ -889,6 +925,7 @@ export default function Cotizar() {
                             </optgroup>
 
                             <optgroup label="Solicitar valores a DecoSun">
+                              <option value="honeycomb">Plisadas Honeycomb · cotización asistida</option>
                               <option value="toldoProyectante">
                                 Toldo proyectante
                               </option>
