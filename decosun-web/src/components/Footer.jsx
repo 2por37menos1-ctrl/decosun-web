@@ -119,7 +119,7 @@ export default function Footer() {
           </p>
 
           <p>
-            Diseño premium · Tecnología · Presencia regional
+            <a href="https://www.hyve.cl" target="_blank" rel="noopener noreferrer" className="transition hover:text-white">Diseño y desarrollo web por HYVE Intelligence</a>
           </p>
         </div>
       </div>
