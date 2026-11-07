@@ -1,3 +1,4 @@
+import PublicPageHero from "../components/PublicPageHero"
 import { createElement, useEffect, useState } from "react"
 import { motion, useReducedMotion } from "framer-motion"
 import { Link } from "react-router-dom"
@@ -124,27 +125,13 @@ export default function Motorizacion() {
 
   useEffect(() => { window.scrollTo(0, 0) }, [])
   return (
-    <main className="bg-white text-slate-950">
-      <section aria-labelledby="motorizacion-title" className="bg-slate-950 px-6 pb-16 pt-28 text-white lg:px-8 lg:pb-20 lg:pt-36">
-        <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-center lg:gap-12">
-          <div className="min-w-0">
-            <p className="text-xs font-black uppercase tracking-[0.25em] text-amber-400 sm:text-sm">Tecnología para tu espacio · DecoSun</p>
-            <h1 id="motorizacion-title" className="mt-5 text-[clamp(1.875rem,4.4vw,3.75rem)] font-black uppercase leading-[1.03] tracking-tight">
-              <span className="text-amber-400">Motorización</span><br />de cortinas Roller
-            </h1>
-            <p className="mt-7 text-xl font-semibold leading-snug sm:text-2xl">Motoriza tus cortinas actuales<br />o elige nuevas roller a medida.</p>
-            <p className="mt-5 text-base leading-7 text-slate-300">Motor tubular integrado · Control remoto · WiFi</p>
-            <p className="mt-2 text-base font-semibold text-white">5 años de garantía en motores · 1 año en instalación.</p>
-            <p className="mt-4 max-w-lg text-sm leading-6 text-slate-400">Evaluamos la compatibilidad de tu Roller existente. Las opciones WiFi dependen de la solución instalada.</p>
-            <WhatsAppLink className="mt-7 w-full sm:w-auto">Cotiza tu motorización</WhatsAppLink>
-            <a href="#proceso-motorizacion" className="mt-5 flex min-h-11 w-fit items-center gap-3 text-sm font-bold text-white underline decoration-amber-400 underline-offset-8 hover:text-amber-300 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-amber-400">De manual a motorizada <span aria-hidden="true">↓</span></a>
-          </div>
-          <figure className="min-w-0">
-            <MotorizationPhoto step={4} priority sizes="(min-width: 1280px) 650px, (min-width: 1024px) 50vw, calc(100vw - 48px)" />
-            <figcaption className="mt-4 border-l-2 border-amber-400 pl-4 text-sm leading-6 text-slate-300">Más comodidad. El control de la luz, en tus manos.</figcaption>
-          </figure>
-        </div>
-      </section>
+    <main className="public-presentation bg-white text-slate-950">
+      <PublicPageHero page="Motorización" eyebrow="Tecnología para tu espacio · DecoSun" titleId="motorizacion-title" highlight="Motorización" title="de cortinas roller" media={<MotorizationPhoto step={4} priority />} caption="Imagen de referencia · Opciones de control sujetas a compatibilidad.">
+        <p className="public-hero-lede">Motoriza tus cortinas actuales<br />o elige nuevas roller a medida.</p>
+        <p className="public-hero-description">Evaluamos tu cortina y las opciones de control remoto o WiFi según el sistema compatible.</p>
+        <p className="public-hero-meta">5 años de garantía en motores · 1 año en instalación.</p>
+        <div className="public-hero-actions"><WhatsAppLink>Cotiza tu motorización</WhatsAppLink><a href="#proceso-motorizacion" className="public-secondary-button">De manual a motorizada ↓</a></div>
+      </PublicPageHero>
 
       <section className="px-6 py-20 lg:px-8 lg:py-28">
         <div className="mx-auto max-w-7xl">

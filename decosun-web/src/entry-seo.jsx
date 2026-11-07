@@ -12,8 +12,10 @@ import Proyectos from "./pages/Proyectos"
 import Nosotros from "./pages/Nosotros"
 import Garantia from "./pages/Garantia"
 import NotFound from "./pages/NotFound"
+import { FabricGuide, FabricDetail } from "./components/FabricLibrary"
+import { fabricPages } from "./lib/fabricLibrary"
 
-const pages = { "/": Home, "/soluciones": Soluciones, "/motorizacion": Motorizacion, "/mantencion": Mantencion, "/proyectos": Proyectos, "/nosotros": Nosotros, "/garantia": Garantia }
+const pages = { "/guia-de-telas": FabricGuide, ...Object.fromEntries(Object.keys(fabricPages).map(path => [path, FabricDetail])), "/": Home, "/soluciones": Soluciones, "/motorizacion": Motorizacion, "/mantencion": Mantencion, "/proyectos": Proyectos, "/nosotros": Nosotros, "/garantia": Garantia }
 
 // Only commercial pages are rendered at build time: no auth, ERP or client data.
 export function renderPage(path) {

@@ -1,3 +1,4 @@
+import PublicPageHero from "../components/PublicPageHero"
 import { useEffect } from "react"
 import { Link } from "react-router-dom"
 import BrandSupport from "../components/BrandSupport"
@@ -69,24 +70,12 @@ function QuoteButton() {
 export default function Mantencion() {
   useEffect(() => { window.scrollTo(0, 0) }, [])
   return (
-    <main className="bg-white text-slate-950">
-      <section aria-labelledby="mantencion-title" className="bg-slate-950 px-6 pb-16 pt-28 text-white lg:px-8 lg:pb-20 lg:pt-36">
-        <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-[1fr_1.1fr] lg:gap-14">
-          <div className="min-w-0">
-            <p className="text-xs font-black uppercase tracking-[0.24em] text-amber-400 sm:text-sm">Servicio técnico · DecoSun</p>
-            <h1 id="mantencion-title" className="mt-6 text-[clamp(2rem,5vw,4.5rem)] font-black uppercase leading-[1.03] tracking-tight">
-              <span className="text-amber-400">Mantención</span><br />de cortinas Roller
-            </h1>
-            <p className="mt-7 text-xl font-semibold leading-snug sm:text-2xl">Tu espacio siempre<br />en las mejores condiciones.</p>
-            <p className="mt-5 max-w-lg text-base leading-7 text-slate-300 sm:text-lg">Mantención de mecanismos y limpieza de telas roller sunscreen. Evaluamos cada cortina y coordinamos el retiro, trabajo en taller y reinstalación para oficinas, edificios e instituciones.</p>
-            <div className="mt-8 flex flex-col items-stretch gap-5 sm:items-start">
-              <QuoteButton />
-              <a href="#proceso-mantencion" className="inline-flex min-h-11 items-center justify-center gap-4 text-sm font-bold uppercase tracking-wide text-white underline decoration-amber-400 underline-offset-8 hover:text-amber-300 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-amber-400">Conoce el proceso <span aria-hidden="true">↓</span></a>
-            </div>
-          </div>
-          <ServicePhoto step={5} priority />
-        </div>
-      </section>
+    <main className="public-presentation bg-white text-slate-950">
+      <PublicPageHero page="Mantención y limpieza" eyebrow="Servicio técnico · DecoSun" titleId="mantencion-title" highlight="Mantención" title="de cortinas roller" media={<ServicePhoto step={5} priority />} caption="Imagen de referencia del servicio · Trabajo según evaluación.">
+        <p className="public-hero-lede">Tu espacio siempre<br />en las mejores condiciones.</p>
+        <p className="public-hero-description">Mantención de mecanismos y limpieza de telas roller sunscreen. Evaluamos cada cortina y coordinamos el retiro, trabajo en taller y reinstalación para oficinas, edificios e instituciones.</p>
+        <div className="public-hero-actions"><QuoteButton /><a href="#proceso-mantencion" className="public-secondary-button">Conoce el proceso ↓</a></div>
+      </PublicPageHero>
 
       <section aria-label="Beneficios de la mantención" className="border-b border-slate-200 px-6 py-10 lg:px-8">
         <ul className="mx-auto grid max-w-7xl grid-cols-2 gap-x-6 gap-y-8 lg:grid-cols-4">

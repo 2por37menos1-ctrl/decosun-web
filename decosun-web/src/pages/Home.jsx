@@ -1,9 +1,8 @@
 import { motion } from "framer-motion"
 import { Link } from "react-router-dom"
-import { useEffect, useState } from "react"
 
-import { supabase } from "../lib/supabase"
 import BrandSupport from "../components/BrandSupport"
+import { FabricHomeLinks } from "../components/FabricLibrary"
 import { coverageCities } from "../lib/siteSeo"
 
 import heroLogo from "../assets/images/seo/logo-horizontal.png"
@@ -20,18 +19,6 @@ const MotionDiv = motion.div
 const MotionArticle = motion.article
 
 export default function Home() {
-  const [activity, setActivity] = useState(null)
-
-  useEffect(() => {
-    let cancelled = false
-    async function loadActivity() {
-      const { data, error } = await supabase.from("public_site_activity").select("*").single()
-      if (!cancelled && !error && data) setActivity(data)
-    }
-    loadActivity()
-    return () => { cancelled = true }
-  }, [])
-
   const soluciones = [
     { title: "Motorización de cortinas roller", text: "Transforma tus cortinas existentes o encarga nuevas roller motorizadas. Compatibilidad sujeta a evaluación técnica.", image: "/img/motorizacion/4MT-640.jpg", to: "/motorizacion", cta: "Conocer motorización →" },
     { title: "Mantención y limpieza de roller", text: "Revisión de mecanismos y limpieza de telas sunscreen, con retiro y reinstalación según evaluación.", image: "/img/mantencion/3M-640.jpg", to: "/mantencion", cta: "Conocer mantención →" },
@@ -133,6 +120,7 @@ export default function Home() {
         </div>
       </section>
 
+      <FabricHomeLinks />
       {/* SOLUCIONES */}
       <section className="bg-white px-6 py-20 lg:px-8">
         <div className="mx-auto max-w-7xl">
@@ -240,58 +228,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* DECOSUN EN MOVIMIENTO */}
-      {activity && <section className="bg-white px-6 py-20 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          <div className="mx-auto max-w-3xl text-center">
-            <p className="text-sm font-bold uppercase tracking-[0.3em] text-amber-700">
-              DecoSun en movimiento
-            </p>
-
-            <h2 className="mt-4 text-4xl font-black tracking-tight text-slate-950 md:text-5xl">
-              Actividad real de nuestra red comercial
-            </h2>
-
-            <p className="mx-auto mt-5 max-w-3xl text-lg leading-8 text-slate-600">
-              Nuestro equipo trabaja diariamente en distintas regiones del país,
-              coordinando visitas, fabricación e instalación de proyectos con respaldo técnico DecoSun.
-            </p>
-          </div>
-
-          <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            {[
-              [activity.active_projects, "proyectos activos"],
-              [activity.active_regions, "regiones activas"],
-              [activity.closed_last_30_days, "proyectos finalizados en los últimos 30 días"],
-              [activity.scheduled_visits, "visitas programadas"],
-            ].map(([number, label]) => (
-              <MotionDiv
-                key={label}
-                initial={false}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.7, ease: "easeOut" }}
-                className="rounded-[32px] border border-slate-200 bg-white p-8 text-center shadow-lg transition duration-300 hover:-translate-y-1 hover:shadow-xl"
-              >
-                <p className="text-5xl font-black tracking-tight text-amber-600">
-                  {number}
-                </p>
-
-                <p className="mt-3 text-sm font-semibold uppercase tracking-wide text-slate-700">
-                  {label}
-                </p>
-              </MotionDiv>
-            ))}
-          </div>
-
-          <p className="mx-auto mt-8 max-w-3xl text-center text-sm leading-6 text-slate-500">
-            Información resumida desde nuestro sistema interno de gestión. No se muestran datos de clientes,
-            valores comerciales ni información privada de proyectos.
-          </p>
-        </div>
-      </section>
-
-      }
       {/* COTIZADOR */}
       <section className="bg-amber-50 px-6 py-20 lg:px-8">
         <div className="mx-auto max-w-7xl">

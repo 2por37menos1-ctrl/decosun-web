@@ -1,3 +1,4 @@
+import PublicPageHero from "./PublicPageHero"
 import "../smartQuote.css"
 import { useRef, useState } from "react"
 import { Link } from "react-router-dom"
@@ -41,16 +42,17 @@ export default function SmartQuote({ form, measures, result, changeForm, changeM
   const choose = (value, label, detail, selected, onClick) => <button key={value} type="button" className="premium-choice" aria-pressed={selected} onClick={onClick}><span>{label}</span><small>{detail}</small></button>
   const motorCost = windows.reduce((sum, row) => sum + Number(row.cantidad || 0), 0) * prices[form.sucursal].motorizacionIntegrada
 
-  return <main className="premium quote-shell">
+  return <main className="premium quote-shell public-presentation">
+    <PublicPageHero page="Cotizar" eyebrow="DecoSun Smart Quote" titleId="quote-title" highlight="Diseña tu" title="solución ideal." media={<img src="/img/motorizacion/4MT-640.jpg" alt="Concepto de control remoto de cortinas roller" />} caption="Imagen conceptual de ambiente."><p className="public-hero-description">Te ayudamos a encontrar las cortinas perfectas para tu espacio.</p></PublicPageHero>
     <div className="premium-wrap">
-      <p className="eyebrow">DecoSun Smart Quote</p><h1>Diseña tu solución ideal.</h1><p className="premium-intro">Te ayudamos a encontrar las cortinas perfectas para tu espacio.</p>
+
       <div className="quote-progress" role="progressbar" aria-label="Progreso de cotización" aria-valuemin={1} aria-valuemax={9} aria-valuenow={step + 1} aria-valuetext={`Paso ${step + 1} de 9: ${steps[step]}`}><span style={{ width: `${(step + 1) / 9 * 100}%` }} /></div>
       <p className="eyebrow">{String(step + 1).padStart(2, "0")} / 09 · {steps[step]}</p>
       <div className="quote-layout"><section className="quote-stage" aria-busy={saving}>
         <h2 ref={heading} tabIndex={-1}>{titles[step]}</h2>
         {locked && !savedProject && !saving && <p role="status">Conservamos los datos del intento anterior para evitar duplicados. Reintenta el envío sin cerrar esta página; si el problema persiste, contacta al equipo.</p>}
         <fieldset disabled={saving || locked || Boolean(savedProject)}>
-        {step === 0 && <><img className="quote-image" src="/img/motorizacion/4MT-640.jpg" alt="Concepto de control remoto de cortinas roller" /><p className="image-note">Imagen conceptual de ambiente.</p><div className="quote-options">{[
+        {step === 0 && <><div className="quote-options">{[
           ["smart", "Cortinas inteligentes", "Control remoto, smartphone y automatizaciones según motor y accesorios compatibles."],
           ["manual", "Cortinas manuales", "Control tradicional mediante cadena."],
           ["existing", "Motorizar mis cortinas actuales", "Conversión sujeta a evaluación técnica."],

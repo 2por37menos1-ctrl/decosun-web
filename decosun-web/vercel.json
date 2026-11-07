@@ -8,6 +8,22 @@
       "continue": true
     },
     {
+      "src": "/guia-de-telas/?",
+      "dest": "/guia-de-telas/index.html"
+    },
+    {
+      "src": "/telas/blackout/?",
+      "dest": "/telas/blackout/index.html"
+    },
+    {
+      "src": "/telas/sunscreen/?",
+      "dest": "/telas/sunscreen/index.html"
+    },
+    {
+      "src": "/telas/translucida/?",
+      "dest": "/telas/translucida/index.html"
+    },
+    {
       "src": "/motorizacion/?",
       "dest": "/motorizacion/index.html"
     },

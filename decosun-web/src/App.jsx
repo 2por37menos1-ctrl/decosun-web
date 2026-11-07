@@ -11,6 +11,8 @@ import Garantia from "./pages/Garantia";
 import NotFound from "./pages/NotFound";
 import Home from "./pages/Home";
 import HomeIntro from "./components/HomeIntro";
+import { FabricGuide, FabricDetail } from "./components/FabricLibrary";
+import { fabricPages } from "./lib/fabricLibrary";
 import Soluciones from "./pages/Soluciones";
 import Motorizacion from "./pages/Motorizacion";
 import Mantencion from "./pages/Mantencion";
@@ -43,6 +45,8 @@ function AppContent() {
         {/* Sitio Público */}
         <Route path="/" element={<Home />} />
         <Route path="/soluciones" element={<Soluciones />} />
+        <Route path="/guia-de-telas" element={<FabricGuide />} />
+        {Object.keys(fabricPages).map(path => <Route key={path} path={path} element={<FabricDetail />} />)}
         <Route path="/motorizacion" element={<Motorizacion />} />
         <Route path="/mantencion" element={<Mantencion />} />
         <Route path="/proyectos" element={<Proyectos />} />

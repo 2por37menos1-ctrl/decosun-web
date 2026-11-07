@@ -1,3 +1,5 @@
+import PublicPageHero from "../components/PublicPageHero"
+import storePhoto from "../assets/images/seo/sucursal-iquique03.jpg"
 import BrandSupport from "../components/BrandSupport"
 import { Link } from "react-router-dom"
 
@@ -5,36 +7,16 @@ export default function Nosotros() {
   const heroImage = "/img/roller-sunscreen-dormitorio.jpg";
 
   return (
-    <main className="bg-[#f6f3ee] text-slate-900">
+    <main className="public-presentation bg-white text-slate-900">
       {/* HERO */}
-      <section className="relative min-h-[70vh] overflow-hidden">
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `url(${heroImage})` }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-900/65 to-slate-900/20" />
-
-        <div className="relative z-10 mx-auto flex min-h-[70vh] max-w-7xl items-center px-6 py-24">
-          <div className="max-w-2xl">
-            <p className="mb-4 text-sm font-semibold uppercase tracking-[0.35em] text-amber-300">
-              Sobre DecoSun
-            </p>
-
-            <h1 className="text-4xl font-semibold leading-tight text-white md:text-6xl">
-              Decoración, control solar y soluciones técnicas para espacios reales.
-            </h1>
-
-            <p className="mt-6 max-w-xl text-lg leading-8 text-slate-200">
-              En DecoSun diseñamos, fabricamos e instalamos soluciones de control
-              solar con una mirada técnica, estética y funcional. Nuestro trabajo
-              une precisión, experiencia en terreno y cuidado por cada detalle.
-            </p>
-          </div>
-        </div>
-      </section>
+      <PublicPageHero page="Nosotros" eyebrow="DecoSun · Diseño y respaldo técnico" titleId="nosotros-title" highlight="Diseño y tecnología." title="Para espacios reales." media={<img src={storePhoto} alt="Tienda DecoSun en Iquique" width="1280" height="721" fetchPriority="high" decoding="async" />} caption="Tienda DecoSun en Iquique · Fotografía del archivo de la empresa.">
+        <p className="public-hero-lede">Más que cortinas.<br />Soluciones para habitar mejor.</p>
+        <p className="public-hero-description">En DecoSun diseñamos, fabricamos e instalamos soluciones de control solar con una mirada técnica, estética y funcional. Nuestro trabajo une precisión, experiencia en terreno y cuidado por cada detalle.</p>
+        <div className="public-hero-actions"><Link to="/soluciones" className="public-primary-button">Descubrir soluciones →</Link><Link to="/agenda" className="public-secondary-button">Coordinar atención</Link></div>
+      </PublicPageHero>
 
       {/* INTRO */}
-      <section className="mx-auto grid max-w-7xl gap-10 px-6 py-20 md:grid-cols-[1.1fr_0.9fr]">
+      <section className="about-intro mx-auto grid max-w-7xl gap-10 px-6 py-20 md:grid-cols-[1.1fr_0.9fr]">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.3em] text-amber-700">
             Nuestra esencia
@@ -62,7 +44,7 @@ export default function Nosotros() {
       </section>
 
       {/* CARDS */}
-      <section className="mx-auto max-w-7xl px-6 pb-20">
+      <section className="about-principles mx-auto max-w-7xl px-6 pb-20">
         <div className="grid gap-6 md:grid-cols-3">
           {[
             {
@@ -92,7 +74,7 @@ export default function Nosotros() {
       </section>
 
       {/* BLOQUE OSCURO */}
-      <section className="bg-slate-950 px-6 py-20 text-white">
+      <section className="about-work bg-slate-950 px-6 py-20 text-white">
         <div className="mx-auto grid max-w-7xl gap-10 md:grid-cols-2">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.3em] text-amber-300">
@@ -123,7 +105,7 @@ export default function Nosotros() {
         </div>
       </section>
 {/* INTRANET REPRESENTANTES */}
-<section className="relative overflow-hidden bg-[#f6f3ee] px-6 py-24">
+<section className="about-portal relative overflow-hidden bg-slate-50 px-6 py-24">
   <div className="mx-auto grid max-w-7xl items-center gap-12 md:grid-cols-[0.95fr_1.05fr]">
     <div className="overflow-hidden rounded-[2rem] shadow-xl">
       <img

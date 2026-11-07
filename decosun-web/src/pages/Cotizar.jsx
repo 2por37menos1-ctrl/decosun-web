@@ -1,4 +1,4 @@
-import bgCotizador from "../assets/images/telas-textura01.jpg"
+import PublicPageHero from "../components/PublicPageHero"
 import { supabase } from "../lib/supabase"
 import { getTerritoryAssignment } from "../lib/territoryAssignment"
 import logoSolo from "../assets/images/logo-vertical.png"
@@ -638,30 +638,9 @@ export default function Cotizar() {
   if (!advanced) return <SmartQuote form={form} measures={measures} result={result} changeForm={handleFormChange} changeMeasure={handleMeasureChange} addRow={addMeasureRow} removeRow={removeMeasureRow} configure={configure} save={saveQuoteToSupabase} saving={saving} locked={Boolean(pendingProject.current)} savedProject={savedProject} advanced={() => { setMeasures(previous => previous.map((row, index) => ({ ...row, cantidad: result.rows[index].cantidad }))); setGuidedControl(""); setAdvanced(true) }} prices={prices} />
 
   return (
-    <main className="relative overflow-hidden bg-slate-950">
-      <button type="button" onClick={() => setAdvanced(false)} className="relative z-10 mt-28 ml-6 rounded bg-amber-400 px-5 py-3">Volver al cotizador guiado</button>
-      <img
-        src={bgCotizador}
-        alt="Cotizador Decosun"
-        className="absolute inset-0 h-full w-full object-cover opacity-35"
-      />
-
-      <div className="absolute inset-0 bg-slate-950/35 backdrop-blur-[2px]" />
-
-      <div className="relative z-10 mx-auto max-w-7xl px-6 py-20 lg:px-8">
-        <div className="max-w-4xl">
-          <p className="text-sm font-semibold uppercase tracking-[0.25em] text-amber-400">
-            Cotizar
-          </p>
-          <h1 className="mt-3 text-4xl font-bold tracking-tight text-white">
-            Cotizador online · Decosun
-          </h1>
-          <p className="mt-5 text-lg leading-8 text-slate-200">
-            Ingresa productos, medidas y ubicación. Al guardar, la cotización
-            crea automáticamente un proyecto en el panel DecoSun.
-          </p>
-        </div>
-
+    <main className="public-presentation quote-advanced">
+      <PublicPageHero page="Cotizar" eyebrow="Configuración detallada" titleId="quote-detail-title" highlight="Tu proyecto." title="Cada detalle cuenta." media={<img src="/img/motorizacion/4MT-640.jpg" alt="Concepto de cortinas motorizadas" />} caption="Imagen conceptual de ambiente."><p className="public-hero-description">Configura productos, medidas y ubicación para preparar tu cotización.</p><div className="public-hero-actions"><button type="button" onClick={() => setAdvanced(false)} className="public-primary-button">Volver al cotizador guiado</button></div></PublicPageHero>
+      <div className="relative z-10 mx-auto max-w-7xl px-6 pb-20 lg:px-8">
         <div className="mt-12 grid gap-8 lg:grid-cols-[1fr_420px]">
           <section className="rounded-[30px] border border-white/20 bg-white/95 p-8 shadow-2xl backdrop-blur-md">
             <div className="grid gap-5 md:grid-cols-2">

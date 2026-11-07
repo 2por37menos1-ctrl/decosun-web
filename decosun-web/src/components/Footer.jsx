@@ -62,6 +62,7 @@ export default function Footer() {
                 Motorización
               </Link>
 
+              <Link to="/guia-de-telas" className="transition hover:text-amber-300">Guía de telas</Link>
               <Link to="/mantencion" className="transition hover:text-amber-300">
                 Mantención y limpieza
               </Link>
@@ -107,6 +108,8 @@ export default function Footer() {
               <p>
                 Soporte técnico y presencia regional
               </p>
+              <p><Link to="/agenda" className="transition hover:text-amber-300">Agenda tu atención</Link></p>
+              <p><Link to="/login" className="transition hover:text-amber-300">Acceso equipo</Link></p>
             </div>
           </div>
         </div>
