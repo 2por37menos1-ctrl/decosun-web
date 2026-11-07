@@ -79,9 +79,9 @@ export default function Home() {
             </p>
 
             <h1 className="mt-6 text-[clamp(2rem,6vw,4.5rem)] font-black leading-[1.05] tracking-tight text-white">
-              Soluciones inteligentes
+              Automatiza tus cortinas.
               <span className="block text-amber-400">
-                para transformar tus espacios.
+                Transforma tu espacio.
               </span>
             </h1>
 

@@ -10,6 +10,7 @@ import Seo from "./components/Seo";
 import Garantia from "./pages/Garantia";
 import NotFound from "./pages/NotFound";
 import Home from "./pages/Home";
+import HomeIntro from "./components/HomeIntro";
 import Soluciones from "./pages/Soluciones";
 import Motorizacion from "./pages/Motorizacion";
 import Mantencion from "./pages/Mantencion";
@@ -33,6 +34,7 @@ function AppContent() {
   const isPublicStatus = location.pathname.startsWith("/estado");
 
   return (
+    <HomeIntro>
     <div className="min-h-screen bg-white text-slate-800">
       <Seo />
       {!isPanel && !isPublicStatus && <Navbar />}
@@ -87,6 +89,7 @@ function AppContent() {
       {!isPanel && !isPublicStatus && <Footer />}
       {!isPanel && !isPublicStatus && <WhatsAppButton />}
     </div>
+    </HomeIntro>
   );
 }
 

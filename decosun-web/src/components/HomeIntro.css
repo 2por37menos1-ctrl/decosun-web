@@ -1,0 +1,82 @@
+.decosun-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  overflow: hidden;
+  isolation: isolate;
+  color: #f4efe5;
+  font-family: Arial, Helvetica, sans-serif;
+  animation: decosun-intro-exit .3s 4.1s forwards;
+}
+.decosun-intro__panels { position: absolute; inset: 0; display: flex; }
+.decosun-intro__panels i {
+  flex: 1;
+  background: linear-gradient(90deg, #151713, #21231c 80%, #12140f);
+  border-right: 1px solid #35382b;
+  animation: decosun-intro-open 1.05s cubic-bezier(.65,0,.25,1) both;
+  animation-delay: calc(2.7s + var(--panel) * .09s);
+}
+.decosun-intro__top {
+  position: absolute;
+  top: max(24px, env(safe-area-inset-top));
+  left: clamp(22px, 5vw, 80px);
+  right: clamp(22px, 5vw, 80px);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+.decosun-intro__brand { font-size: 17px; font-weight: 700; letter-spacing: 3px; }
+.decosun-intro__brand span { color: #ffad45; }
+.decosun-intro__top button {
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid #f4efe555;
+  border-radius: 24px;
+  background: #151713;
+  color: #f4efe5;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+}
+.decosun-intro__top button:focus-visible { outline: 3px solid #ffad45; outline-offset: 4px; }
+.decosun-intro__message {
+  position: absolute;
+  inset: 20% 7% auto;
+  animation: decosun-intro-away .35s 2.65s both;
+}
+.decosun-intro__message p { margin: 0 0 28px; font-size: clamp(10px, 1vw, 14px); letter-spacing: .2em; color: #c3c0b1; }
+.decosun-intro__headline { font-size: clamp(48px, 12vw, 160px); font-weight: 900; line-height: .9; letter-spacing: -.055em; }
+.decosun-intro__headline > span { display: block; animation: decosun-intro-word .65s cubic-bezier(.16,1,.3,1) both; animation-delay: .25s; }
+.decosun-intro__headline > span:nth-child(2) { animation-delay: .43s; }
+.decosun-intro__headline > span:nth-child(3) { animation-delay: .61s; color: #ffad45; }
+.decosun-intro__period { color: #f4efe5; }
+.decosun-intro__flash {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #fff2c4;
+  box-shadow: 0 0 70px 30px #ffc964;
+  opacity: 0;
+  pointer-events: none;
+  animation: decosun-intro-light .7s 2.4s both;
+}
+.decosun-intro__bottom { position: absolute; left: 7%; right: 7%; bottom: max(35px, env(safe-area-inset-bottom)); display: flex; justify-content: space-between; gap: 20px; font-size: 10px; letter-spacing: .14em; animation: decosun-intro-away .35s 2.65s both; }
+@keyframes decosun-intro-word { from { opacity: 0; transform: translateY(50px) rotate(2deg); } to { opacity: 1; transform: none; } }
+@keyframes decosun-intro-away { to { opacity: 0; transform: translateY(-25px); } }
+@keyframes decosun-intro-open { to { transform: translateY(-105%); } }
+@keyframes decosun-intro-light { 0% { opacity: 0; transform: scale(1); } 55% { opacity: .9; transform: scale(14); } 100% { opacity: 0; transform: scale(18); } }
+@keyframes decosun-intro-exit { to { opacity: 0; visibility: hidden; } }
+@media (max-width: 540px) {
+  .decosun-intro__message { top: 28%; }
+  .decosun-intro__bottom { font-size: 9px; flex-wrap: wrap; }
+  .decosun-intro__bottom span:last-child { display: none; }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  .decosun-intro__message { top: 25%; }
+  .decosun-intro__headline { font-size: min(12vw, 17vh); }
+  .decosun-intro__message p { margin-bottom: 12px; }
+  .decosun-intro__bottom { bottom: 14px; }
+}
+@media (prefers-reduced-motion: reduce) { .decosun-intro { display: none; } }
