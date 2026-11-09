@@ -9,6 +9,7 @@ import proyectante from "../assets/images/systems/toldos-proyectantes-concept.jp
 import toldoVertical from "../assets/images/systems/toldos-verticales-concept.jpg"
 import cristal from "../assets/images/cierres-cristal/cierre-cristal-balcon-01.jpeg"
 import pergola from "../assets/images/pergola02.avif"
+import honeycomb from "../assets/images/systems/honeycomb-lateral-concept.jpg"
 
 export const quoteFamilies = [
   {
@@ -58,7 +59,7 @@ export const quoteFamilies = [
     variants: [["toldoVertical", "Toldo vertical"]],
   },
   {
-    id: "honeycomb", name: "Plisadas Honeycomb", assisted: true,
+    id: "honeycomb", name: "Plisadas Honeycomb", image: honeycomb, conceptual: true, assisted: true,
     description: "Cortinas de estructura celular. Configuración y valor se definen mediante asesoría.",
     variants: [["honeycomb", "Plisadas Honeycomb"]],
   },
