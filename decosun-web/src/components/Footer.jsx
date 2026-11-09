@@ -63,6 +63,7 @@ export default function Footer() {
               </Link>
 
               <Link to="/guia-de-telas" className="transition hover:text-amber-300">Guía de telas</Link>
+              <Link to="/cortinas-plisadas-honeycomb" className="transition hover:text-amber-300">Honeycomb y mosquiteros</Link>
               <Link to="/mantencion" className="transition hover:text-amber-300">
                 Mantención y limpieza
               </Link>

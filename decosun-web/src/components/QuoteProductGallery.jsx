@@ -10,6 +10,8 @@ import toldoVertical from "../assets/images/systems/toldos-verticales-concept.jp
 import cristal from "../assets/images/cierres-cristal/cierre-cristal-balcon-01.jpeg"
 import pergola from "../assets/images/pergola02.avif"
 import honeycomb from "../assets/images/systems/honeycomb-lateral-concept.jpg"
+import mosquitoMesh from "../assets/images/systems/mosquitero-plisado-concept.jpg"
+import { getPleatedOption, pleatedOptions } from "../lib/pleatedSystems"
 
 export const quoteFamilies = [
   {
@@ -59,9 +61,26 @@ export const quoteFamilies = [
     variants: [["toldoVertical", "Toldo vertical"]],
   },
   {
-    id: "honeycomb", name: "Plisadas Honeycomb", image: honeycomb, conceptual: true, assisted: true,
-    description: "Cortinas de estructura celular. Configuración y valor se definen mediante asesoría.",
-    variants: [["honeycomb", "Plisadas Honeycomb"]],
+    id: "honeycomb", name: "Plisadas Honeycomb", image: honeycomb, conceptual: true,
+    description: "Sistemas laterales blackout, translúcidos y de paso de luz difusa sin vista exterior. Elige tela y medidas para cotizar.",
+    variantLabel: "Tela del sistema plisado",
+    variants: [...pleatedOptions.filter(option => option.group === "cortina").map(option => [option.key, option.name]), ["honeycomb", "Honeycomb · sistema por definir"]],
+  },
+  {
+    id: "mosquitero", name: "Mosquitero plisado", image: mosquitoMesh, conceptual: true,
+    description: "Malla de apertura lateral para ayudar a limitar el paso de insectos durante la ventilación.",
+    variants: [["mosquiteroPlisado", "Mosquitero plisado"]],
+  },
+  {
+    id: "honeycombCombinado", name: "Plisada + mosquitero", image: honeycomb, conceptual: true,
+    description: "Combina la función de una cortina plisada con una malla mosquitera en un sistema a medida.",
+    variantLabel: "Tela combinada con mosquitero",
+    variants: pleatedOptions.filter(option => option.group === "combinado").map(option => [option.key, option.name]),
+  },
+  {
+    id: "honeycombDoble", name: "Plisada doble blackout + screen", image: honeycomb, conceptual: true,
+    description: "Dos telas para alternar oscurecimiento y luz filtrada. Montaje y dimensiones se confirman con asesoría.",
+    variants: [["honeycombDoble", "Plisada doble blackout + screen"]],
   },
   {
     id: "cristal", name: "Cierre de cristal", image: cristal, assisted: true,
@@ -85,7 +104,7 @@ export function QuoteProductImage({ family, productKey }) {
 
   if (!image) return <div className="quote-photo-pending">Fotografía pendiente<br /><strong>{family.name}</strong></div>
 
-  return <img src={image} alt={family.name} loading="lazy" decoding="async" />
+  return <img src={image} alt={getPleatedOption(productKey)?.name || family.name} loading="lazy" decoding="async" />
 }
 
 export default function QuoteProductGallery({ target, onChoose, onClose }) {

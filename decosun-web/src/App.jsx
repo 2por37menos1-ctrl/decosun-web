@@ -19,6 +19,7 @@ import Mantencion from "./pages/Mantencion";
 import Proyectos from "./pages/Proyectos";
 import Nosotros from "./pages/Nosotros";
 import Cotizar from "./pages/Cotizar";
+import Plisadas from "./pages/Plisadas";
 import Login from "./pages/Login";
 import Agenda from "./pages/Agenda";
 import ProjectStatusPublic from "./pages/ProjectStatusPublic";
@@ -45,6 +46,7 @@ function AppContent() {
         {/* Sitio Público */}
         <Route path="/" element={<Home />} />
         <Route path="/soluciones" element={<Soluciones />} />
+        <Route path="/cortinas-plisadas-honeycomb" element={<Plisadas />} />
         <Route path="/guia-de-telas" element={<FabricGuide />} />
         {Object.keys(fabricPages).map(path => <Route key={path} path={path} element={<FabricDetail />} />)}
         <Route path="/motorizacion" element={<Motorizacion />} />

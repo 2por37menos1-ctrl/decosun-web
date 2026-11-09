@@ -203,3 +203,42 @@
 .catalog-system-photo{margin:0;border-bottom:1px solid #e2e8f0;background:#f8fafc}
 .catalog-system-photo img{display:block;width:100%;height:auto;aspect-ratio:3/2;object-fit:cover;background:#f1f5f9}
 .catalog-system-photo figcaption{margin:0!important;padding:10px 18px;font-size:11px!important;line-height:1.6;color:#64748b}
+
+.fabric-library .catalog-pleated {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 38px;
+  align-items: center;
+  margin: 50px 0;
+  padding: 32px;
+  border-radius: 30px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+.fabric-library .catalog-pleated img {
+  width: 100%;
+  height: 350px;
+  object-fit: cover;
+  border-radius: 22px;
+}
+.fabric-library .catalog-pleated figure {
+  margin: 0;
+}
+.fabric-library .catalog-pleated figcaption {
+  font-size: 10px;
+  color: #64748b;
+  margin-top: 10px;
+}
+.fabric-library .catalog-pleated h2 {
+  font-size: clamp(1.8rem,3vw,2.5rem);
+}
+@media(max-width:760px) {
+  .fabric-library .catalog-pleated {
+    grid-template-columns: 1fr;
+    padding: 24px;
+    gap: 26px;
+  }
+  .fabric-library .catalog-pleated img {
+    height: 240px;
+  }
+}

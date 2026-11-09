@@ -1,6 +1,10 @@
 {
   "routes": [
     {
+      "src": "/cortinas-plisadas-honeycomb/?",
+      "dest": "/cortinas-plisadas-honeycomb/index.html"
+    },
+    {
       "src": "/assets/(.*)",
       "headers": {
         "Cache-Control": "public, max-age=31536000, immutable"

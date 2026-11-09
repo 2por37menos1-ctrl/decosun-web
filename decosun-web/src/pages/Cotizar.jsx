@@ -5,8 +5,11 @@ import logoSolo from "../assets/images/logo-vertical.png"
 import QuoteProductGallery, { getQuoteFamily, QuoteProductImage } from "../components/QuoteProductGallery"
 import "../components/QuoteExperience.css"
 import { insertQuoteRows } from "../lib/smartQuote"
-import { useMemo, useState, useRef } from "react"
+import { useEffect, useMemo, useState, useRef } from "react"
 import emailjs from "@emailjs/browser"
+import { Link, useSearchParams } from "react-router-dom"
+import { getPleatedOption, pleatedOptions, PLEATED_PATH } from "../lib/pleatedSystems"
+import { getPleatedPrice } from "../lib/pleatedPricing"
 
 function formatCLP(value) {
   return new Intl.NumberFormat("es-CL", {
@@ -17,6 +20,7 @@ function formatCLP(value) {
 }
 
 const calculableProducts = {
+  ...Object.fromEntries(pleatedOptions.map(option => [option.key, option.name])),
   rollerSimple: "Roller simple",
   blackout: "Black out",
   sunscreen: "Sun Screen",
@@ -70,6 +74,7 @@ function createMeasureRow(tipo = "rollerSimple") {
 }
 
 export default function Cotizar() {
+  const [searchParams] = useSearchParams()
   const phone = "56929307614"
 
   const emailServiceId = "service_tbteogn"
@@ -169,7 +174,17 @@ export default function Cotizar() {
     promoCode: "",
   })
 
-  const [measures, setMeasures] = useState([])
+  const [measures, setMeasures] = useState(() => {
+    const productKey = searchParams.get("producto")
+    return getPleatedOption(productKey) ? [createMeasureRow(productKey)] : []
+  })
+
+  useEffect(() => {
+    if (!getPleatedOption(searchParams.get("producto"))) return
+    const card = document.querySelector(".quote-config-card")
+    card?.focus({ preventScroll: true })
+    card?.scrollIntoView({ block: "start" })
+  }, [searchParams])
 
   const vendedor = vendedores[form.sucursal]
   const condicionesSucursal = condiciones[form.sucursal]
@@ -290,6 +305,38 @@ export default function Cotizar() {
         note: "",
       }
 
+      const pleatedPrice = getPleatedPrice(item.tipo, item.ancho, item.alto, cantidad)
+      if (pleatedPrice) {
+        if (!pleatedPrice.valid) return baseRow
+        if (pleatedPrice.requiresAssessment) {
+          return {
+            ...baseRow,
+            valid: true,
+            category: "solicitud",
+            ancho: pleatedPrice.width,
+            alto: pleatedPrice.height,
+            cantidad,
+            note: "Medida fuera de la tabla de precios en línea. Solicita evaluación técnica.",
+          }
+        }
+
+        const subtotal = pleatedPrice.subtotal
+        const recargo = recargoUnit * cantidad
+        const discount = promo ? Math.round(subtotal * (promo.percent / 100)) : 0
+        return {
+          ...baseRow,
+          valid: true,
+          ancho: pleatedPrice.width,
+          alto: pleatedPrice.height,
+          cantidad,
+          subtotal,
+          recargo,
+          discount,
+          total: subtotal + recargo - discount,
+          note: `Valor por tramo de hasta ${pleatedPrice.bandWidth.toLocaleString("es-CL")} × ${pleatedPrice.bandHeight.toLocaleString("es-CL")} m. IVA incluido.`,
+        }
+      }
+
       if (category === "solicitud") {
         const valid = Number.isInteger(cantidad) && cantidad > 0
         return {
@@ -382,13 +429,17 @@ export default function Cotizar() {
     }
   }, [form, measures])
 
+  const displayedTotal = result.hasRequestRows && result.requestRows.length === result.validRows.length
+    ? "Por evaluar"
+    : formatCLP(result.totalGeneral)
+
   function buildQuoteDetails() {
     return result.rows
       .filter((row) => row.valid)
       .map((row, index) => {
         const locationText = row.ubicacion ? ` · Ubicación: ${row.ubicacion}` : ""
         const measureText =
-          row.category === "calculable"
+          (row.category === "calculable" || getPleatedOption(row.productKey))
             ? ` · ${row.ancho}m x ${row.alto}m`
             : ""
         const valueText =
@@ -478,7 +529,7 @@ export default function Cotizar() {
         .map((row) => {
           const locationText = row.ubicacion ? ` · Ubicación: ${row.ubicacion}` : ""
           const measureText =
-            row.category === "calculable" || row.productKey === "honeycomb" ? ` · ${row.ancho}x${row.alto}` : ""
+            row.category === "calculable" || row.productKey === "honeycomb" || getPleatedOption(row.productKey) ? ` · ${row.ancho}x${row.alto}` : ""
           const valueText =
             row.category === "solicitud"
               ? " · Solicitar valores a DecoSun"
@@ -534,8 +585,8 @@ export default function Cotizar() {
       const measurementRows = validRows.map((row) => ({
         project_id: projectId,
         product_type: row.productKey,
-        width: row.category === "calculable" || row.productKey === "honeycomb" ? Number(row.ancho) || null : null,
-        height: row.category === "calculable" || row.productKey === "honeycomb" ? Number(row.alto) || null : null,
+        width: row.category === "calculable" || row.productKey === "honeycomb" || getPleatedOption(row.productKey) ? Number(row.ancho) || null : null,
+        height: row.category === "calculable" || row.productKey === "honeycomb" || getPleatedOption(row.productKey) ? Number(row.alto) || null : null,
         quantity: row.cantidad,
         fabric: row.ubicacion || null,
       }))
@@ -663,6 +714,7 @@ export default function Cotizar() {
                 {measures.map((item, index) => {
                   const category = getProductCategory(item.tipo)
                   const family = getQuoteFamily(item.tipo)
+                  const pleatedOption = getPleatedOption(item.tipo)
 
                   return (
                     <div
@@ -675,10 +727,11 @@ export default function Cotizar() {
                         <figure><QuoteProductImage family={family} productKey={item.tipo} />{family.conceptual && <figcaption>Imagen conceptual generada con IA.</figcaption>}</figure>
                         <div>
                           <p className="quote-step-label">Producto {index + 1}</p>
-                          <h3>{family.name}</h3>
-                          <p>{family.description}</p>
+                          <h3>{pleatedOption?.name || family.name}</h3>
+                          <p>{pleatedOption?.description || family.description}</p>
+                          {family.id.startsWith("honeycomb") || family.id === "mosquitero" ? <Link className="quote-product-guide" to={PLEATED_PATH}>Conocer sistemas y comparar opciones ↗</Link> : null}
                           <button type="button" className="quote-outline-button" disabled={saving || Boolean(pendingProject.current)} onClick={() => setGalleryTarget({ rowId: item.id })}>Cambiar producto</button>
-                          {category === "calculable" && <button type="button" className="quote-outline-button quote-add-motor" disabled={saving || Boolean(pendingProject.current)} onClick={() => setGalleryTarget({ familyId: "motor", ubicacion: item.ubicacion })}>+ Añadir motorización</button>}
+                          {category === "calculable" && !pleatedOption && <button type="button" className="quote-outline-button quote-add-motor" disabled={saving || Boolean(pendingProject.current)} onClick={() => setGalleryTarget({ familyId: "motor", ubicacion: item.ubicacion })}>+ Añadir motorización</button>}
                         </div>
                       </div>
                       <div className="quote-row-actions">
@@ -687,6 +740,7 @@ export default function Cotizar() {
                       </div>
                       {category === "solicitud" && <p className="quote-measure-note">Valor mediante evaluación técnica. Puedes indicar el ambiente y la cantidad.</p>}
                       {category === "motor" && <p className="quote-measure-note">Valor por unidad. Indica el ambiente para relacionarlo con tus cortinas. La compatibilidad y los accesorios se confirman con asesoría.</p>}
+                      {pleatedOption && <p className="quote-measure-note">{result.rows[index].note || "Indica ancho y alto para ver el precio del sistema. La tarifa usa el tramo superior de la tabla e incluye IVA. Medidas sobre 3 m en cualquiera de sus lados requieren cotización asistida."}</p>}
                       <div className="grid gap-4 md:grid-cols-3">
                         {family.variants.length > 1 && <div className="md:col-span-3">
                           <label htmlFor={`variant-${item.id}`} className="mb-2 block text-sm font-medium text-slate-700">{family.variantLabel}</label>
@@ -972,7 +1026,7 @@ export default function Cotizar() {
             {result.hasValidRows ? (
               <>
                 <h2 className="mt-3 text-3xl font-bold text-slate-950">
-                  {formatCLP(result.totalGeneral)}
+                  {displayedTotal}
                 </h2>
 
                 {result.hasRequestRows && (
@@ -1007,7 +1061,7 @@ export default function Cotizar() {
                               )}
 
                               <p className="text-sm text-slate-600">
-                                {row.category === "calculable" &&
+                                {(row.category === "calculable" || getPleatedOption(row.productKey)) &&
                                   `${row.ancho} m × ${row.alto} m · `}
                                 Cantidad: {row.cantidad}
                               </p>
@@ -1047,7 +1101,7 @@ export default function Cotizar() {
                             <td className="p-2">{row.productLabel}</td>
                             <td className="p-2">{row.ubicacion || "-"}</td>
                             <td className="p-2">
-                              {row.category === "calculable"
+                              {(row.category === "calculable" || getPleatedOption(row.productKey))
                                 ? `${row.ancho} m × ${row.alto} m`
                                 : "-"}
                             </td>
@@ -1092,7 +1146,7 @@ export default function Cotizar() {
                       Total estimado
                     </span>
                     <span className="font-bold text-slate-950">
-                      {formatCLP(result.totalGeneral)}
+                      {displayedTotal}
                     </span>
                   </div>
                 </div>

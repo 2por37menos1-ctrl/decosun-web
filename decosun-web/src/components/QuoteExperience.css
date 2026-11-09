@@ -388,3 +388,14 @@ body:has(.quote-gallery-dialog[open]) {
     height: 210px;
   }
 }
+
+.quote-product-guide {
+  display: inline-flex;
+  align-items: center;
+  min-height: 52px;
+  color: #92400e;
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}

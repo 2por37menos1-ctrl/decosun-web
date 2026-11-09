@@ -57,7 +57,8 @@ test("New pages contain resolvable internal links and fragments; future catalogu
 test("Catalogue preserves legacy anchors and excludes deferred product families", async () => {
   const html = await readHtml("/soluciones")
   for (const id of ["roller-blackout", "roller-sunscreen", "roller-duo", "persianas-verticales", "tipos-telas"]) assert.ok(html.includes(`id="${id}"`), id)
-  assert.doesNotMatch(html, /pérgola|honeycomb|cierres de cristal/i)
+  assert.doesNotMatch(html, /pérgola|cierres de cristal/i)
+  assert.ok(html.includes('href="/cortinas-plisadas-honeycomb"'))
   const nav = html.match(/<nav[^>]+aria-label="Navegación principal"[^>]*>(.*?)<\/nav>/s)[1]
   assert.equal((nav.match(/href="\/soluciones"/g) || []).length, 1)
   assert.equal((nav.match(/href="\/cotizar"/g) || []).length, 1)

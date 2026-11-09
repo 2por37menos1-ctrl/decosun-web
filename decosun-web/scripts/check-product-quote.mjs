@@ -16,7 +16,16 @@ try {
   assert.ok(!html.includes('aria-valuemax="9"'))
   assert.ok(!html.includes('Volver al cotizador guiado'))
   const variants = quoteFamilies.flatMap(family => family.variants.map(([key]) => key))
-  const expected = ['rollerSimple','blackout','sunscreen','translucido','rollerCenefa','rollerDoble','rollerDobleCenefa','rollerDuo','rollerDuoTranslucido','rollerDuoSunOut','persianaVertical','darkBlackout','honeycomb','toldoProyectante','toldoVertical','cierreTerraza','pergolaBioclimatica','motorizacionIndependiente','motorizacionDual','motorizacionIntegrada']
+  const expected = ['rollerSimple','blackout','sunscreen','translucido','rollerCenefa','rollerDoble','rollerDobleCenefa','rollerDuo','rollerDuoTranslucido','rollerDuoSunOut','persianaVertical','darkBlackout','honeycomb','toldoProyectante','toldoVertical','cierreTerraza','pergolaBioclimatica','motorizacionIndependiente','motorizacionDual','motorizacionIntegrada','honeycombBlackout','honeycombTranslucida','honeycombScreen','mosquiteroPlisado','honeycombBlackoutMosquitero','honeycombTranslucidaMosquitero','honeycombScreenMosquitero','honeycombDoble']
   assert.deepEqual(variants.sort(), expected.sort(), 'Each original product must be offered exactly once in the visual selector')
-  console.log('OK: /cotizar opens the original quote with a visual gallery covering all 20 product variants.')
+  const { pleatedOptions } = await vite.ssrLoadModule('/src/lib/pleatedSystems.js')
+  for (const option of pleatedOptions) {
+    const linkedHtml = renderToString(createElement(MemoryRouter, { initialEntries: [`/cotizar?producto=${option.key}`] }, createElement(Cotizar)))
+    assert.ok(linkedHtml.includes(`<h3>${option.name}</h3>`), `Missing selected product: ${option.key}`)
+    assert.ok(linkedHtml.includes('Ancho (m)'))
+    assert.ok(linkedHtml.includes('Alto (m)'))
+  }
+  const unknownHtml = renderToString(createElement(MemoryRouter, { initialEntries: ['/cotizar?producto=unknown'] }, createElement(Cotizar)))
+  assert.ok(unknownHtml.includes('Explorar galería de productos'))
+  console.log('OK: /cotizar opens the original quote with a visual gallery covering all 28 product variants.')
 } finally { await vite.close() }
