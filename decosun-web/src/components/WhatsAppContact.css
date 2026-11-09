@@ -1,0 +1,122 @@
+.whatsapp-contact-dialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: min(610px, calc(100% - 32px));
+  max-height: 90dvh;
+  padding: 30px;
+  overflow-y: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 28px;
+  background: #fff;
+  color: #0f172a;
+  box-shadow: 0 30px 100px #02061755;
+  font-family: inherit;
+}
+
+.whatsapp-contact-dialog::backdrop {
+  background: #020617b3;
+  backdrop-filter: blur(5px);
+}
+
+body:has(.whatsapp-contact-dialog[open]) {
+  overflow: hidden;
+}
+
+.whatsapp-contact-dialog header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.whatsapp-contact-dialog header p {
+  margin: 0 0 12px;
+  color: #92400e;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+}
+
+.whatsapp-contact-dialog h2 {
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: -.035em;
+  line-height: 1.15;
+}
+
+.whatsapp-contact-dialog > p {
+  font-size: 14px;
+  line-height: 1.8;
+  color: #64748b;
+  margin: 18px 0;
+}
+
+.whatsapp-contact-close {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  min-height: 48px;
+  border: 1px solid #cbd5e1;
+  border-radius: 14px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.whatsapp-contact-zones {
+  display: grid;
+  gap: 14px;
+}
+
+.whatsapp-contact-zones a {
+  display: grid;
+  gap: 8px;
+  min-height: 110px;
+  padding: 22px;
+  border: 1px solid #cbd5e1;
+  border-radius: 20px;
+  background: #f8fafc;
+  color: #0f172a;
+  text-decoration: none;
+}
+
+.whatsapp-contact-zones a:hover {
+  background: #fffbeb;
+  border-color: #d97706;
+}
+
+.whatsapp-contact-zones strong {
+  display: flex;
+  justify-content: space-between;
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.whatsapp-contact-zones a > span {
+  font-size: 14px;
+  color: #475569;
+}
+
+.whatsapp-contact-zones small {
+  font-size: 12px;
+  font-weight: 700;
+  color: #166534;
+}
+
+.whatsapp-contact-dialog .whatsapp-contact-note {
+  font-size: 12px;
+  margin-bottom: 0;
+}
+
+.whatsapp-contact-dialog :focus-visible {
+  outline: 3px solid #d97706;
+  outline-offset: 4px;
+}
+
+@media (max-width: 500px) {
+  .whatsapp-contact-dialog { padding: 24px; }
+  .whatsapp-contact-dialog h2 { font-size: 25px; }
+}

@@ -10,6 +10,7 @@ import emailjs from "@emailjs/browser"
 import { Link, useSearchParams } from "react-router-dom"
 import { getPleatedOption, pleatedOptions, PLEATED_PATH } from "../lib/pleatedSystems"
 import { getPleatedPrice } from "../lib/pleatedPricing"
+import { buildWhatsAppUrl, getQuoteWhatsAppZone } from "../lib/whatsappRouting"
 
 function formatCLP(value) {
   return new Intl.NumberFormat("es-CL", {
@@ -75,7 +76,6 @@ function createMeasureRow(tipo = "rollerSimple") {
 
 export default function Cotizar() {
   const [searchParams] = useSearchParams()
-  const phone = "56929307614"
 
   const emailServiceId = "service_tbteogn"
   const emailTemplateId = "template_g9wrxn9"
@@ -668,9 +668,11 @@ export default function Cotizar() {
     const saved = await saveQuoteToSupabase()
     if (!saved) return
 
-    const whatsappURL = `https://wa.me/${phone}?text=${encodeURIComponent(
-      buildWhatsappText(saved.quoteNumber)
-    )}`
+    const zone = getQuoteWhatsAppZone({
+      city: form.zona === "otra" ? form.ciudadExtra : zoneLabel,
+      sucursal: form.sucursal,
+    })
+    const whatsappURL = buildWhatsAppUrl({ zone, message: buildWhatsappText(saved.quoteNumber), pathname: "/cotizar" })
 
     window.open(whatsappURL, "_blank", "noopener,noreferrer")
   }
