@@ -2,7 +2,8 @@ import PublicPageHero from "../components/PublicPageHero"
 import { supabase } from "../lib/supabase"
 import { getTerritoryAssignment } from "../lib/territoryAssignment"
 import logoSolo from "../assets/images/logo-vertical.png"
-import SmartQuote from "../components/SmartQuote"
+import QuoteProductGallery, { getQuoteFamily, QuoteProductImage } from "../components/QuoteProductGallery"
+import "../components/QuoteExperience.css"
 import { insertQuoteRows } from "../lib/smartQuote"
 import { useMemo, useState, useRef } from "react"
 import emailjs from "@emailjs/browser"
@@ -152,8 +153,7 @@ export default function Cotizar() {
     DSNIQQ: { label: "DSNIQQ", percent: 15 },
   }
 
-  const [advanced, setAdvanced] = useState(false)
-  const [guidedControl, setGuidedControl] = useState("")
+  const [galleryTarget, setGalleryTarget] = useState(null)
   const savePending = useRef(null)
   const pendingProject = useRef(null)
   const [quoteNumber, setQuoteNumber] = useState("COT-PENDIENTE")
@@ -169,7 +169,7 @@ export default function Cotizar() {
     promoCode: "",
   })
 
-  const [measures, setMeasures] = useState([createMeasureRow()])
+  const [measures, setMeasures] = useState([])
 
   const vendedor = vendedores[form.sucursal]
   const condicionesSucursal = condiciones[form.sucursal]
@@ -211,11 +211,13 @@ export default function Cotizar() {
     )
   }
 
-  function addMeasureRow(tipo = "rollerSimple") {
+  function addMeasureRow(tipo = "rollerSimple", ubicacion = "") {
     if (pendingProject.current) return
     setSavedProject(null)
     setQuoteNumber("COT-PENDIENTE")
-    setMeasures((prev) => [...prev, createMeasureRow(tipo)])
+    const row = { ...createMeasureRow(tipo), ubicacion }
+    setMeasures((prev) => [...prev, row])
+    return row.id
   }
 
   function removeMeasureRow(id) {
@@ -224,7 +226,6 @@ export default function Cotizar() {
     setQuoteNumber("COT-PENDIENTE")
 
     setMeasures((prev) => {
-      if (prev.length === 1) return prev
       return prev.filter((item) => item.id !== id)
     })
   }
@@ -269,7 +270,7 @@ export default function Cotizar() {
 
     const rows = measures.map((item, index) => {
       const category = getProductCategory(item.tipo)
-      const cantidad = guidedControl === "smart" && item.tipo === "motorizacionIntegrada" ? measures.filter(row => !row.tipo.startsWith("motorizacion")).reduce((sum, row) => sum + Number(row.cantidad || 0), 0) : Number(item.cantidad)
+      const cantidad = Number(item.cantidad)
       const price = prices[form.sucursal]?.[item.tipo] ?? 0
 
       const baseRow = {
@@ -379,7 +380,7 @@ export default function Cotizar() {
       hasValidRows: validRows.length > 0,
       hasRequestRows: requestRows.length > 0,
     }
-  }, [form, measures, guidedControl])
+  }, [form, measures])
 
   function buildQuoteDetails() {
     return result.rows
@@ -623,61 +624,203 @@ export default function Cotizar() {
     window.open(whatsappURL, "_blank", "noopener,noreferrer")
   }
 
-  function configure(product, control, room) {
-    if (pendingProject.current) return
-    setGuidedControl(control)
-    setSavedProject(null)
-    setMeasures(previous => {
-      const windows = previous.filter(row => !row.tipo.startsWith("motorizacion"))
-      const configured = (windows.length ? windows : [createMeasureRow()]).map(row => ({ ...row, tipo: product, ubicacion: row.ubicacion || room }))
-      if (control === "smart") configured.push(createMeasureRow("motorizacionIntegrada"))
-      return configured
+  function chooseProduct(tipo) {
+    let rowId = galleryTarget.rowId
+    if (rowId) handleMeasureChange(rowId, "tipo", tipo)
+    else rowId = addMeasureRow(tipo, galleryTarget.ubicacion)
+    setGalleryTarget(null)
+    requestAnimationFrame(() => {
+      const card = document.getElementById(`product-${rowId}`)
+      card?.focus({ preventScroll: true })
+      card?.scrollIntoView({ block: "start" })
     })
   }
 
-  if (!advanced) return <SmartQuote form={form} measures={measures} result={result} changeForm={handleFormChange} changeMeasure={handleMeasureChange} addRow={addMeasureRow} removeRow={removeMeasureRow} configure={configure} save={saveQuoteToSupabase} saving={saving} locked={Boolean(pendingProject.current)} savedProject={savedProject} advanced={() => { setMeasures(previous => previous.map((row, index) => ({ ...row, cantidad: result.rows[index].cantidad }))); setGuidedControl(""); setAdvanced(true) }} prices={prices} />
+  function duplicateMeasureRow(item) {
+    if (pendingProject.current) return
+    setSavedProject(null)
+    setQuoteNumber("COT-PENDIENTE")
+    setMeasures(previous => [...previous, { ...item, id: crypto.randomUUID() }])
+  }
 
   return (
     <main className="public-presentation quote-advanced">
-      <PublicPageHero page="Cotizar" eyebrow="Configuración detallada" titleId="quote-detail-title" highlight="Tu proyecto." title="Cada detalle cuenta." media={<img src="/img/motorizacion/4MT-640.jpg" alt="Concepto de cortinas motorizadas" />} caption="Imagen conceptual de ambiente."><p className="public-hero-description">Configura productos, medidas y ubicación para preparar tu cotización.</p><div className="public-hero-actions"><button type="button" onClick={() => setAdvanced(false)} className="public-primary-button">Volver al cotizador guiado</button></div></PublicPageHero>
+      <PublicPageHero page="Cotizar" eyebrow="Cotiza a tu medida" titleId="quote-title" highlight="Tu espacio." title="Tu próxima solución." media={<img src="/img/motorizacion/4MT-640.jpg" alt="Concepto de cortinas motorizadas" />} caption="Imagen conceptual de ambiente.">
+        <p className="public-hero-description">Elige tus productos, configura sus medidas y revisa una estimación para tu proyecto.</p>
+        <div className="public-hero-actions"><a href="#quote-products" className="public-primary-button">Elegir productos ↓</a></div>
+      </PublicPageHero>
       <div className="relative z-10 mx-auto max-w-7xl px-6 pb-20 lg:px-8">
-        <div className="mt-12 grid gap-8 lg:grid-cols-[1fr_420px]">
+        <div className="mt-12 grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
           <section className="rounded-[30px] border border-white/20 bg-white/95 p-8 shadow-2xl backdrop-blur-md">
+            <div>
+              <div className="quote-products-heading">
+                <div><p className="quote-step-label">01 · Tus productos</p><h2 id="quote-products">¿Qué quieres cotizar?</h2><p>Elige un sistema y configura cada producto en su propia tarjeta.</p></div>
+                <button type="button" className="public-primary-button" disabled={saving || Boolean(pendingProject.current)} onClick={() => setGalleryTarget({})}>+ Añadir producto</button>
+              </div>
+              {measures.length === 0 && <div className="quote-empty"><h3>Tu proyecto empieza aquí.</h3><p>Explora las fotos y encuentra la solución para tu espacio.</p><button type="button" className="public-primary-button" onClick={() => setGalleryTarget({})}>Explorar galería de productos ↗</button></div>}
+              <p className="quote-measure-note">Medidas en metros. Por ejemplo, 150 cm = 1,50 m. Las medidas finales y la compatibilidad se confirman en evaluación técnica.</p>
+              <div className="space-y-4">
+                {measures.map((item, index) => {
+                  const category = getProductCategory(item.tipo)
+                  const family = getQuoteFamily(item.tipo)
+
+                  return (
+                    <div
+                      key={item.id}
+                      id={`product-${item.id}`}
+                      tabIndex={-1}
+                      className="quote-config-card"
+                    >
+                      <div className="quote-selected-product">
+                        <figure><QuoteProductImage family={family} productKey={item.tipo} />{family.conceptual && <figcaption>Imagen conceptual generada con IA.</figcaption>}</figure>
+                        <div>
+                          <p className="quote-step-label">Producto {index + 1}</p>
+                          <h3>{family.name}</h3>
+                          <p>{family.description}</p>
+                          <button type="button" className="quote-outline-button" disabled={saving || Boolean(pendingProject.current)} onClick={() => setGalleryTarget({ rowId: item.id })}>Cambiar producto</button>
+                          {category === "calculable" && <button type="button" className="quote-outline-button quote-add-motor" disabled={saving || Boolean(pendingProject.current)} onClick={() => setGalleryTarget({ familyId: "motor", ubicacion: item.ubicacion })}>+ Añadir motorización</button>}
+                        </div>
+                      </div>
+                      <div className="quote-row-actions">
+                        <button type="button" disabled={saving || Boolean(pendingProject.current)} onClick={() => duplicateMeasureRow(item)}>Duplicar producto</button>
+                        <button type="button" disabled={saving || Boolean(pendingProject.current)} onClick={() => removeMeasureRow(item.id)}>Eliminar producto</button>
+                      </div>
+                      {category === "solicitud" && <p className="quote-measure-note">Valor mediante evaluación técnica. Puedes indicar el ambiente y la cantidad.</p>}
+                      {category === "motor" && <p className="quote-measure-note">Valor por unidad. Indica el ambiente para relacionarlo con tus cortinas. La compatibilidad y los accesorios se confirman con asesoría.</p>}
+                      <div className="grid gap-4 md:grid-cols-3">
+                        {family.variants.length > 1 && <div className="md:col-span-3">
+                          <label htmlFor={`variant-${item.id}`} className="mb-2 block text-sm font-medium text-slate-700">{family.variantLabel}</label>
+                          <select id={`variant-${item.id}`} value={item.tipo} onChange={event => handleMeasureChange(item.id, "tipo", event.target.value)} className="w-full rounded-2xl border border-slate-200 px-4 py-3">
+                            {family.variants.map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+                          </select>
+                        </div>}
+                        <div className="md:col-span-3">
+                          <label htmlFor={`ubicacion-${item.id}`} className="mb-2 block text-sm font-medium text-slate-700">
+                            Ubicación
+                          </label>
+                          <input
+                            type="text"
+                            id={`ubicacion-${item.id}`} value={item.ubicacion}
+                            onChange={(event) =>
+                              handleMeasureChange(
+                                item.id,
+                                "ubicacion",
+                                event.target.value
+                              )
+                            }
+                            placeholder="Ej. Living, Oficina 1, Dormitorio principal"
+                            className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-slate-400"
+                          />
+                        </div>
+
+                        {category === "calculable" && (
+                          <>
+                            <div>
+                              <label htmlFor={`ancho-${item.id}`} className="mb-2 block text-sm font-medium text-slate-700">
+                                Ancho (m)
+                              </label>
+                              <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                id={`ancho-${item.id}`} value={item.ancho}
+                                onChange={(event) =>
+                                  handleMeasureChange(
+                                    item.id,
+                                    "ancho",
+                                    event.target.value
+                                  )
+                                }
+                                placeholder="1.80"
+                                className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-slate-400"
+                              />
+                            </div>
+
+                            <div>
+                              <label htmlFor={`alto-${item.id}`} className="mb-2 block text-sm font-medium text-slate-700">
+                                Alto (m)
+                              </label>
+                              <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                id={`alto-${item.id}`} value={item.alto}
+                                onChange={(event) =>
+                                  handleMeasureChange(
+                                    item.id,
+                                    "alto",
+                                    event.target.value
+                                  )
+                                }
+                                placeholder="2.20"
+                                className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-slate-400"
+                              />
+                            </div>
+                          </>
+                        )}
+
+                        <div>
+                          <label htmlFor={`cantidad-${item.id}`} className="mb-2 block text-sm font-medium text-slate-700">
+                            Cantidad
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            id={`cantidad-${item.id}`} value={item.cantidad}
+                            onChange={(event) =>
+                              handleMeasureChange(
+                                item.id,
+                                "cantidad",
+                                event.target.value
+                              )
+                            }
+                            className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-slate-400"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+            <div className="quote-contact-heading"><p className="quote-step-label">02 · Ubicación y contacto</p><h2>¿Dónde está tu proyecto?</h2><p>La sucursal, la zona y el código promocional se reflejan en el valor estimado.</p></div>
             <div className="grid gap-5 md:grid-cols-2">
               <div className="md:col-span-2">
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="quote-nombre" className="mb-2 block text-sm font-medium text-slate-700">
                   Nombre del cliente
                 </label>
                 <input
-                  name="nombre"
+                  id="quote-nombre" name="nombre"
                   value={form.nombre}
                   onChange={handleFormChange}
                   type="text"
                   placeholder="Nombre del cliente"
+                  autoComplete="name"
                   className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-slate-400"
                 />
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="quote-telefono" className="mb-2 block text-sm font-medium text-slate-700">
                   Teléfono
                 </label>
                 <input
-                  name="telefono"
+                  id="quote-telefono" name="telefono"
                   value={form.telefono}
                   onChange={handleFormChange}
-                  type="text"
+                  type="tel"
+                  autoComplete="tel"
                   placeholder="+56..."
                   className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-slate-400"
                 />
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="quote-sucursal" className="mb-2 block text-sm font-medium text-slate-700">
                   Sucursal
                 </label>
                 <select
-                  name="sucursal"
+                  id="quote-sucursal" name="sucursal"
                   value={form.sucursal}
                   onChange={handleFormChange}
                   className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-slate-400"
@@ -689,11 +832,11 @@ export default function Cotizar() {
 
               {form.sucursal === "iquique" && (
                 <div className="md:col-span-2">
-                  <label className="mb-2 block text-sm font-medium text-slate-700">
+                  <label htmlFor="quote-zona" className="mb-2 block text-sm font-medium text-slate-700">
                     Ciudad / zona
                   </label>
                   <select
-                    name="zona"
+                    id="quote-zona" name="zona"
                     value={form.zona}
                     onChange={handleFormChange}
                     className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-slate-400"
@@ -708,11 +851,11 @@ export default function Cotizar() {
 
               {form.sucursal === "vina" && (
                 <div className="md:col-span-2">
-                  <label className="mb-2 block text-sm font-medium text-slate-700">
+                  <label htmlFor="quote-zona" className="mb-2 block text-sm font-medium text-slate-700">
                     Ciudad / zona
                   </label>
                   <select
-                    name="zona"
+                    id="quote-zona" name="zona"
                     value={form.zona}
                     onChange={handleFormChange}
                     className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-slate-400"
@@ -727,11 +870,11 @@ export default function Cotizar() {
 
               {form.zona === "otra" && (
                 <div className="md:col-span-2">
-                  <label className="mb-2 block text-sm font-medium text-slate-700">
+                  <label htmlFor="quote-ciudadExtra" className="mb-2 block text-sm font-medium text-slate-700">
                     Escribe tu ciudad
                   </label>
                   <input
-                    name="ciudadExtra"
+                    id="quote-ciudadExtra" name="ciudadExtra"
                     value={form.ciudadExtra}
                     onChange={handleFormChange}
                     type="text"
@@ -742,11 +885,11 @@ export default function Cotizar() {
               )}
 
               <div className="md:col-span-2">
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label htmlFor="quote-promoCode" className="mb-2 block text-sm font-medium text-slate-700">
                   Código promocional
                 </label>
                 <input
-                  name="promoCode"
+                  id="quote-promoCode" name="promoCode"
                   value={form.promoCode}
                   onChange={handleFormChange}
                   type="text"
@@ -768,246 +911,6 @@ export default function Cotizar() {
               </div>
             </div>
 
-            <div className="mt-10">
-              <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                <h2 className="text-xl font-semibold text-slate-950">
-                  Productos a cotizar
-                </h2>
-
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => addMeasureRow("rollerSimple")}
-                    className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:-translate-y-0.5"
-                  >
-                    + Producto
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => addMeasureRow("motorizacionIndependiente")}
-                    className="rounded-2xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition hover:-translate-y-0.5"
-                  >
-                    + Motorización
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => addMeasureRow("toldoProyectante")}
-                    className="rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 transition hover:-translate-y-0.5"
-                  >
-                    + Solicitud especial
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                {measures.map((item) => {
-                  const category = getProductCategory(item.tipo)
-
-                  return (
-                    <div
-                      key={item.id}
-                      className="rounded-[24px] border border-slate-200 p-5"
-                    >
-                      <div className="mb-4 flex items-center justify-between">
-                        <div>
-                          <p className="text-base font-semibold text-slate-900">
-                            {productLabels[item.tipo]}
-                          </p>
-
-                          {category === "solicitud" && (
-                            <p className="mt-1 text-sm text-amber-700">
-                              Este producto requiere evaluación técnica.
-                            </p>
-                          )}
-
-                          {category === "motor" && (
-                            <p className="mt-1 text-sm text-slate-600">
-                              Artículo independiente, no requiere medidas.
-                            </p>
-                          )}
-                        </div>
-
-                        {measures.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => removeMeasureRow(item.id)}
-                            className="text-sm font-medium text-red-600 hover:text-red-700"
-                          >
-                            Eliminar
-                          </button>
-                        )}
-                      </div>
-
-                      <div className="grid gap-4 md:grid-cols-3">
-                        <div className="md:col-span-3">
-                          <label className="mb-2 block text-sm font-medium text-slate-700">
-                            Tipo de producto
-                          </label>
-                          <select
-                            value={item.tipo}
-                            onChange={(event) =>
-                              handleMeasureChange(
-                                item.id,
-                                "tipo",
-                                event.target.value
-                              )
-                            }
-                            className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-slate-400"
-                          >
-                            <optgroup label="Roller simple">
-                              <option value="rollerSimple">Roller simple</option>
-                              <option value="blackout">Black out</option>
-                              <option value="sunscreen">Sun Screen</option>
-                              <option value="translucido">Translúcido</option>
-                              <option value="darkBlackout">
-                                Dark Black Out
-                              </option>
-                              <option value="rollerCenefa">
-                                Roller / Cenefa
-                              </option>
-                              <option value="rollerDoble">
-                                Roller doble SC + BO
-                              </option>
-                              <option value="rollerDobleCenefa">
-                                Roller doble SC + BO / Cenefa
-                              </option>
-                            </optgroup>
-
-                            <optgroup label="DÚO">
-                              <option value="rollerDuo">DÚO</option>
-                              <option value="rollerDuoTranslucido">
-                                DÚO translúcido
-                              </option>
-                              <option value="rollerDuoSunOut">
-                                DÚO Sun Out
-                              </option>
-                            </optgroup>
-
-                            <optgroup label="Otros productos">
-                              <option value="persianaVertical">
-                                Persiana vertical
-                              </option>
-                            </optgroup>
-
-                            <optgroup label="Motorización">
-                              <option value="motorizacionIndependiente">
-                                Motorización independiente
-                              </option>
-                              <option value="motorizacionDual">
-                                Motorización dual
-                              </option>
-                              <option value="motorizacionIntegrada">
-                                Motorización integrada al producto
-                              </option>
-                            </optgroup>
-
-                            <optgroup label="Solicitar valores a DecoSun">
-                              <option value="honeycomb">Plisadas Honeycomb · cotización asistida</option>
-                              <option value="toldoProyectante">
-                                Toldo proyectante
-                              </option>
-                              <option value="toldoVertical">Toldo vertical</option>
-                              <option value="cierreTerraza">
-                                Cierres de cristal para terrazas y balcones
-                              </option>
-                              <option value="pergolaBioclimatica">
-                                Pérgola bioclimática
-                              </option>
-                            </optgroup>
-                          </select>
-                        </div>
-
-                        <div className="md:col-span-3">
-                          <label className="mb-2 block text-sm font-medium text-slate-700">
-                            Ubicación
-                          </label>
-                          <input
-                            type="text"
-                            value={item.ubicacion}
-                            onChange={(event) =>
-                              handleMeasureChange(
-                                item.id,
-                                "ubicacion",
-                                event.target.value
-                              )
-                            }
-                            placeholder="Ej. Living, Oficina 1, Dormitorio principal"
-                            className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-slate-400"
-                          />
-                        </div>
-
-                        {category === "calculable" && (
-                          <>
-                            <div>
-                              <label className="mb-2 block text-sm font-medium text-slate-700">
-                                Ancho (m)
-                              </label>
-                              <input
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                value={item.ancho}
-                                onChange={(event) =>
-                                  handleMeasureChange(
-                                    item.id,
-                                    "ancho",
-                                    event.target.value
-                                  )
-                                }
-                                placeholder="1.80"
-                                className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-slate-400"
-                              />
-                            </div>
-
-                            <div>
-                              <label className="mb-2 block text-sm font-medium text-slate-700">
-                                Alto (m)
-                              </label>
-                              <input
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                value={item.alto}
-                                onChange={(event) =>
-                                  handleMeasureChange(
-                                    item.id,
-                                    "alto",
-                                    event.target.value
-                                  )
-                                }
-                                placeholder="2.20"
-                                className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-slate-400"
-                              />
-                            </div>
-                          </>
-                        )}
-
-                        <div>
-                          <label className="mb-2 block text-sm font-medium text-slate-700">
-                            Cantidad
-                          </label>
-                          <input
-                            type="number"
-                            min="1"
-                            value={item.cantidad}
-                            onChange={(event) =>
-                              handleMeasureChange(
-                                item.id,
-                                "cantidad",
-                                event.target.value
-                              )
-                            }
-                            className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-slate-400"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
           </section>
 
           <aside
@@ -1261,6 +1164,7 @@ export default function Cotizar() {
           </aside>
         </div>
       </div>
+      <QuoteProductGallery target={galleryTarget} onChoose={chooseProduct} onClose={() => setGalleryTarget(null)} />
     </main>
   )
 }
