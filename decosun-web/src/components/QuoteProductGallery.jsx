@@ -98,9 +98,13 @@ export function getQuoteFamily(productKey) {
   return quoteFamilies.find(family => family.variants.some(([key]) => key === productKey))
 }
 
-export function QuoteProductImage({ family, productKey }) {
+export function getQuoteProductImage(family, productKey) {
   const fabricImages = { blackout, darkBlackout: blackout, translucido: translucida }
-  const image = fabricImages[productKey] || family.image
+  return fabricImages[productKey] || family.image
+}
+
+export function QuoteProductImage({ family, productKey }) {
+  const image = getQuoteProductImage(family, productKey)
 
   if (!image) return <div className="quote-photo-pending">Fotografía pendiente<br /><strong>{family.name}</strong></div>
 

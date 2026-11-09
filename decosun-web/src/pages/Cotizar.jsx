@@ -2,7 +2,7 @@ import PublicPageHero from "../components/PublicPageHero"
 import { supabase } from "../lib/supabase"
 import { getTerritoryAssignment } from "../lib/territoryAssignment"
 import logoSolo from "../assets/images/logo-vertical.png"
-import QuoteProductGallery, { getQuoteFamily, QuoteProductImage } from "../components/QuoteProductGallery"
+import QuoteProductGallery, { getQuoteFamily, getQuoteProductImage, QuoteProductImage } from "../components/QuoteProductGallery"
 import "../components/QuoteExperience.css"
 import { insertQuoteRows } from "../lib/smartQuote"
 import { useEffect, useMemo, useState, useRef } from "react"
@@ -11,6 +11,7 @@ import { Link, useSearchParams } from "react-router-dom"
 import { getPleatedOption, pleatedOptions, PLEATED_PATH } from "../lib/pleatedSystems"
 import { getPleatedPrice } from "../lib/pleatedPricing"
 import { buildWhatsAppUrl, getQuoteWhatsAppZone } from "../lib/whatsappRouting"
+import quoteLogo from "../assets/images/seo/logo-horizontal.png"
 
 function formatCLP(value) {
   return new Intl.NumberFormat("es-CL", {
@@ -164,6 +165,8 @@ export default function Cotizar() {
   const [quoteNumber, setQuoteNumber] = useState("COT-PENDIENTE")
   const [savedProject, setSavedProject] = useState(null)
   const [saving, setSaving] = useState(false)
+  const [preparingPdf, setPreparingPdf] = useState(false)
+  const [pdfError, setPdfError] = useState("")
 
   const [form, setForm] = useState({
     nombre: "",
@@ -677,6 +680,33 @@ export default function Cotizar() {
     window.open(whatsappURL, "_blank", "noopener,noreferrer")
   }
 
+  async function printQuote() {
+    if (preparingPdf) return
+    setPreparingPdf(true)
+    setPdfError("")
+    try {
+      const { createQuotePdf, loadQuotePdfImage } = await import("../lib/quotePdf")
+      const sources = { logo: quoteLogo }
+      for (const row of result.validRows) sources[row.productKey] = getQuoteProductImage(getQuoteFamily(row.productKey), row.productKey)
+      const images = Object.fromEntries(await Promise.all(Object.entries(sources).map(async ([key, src]) => [key, await loadQuotePdfImage(src)])))
+      const pdf = createQuotePdf({
+        quoteNumber,
+        date: new Date().toLocaleDateString("es-CL"),
+        customer: form,
+        city: zoneLabel,
+        seller: vendedor,
+        conditions: condicionesSucursal,
+        result,
+        totalLabel: displayedTotal,
+      }, images)
+      pdf.save(`Cotizacion-DecoSun-${quoteNumber.replace(/[^a-z0-9_-]/gi, "-")}.pdf`)
+    } catch {
+      setPdfError("No se pudo generar el PDF. Intenta nuevamente.")
+    } finally {
+      setPreparingPdf(false)
+    }
+  }
+
   function chooseProduct(tipo) {
     let rowId = galleryTarget.rowId
     if (rowId) handleMeasureChange(rowId, "tipo", tipo)
@@ -1085,38 +1115,7 @@ export default function Cotizar() {
                       ))}
                   </div>
 
-                  <table className="hidden w-full text-sm print:table">
-                    <thead>
-                      <tr className="border-b border-slate-300 bg-slate-100">
-                        <th className="p-2 text-left">Producto</th>
-                        <th className="p-2 text-left">Ubicación</th>
-                        <th className="p-2 text-left">Medidas</th>
-                        <th className="p-2 text-left">Cant.</th>
-                        <th className="p-2 text-right">Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {result.rows
-                        .filter((row) => row.valid)
-                        .map((row) => (
-                          <tr key={row.index} className="border-b border-slate-200">
-                            <td className="p-2">{row.productLabel}</td>
-                            <td className="p-2">{row.ubicacion || "-"}</td>
-                            <td className="p-2">
-                              {(row.category === "calculable" || getPleatedOption(row.productKey))
-                                ? `${row.ancho} m × ${row.alto} m`
-                                : "-"}
-                            </td>
-                            <td className="p-2">{row.cantidad}</td>
-                            <td className="p-2 text-right">
-                              {row.category === "solicitud"
-                                ? "Solicitar valores"
-                                : formatCLP(row.total)}
-                            </td>
-                          </tr>
-                        ))}
-                    </tbody>
-                  </table>
+
                 </div>
 
                 <div className="mt-6 space-y-3 text-sm text-slate-700">
@@ -1167,11 +1166,13 @@ export default function Cotizar() {
 
                 <button
                   type="button"
-                  onClick={() => window.print()}
+                  onClick={printQuote}
+                  disabled={preparingPdf}
                   className="mt-4 inline-flex w-full items-center justify-center rounded-2xl bg-slate-900 px-6 py-3 text-center text-sm font-semibold text-white transition hover:-translate-y-0.5 print:hidden"
                 >
-                  Generar PDF
+                  {preparingPdf ? "Preparando PDF…" : "Generar PDF carta"}
                 </button>
+                {pdfError && <p role="alert" className="mt-3 text-sm text-red-700">{pdfError}</p>}
 
                 <button
                   type="button"
