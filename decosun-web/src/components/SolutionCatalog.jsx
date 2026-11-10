@@ -7,7 +7,6 @@ import catalogPhoto from "../assets/images/fabrics/sunscreen-concept.jpg"
 import doublePhoto from "../assets/images/systems/roller-doble-real.jpg"
 import duoPhoto from "../assets/images/systems/roller-duo-concept.jpg"
 import verticalPhoto from "../assets/images/systems/persianas-verticales-concept.jpg"
-import projectingAwningPhoto from "../assets/images/systems/toldos-proyectantes-concept.jpg"
 import verticalAwningPhoto from "../assets/images/systems/toldos-verticales-concept.jpg"
 
 const systemPhotos = {
@@ -15,7 +14,7 @@ const systemPhotos = {
   "roller-doble": { src: doublePhoto, alt: "Instalación real de roller doble con dos telas a distinta altura en ventanales de esquina", caption: "Fotografía real de instalación DecoSun." },
   "roller-duo": { src: duoPhoto, alt: "Imagen conceptual de cortina DÚO con franjas opacas y translúcidas superpuestas" },
   "persianas-verticales": { src: verticalPhoto, alt: "Imagen conceptual de persianas de láminas verticales orientables en una oficina" },
-  "toldos-proyectantes": { src: projectingAwningPhoto, alt: "Imagen conceptual de toldo de brazos articulados que proyecta sombra sobre una terraza" },
+  "toldos-proyectantes": { src: "/img/toldos-renovacion/toldo-instalado-real.jpg", alt: "Fotografía real de toldo proyectante con tela clara instalado en una terraza costera", caption: "Fotografía real de instalación DecoSun." },
   "toldos-verticales": { src: verticalAwningPhoto, alt: "Imagen conceptual de toldo exterior con lona que desciende verticalmente frente a una terraza" },
 }
 

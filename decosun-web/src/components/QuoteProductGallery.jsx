@@ -5,7 +5,6 @@ import translucida from "../assets/images/fabrics/translucida-concept.jpg"
 import doble from "../assets/images/systems/roller-doble-real.jpg"
 import duo from "../assets/images/systems/roller-duo-concept.jpg"
 import vertical from "../assets/images/systems/persianas-verticales-concept.jpg"
-import proyectante from "../assets/images/systems/toldos-proyectantes-concept.jpg"
 import toldoVertical from "../assets/images/systems/toldos-verticales-concept.jpg"
 import cristal from "../assets/images/cierres-cristal/cierre-cristal-balcon-01.jpeg"
 import pergola from "../assets/images/pergola02.avif"
@@ -51,7 +50,7 @@ export const quoteFamilies = [
     variants: [["motorizacionIndependiente", "Motorización independiente"], ["motorizacionDual", "Motorización dual"], ["motorizacionIntegrada", "Motorización integrada al producto"]],
   },
   {
-    id: "proyectante", name: "Toldo proyectante", image: proyectante, conceptual: true, assisted: true,
+    id: "proyectante", name: "Toldo proyectante", image: "/img/toldos-renovacion/toldo-instalado-real.jpg", conceptual: false, assisted: true,
     description: "Sombra que se proyecta hacia terrazas y otros espacios exteriores. Requiere evaluación técnica.",
     variants: [["toldoProyectante", "Toldo proyectante"]],
   },
