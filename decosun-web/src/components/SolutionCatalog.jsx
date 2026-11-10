@@ -4,7 +4,7 @@ import { FabricCTA } from "./FabricLibrary"
 import "./FabricLibrary.css"
 import honeycombPhoto from "../assets/images/systems/honeycomb-lateral-concept.jpg"
 import catalogPhoto from "../assets/images/fabrics/sunscreen-concept.jpg"
-import doublePhoto from "../assets/images/systems/roller-doble-concept.jpg"
+import doublePhoto from "../assets/images/systems/roller-doble-real.jpg"
 import duoPhoto from "../assets/images/systems/roller-duo-concept.jpg"
 import verticalPhoto from "../assets/images/systems/persianas-verticales-concept.jpg"
 import projectingAwningPhoto from "../assets/images/systems/toldos-proyectantes-concept.jpg"
@@ -12,7 +12,7 @@ import verticalAwningPhoto from "../assets/images/systems/toldos-verticales-conc
 
 const systemPhotos = {
   "cortinas-roller": { src: catalogPhoto, alt: "Ambiente conceptual con una cortina roller sunscreen en un living" },
-  "roller-doble": { src: doublePhoto, alt: "Imagen conceptual de roller doble: dos tubos independientes, sunscreen posterior y blackout frontal a distinta altura" },
+  "roller-doble": { src: doublePhoto, alt: "Instalación real de roller doble con dos telas a distinta altura en ventanales de esquina", caption: "Fotografía real de instalación DecoSun." },
   "roller-duo": { src: duoPhoto, alt: "Imagen conceptual de cortina DÚO con franjas opacas y translúcidas superpuestas" },
   "persianas-verticales": { src: verticalPhoto, alt: "Imagen conceptual de persianas de láminas verticales orientables en una oficina" },
   "toldos-proyectantes": { src: projectingAwningPhoto, alt: "Imagen conceptual de toldo de brazos articulados que proyecta sombra sobre una terraza" },
@@ -36,7 +36,7 @@ export default function SolutionCatalog() {
     return () => cancelAnimationFrame(frame)
   }, [hash])
   return <main className="fabric-library"><div className="fabric-wrap"><nav className="fabric-breadcrumbs" aria-label="Ruta de navegación"><ol><li><Link to="/">Inicio</Link></li><li><span aria-current="page">Soluciones</span></li></ol></nav><header className="fabric-page-heading fabric-guide-hero"><img src={catalogPhoto} alt="Ambiente conceptual con cortinas roller sunscreen" width="1536" height="1024" fetchPriority="high" decoding="async" /><div className="fabric-hero-copy"><p className="fabric-eyebrow">Sistemas · Mecanismos · Instalación</p><h1>Cada espacio.<br /><em>Su forma de vivir la luz.</em></h1><p className="fabric-lede">El sistema define cómo se mueve y se instala tu cortina. La tela define cómo recibes la luz. Explora las alternativas y elige con asesoría.</p><Link className="fabric-text-link" to="/guia-de-telas">¿Quieres comparar telas? Empieza por la guía ↗︎</Link><p className="fabric-hero-note">Imagen conceptual generada con IA.</p></div></header>
-    <section className="catalog-systems" aria-label="Catálogo de sistemas">{systems.map((system, index) => <article id={system.id} key={system.id}><figure className="catalog-system-photo"><img src={systemPhotos[system.id].src} alt={systemPhotos[system.id].alt} width="1280" height="853" loading="lazy" decoding="async" /><figcaption>Imagen conceptual generada con IA.</figcaption></figure><div className="catalog-system-copy"><p className="fabric-eyebrow">{String(index + 1).padStart(2, "0")} · {system.tag}</p><h2>{system.name}</h2><p>{system.description}</p><Link className="fabric-text-link" to={system.link}>{system.cta} ↗︎</Link></div></article>)}</section>
+    <section className="catalog-systems" aria-label="Catálogo de sistemas">{systems.map((system, index) => <article id={system.id} key={system.id}><figure className="catalog-system-photo"><img src={systemPhotos[system.id].src} alt={systemPhotos[system.id].alt} width="1280" height="853" loading="lazy" decoding="async" /><figcaption>{systemPhotos[system.id].caption || "Imagen conceptual generada con IA."}</figcaption></figure><div className="catalog-system-copy"><p className="fabric-eyebrow">{String(index + 1).padStart(2, "0")} · {system.tag}</p><h2>{system.name}</h2><p>{system.description}</p><Link className="fabric-text-link" to={system.link}>{system.cta} ↗︎</Link></div></article>)}</section>
     <section className="catalog-pleated" aria-labelledby="catalog-pleated-title">
       <figure><img src={honeycombPhoto} alt="Cortina plisada Honeycomb con apertura lateral" width="1280" height="853" loading="lazy" decoding="async" /><figcaption>Imagen conceptual generada con IA.</figcaption></figure>
       <div><p className="fabric-eyebrow">Honeycomb · Plisadas · Mosquiteros</p><h2 id="catalog-pleated-title">Luz, privacidad y apertura lateral.</h2><p>Explora cortinas plisadas blackout, translúcidas y screen, mallas mosquiteras y sistemas combinados para tus ventanas y puertas.</p><Link className="fabric-text-link" to="/cortinas-plisadas-honeycomb">Conocer sistemas y configuraciones ↗</Link></div>

@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react"
 import roller from "../assets/images/fabrics/sunscreen-concept.jpg"
 import blackout from "../assets/images/fabrics/blackout-concept.jpg"
 import translucida from "../assets/images/fabrics/translucida-concept.jpg"
-import doble from "../assets/images/systems/roller-doble-concept.jpg"
+import doble from "../assets/images/systems/roller-doble-real.jpg"
 import duo from "../assets/images/systems/roller-duo-concept.jpg"
 import vertical from "../assets/images/systems/persianas-verticales-concept.jpg"
 import proyectante from "../assets/images/systems/toldos-proyectantes-concept.jpg"
@@ -28,7 +28,7 @@ export const quoteFamilies = [
     ],
   },
   {
-    id: "doble", name: "Roller doble", image: doble, conceptual: true,
+    id: "doble", name: "Roller doble", image: doble, conceptual: false,
     description: "Dos cortinas independientes, sunscreen y blackout, para alternar luz y oscurecimiento.",
     variantLabel: "Terminación",
     variants: [["rollerDoble", "Sunscreen + blackout"], ["rollerDobleCenefa", "Sunscreen + blackout con cenefa"]],
