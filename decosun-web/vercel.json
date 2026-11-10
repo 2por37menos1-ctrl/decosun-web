@@ -1,6 +1,10 @@
 {
   "routes": [
     {
+      "src": "/cambio-tela-toldos-proyectantes/?",
+      "dest": "/cambio-tela-toldos-proyectantes/index.html"
+    },
+    {
       "src": "/cortinas-plisadas-honeycomb/?",
       "dest": "/cortinas-plisadas-honeycomb/index.html"
     },

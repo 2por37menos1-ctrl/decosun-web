@@ -67,6 +67,7 @@ export default function Footer() {
               <Link to="/mantencion" className="transition hover:text-amber-300">
                 Mantención y limpieza
               </Link>
+              <Link to="/cambio-tela-toldos-proyectantes" className="transition hover:text-amber-300">Cambio de tela de toldos</Link>
               <Link to="/garantia" className="transition hover:text-amber-300">Garantía y postventa</Link>
 
               <Link

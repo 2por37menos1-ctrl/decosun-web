@@ -8,6 +8,7 @@ import Home from "./pages/Home"
 import Soluciones from "./pages/Soluciones"
 import Motorizacion from "./pages/Motorizacion"
 import Mantencion from "./pages/Mantencion"
+import CambioTelaToldos from "./pages/CambioTelaToldos"
 import Proyectos from "./pages/Proyectos"
 import Nosotros from "./pages/Nosotros"
 import Garantia from "./pages/Garantia"
@@ -16,7 +17,7 @@ import NotFound from "./pages/NotFound"
 import { FabricGuide, FabricDetail } from "./components/FabricLibrary"
 import { fabricPages } from "./lib/fabricLibrary"
 
-const pages = { "/cortinas-plisadas-honeycomb": Plisadas, "/guia-de-telas": FabricGuide, ...Object.fromEntries(Object.keys(fabricPages).map(path => [path, FabricDetail])), "/": Home, "/soluciones": Soluciones, "/motorizacion": Motorizacion, "/mantencion": Mantencion, "/proyectos": Proyectos, "/nosotros": Nosotros, "/garantia": Garantia }
+const pages = { "/cambio-tela-toldos-proyectantes": CambioTelaToldos, "/cortinas-plisadas-honeycomb": Plisadas, "/guia-de-telas": FabricGuide, ...Object.fromEntries(Object.keys(fabricPages).map(path => [path, FabricDetail])), "/": Home, "/soluciones": Soluciones, "/motorizacion": Motorizacion, "/mantencion": Mantencion, "/proyectos": Proyectos, "/nosotros": Nosotros, "/garantia": Garantia }
 
 // Only commercial pages are rendered at build time: no auth, ERP or client data.
 export function renderPage(path) {

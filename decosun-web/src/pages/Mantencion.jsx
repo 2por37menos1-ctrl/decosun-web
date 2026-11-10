@@ -85,6 +85,15 @@ export default function Mantencion() {
         </ul>
       </section>
 
+      <section className="mx-auto max-w-7xl px-6 pt-16 lg:px-8" aria-labelledby="toldos-renovacion-title">
+        <div className="rounded-[28px] bg-slate-950 p-8 text-white sm:p-12">
+          <p className="public-eyebrow">También renovamos tu terraza</p>
+          <h2 id="toldos-renovacion-title">Cambio de tela de toldos proyectantes</h2>
+          <p className="mb-6 mt-5 max-w-2xl text-slate-300">¿Tela rajada, deteriorada o una estructura que quedó sin tela? Evaluamos la recuperación de tu toldo, con una nueva tela a medida y mantención según su estado. Consultas para departamentos y edificios de la V Región.</p>
+          <Link className="public-primary-button" to="/cambio-tela-toldos-proyectantes">Conocer la renovación de toldos →</Link>
+        </div>
+      </section>
+
       <section id="proceso-mantencion" aria-labelledby="proceso-title" className="scroll-mt-28 px-6 py-20 lg:px-8 lg:py-28">
         <div className="mx-auto max-w-7xl">
           <p className="text-sm font-black uppercase tracking-[0.25em] text-amber-700">De tus instalaciones a nuestro taller. Y de vuelta.</p>

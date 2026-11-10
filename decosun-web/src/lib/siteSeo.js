@@ -1,10 +1,12 @@
 import { fabricSeoPages, fabricBreadcrumbs } from "./fabricLibrary.js"
 import { PLEATED_PATH, pleatedFaqs } from "./pleatedSystems.js"
+import { AWNING_RENEWAL_PATH, awningRenewalFaqs } from "./awningRenewal.js"
 export const SITE_URL = "https://www.decosun.cl"
 
 export const coverageCities = ["Iquique", "Región de Valparaíso", "Santiago", "Arica", "Copiapó", "Vallenar", "La Serena", "Concepción", "Temuco"]
 
 export const publicPages = {
+  [AWNING_RENEWAL_PATH]: { title: "Cambio de tela de toldos en Viña del Mar y V Región | DecoSun", description: "Renueva tu toldo proyectante con cambio de tela a medida y mantención según evaluación. Departamentos y edificios en Viña del Mar, Reñaca, Concón y V Región." },
   ...fabricSeoPages,
   [PLEATED_PATH]: { title: "Cortinas Honeycomb y mosquiteros plisados | DecoSun", description: "Cortinas plisadas Honeycomb blackout, translúcidas, screen y mosquiteros a medida. Compara sistemas laterales y cotiza tu proyecto con DecoSun en Chile." },
   "/": { title: "Motorización y cortinas roller a medida | DecoSun", description: "Motorización de cortinas roller, confección a medida y servicio técnico DecoSun. Atención en Iquique, Región de Valparaíso, Santiago y red regional." },
@@ -29,6 +31,24 @@ export function getStructuredData(pathname) {
   const organization = { "@type": "Organization", "@id": `${SITE_URL}/#organization`, name: "DecoSun", url: SITE_URL, telephone: "+56 9 2930 7614", areaServed: coverageCities.map(name => ({ "@type": "Place", name })) }
   const webpage = { "@type": "WebPage", "@id": `${SITE_URL}${page.path}#webpage`, url: `${SITE_URL}${page.path}`, name: page.title, description: page.description, inLanguage: "es-CL", publisher: { "@id": organization["@id"] } }
   const graph = [organization, webpage]
+  if (page.path === AWNING_RENEWAL_PATH) {
+    graph.push({
+      "@type": "Service",
+      "@id": `${SITE_URL}${page.path}#service`,
+      name: "Cambio de tela y mantención de toldos proyectantes",
+      serviceType: "Cambio de tela de toldos proyectantes",
+      description: page.description,
+      url: webpage.url,
+      provider: { "@id": organization["@id"] },
+      areaServed: ["Región de Valparaíso", "Viña del Mar", "Reñaca", "Concón", "Valparaíso"].map(name => ({ "@type": "Place", name })),
+    })
+    graph.push({
+      "@type": "FAQPage",
+      "@id": `${SITE_URL}${page.path}#faq`,
+      mainEntity: awningRenewalFaqs.map(([question, answer]) => ({ "@type": "Question", name: question, acceptedAnswer: { "@type": "Answer", text: answer } })),
+    })
+    graph.push({ "@type": "BreadcrumbList", itemListElement: [{ "@type": "ListItem", position: 1, name: "Inicio", item: SITE_URL }, { "@type": "ListItem", position: 2, name: "Cambio de tela de toldos", item: webpage.url }] })
+  }
   const crumbs = page.path === PLEATED_PATH
     ? [{ name: "Inicio", path: "/" }, { name: "Cortinas plisadas Honeycomb", path: PLEATED_PATH }]
     : fabricBreadcrumbs(page.path)

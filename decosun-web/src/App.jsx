@@ -16,6 +16,7 @@ import { fabricPages } from "./lib/fabricLibrary";
 import Soluciones from "./pages/Soluciones";
 import Motorizacion from "./pages/Motorizacion";
 import Mantencion from "./pages/Mantencion";
+import CambioTelaToldos from "./pages/CambioTelaToldos";
 import Proyectos from "./pages/Proyectos";
 import Nosotros from "./pages/Nosotros";
 import Cotizar from "./pages/Cotizar";
@@ -51,6 +52,7 @@ function AppContent() {
         {Object.keys(fabricPages).map(path => <Route key={path} path={path} element={<FabricDetail />} />)}
         <Route path="/motorizacion" element={<Motorizacion />} />
         <Route path="/mantencion" element={<Mantencion />} />
+        <Route path="/cambio-tela-toldos-proyectantes" element={<CambioTelaToldos />} />
         <Route path="/proyectos" element={<Proyectos />} />
         <Route path="/nosotros" element={<Nosotros />} />
         <Route path="/garantia" element={<Garantia />} />
