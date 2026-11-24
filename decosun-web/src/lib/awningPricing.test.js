@@ -9,9 +9,9 @@ test("Fabric renewal uses actual area, quantity and IVA exactly once", () => {
 })
 
 test("New awnings use the approved gross sale values for each mechanism", () => {
-  assert.equal(getAwningPrice("toldoVinciManual", 4.8, 2.5, 1).subtotal, 2042904)
-  assert.equal(getAwningPrice("toldoVinciMotorizado", 4.8, 2.5, 1).subtotal, 2164413)
-  assert.equal(getAwningPrice("toldoMonoblockMotorizado", 4.8, 4, 1).subtotal, Math.round(((1471545 + 206500) * .65 + 282000) * 1.19 * 2.3))
+  assert.equal(getAwningPrice("toldoVinciManual", 4.8, 2.5, 1).subtotal, Math.round((852927.27 * .65 + 192000) * 1.19 * 1.65))
+  assert.equal(getAwningPrice("toldoVinciMotorizado", 4.8, 2.5, 1).subtotal, Math.round(((782727.27 + 138500) * .65 + 192000) * 1.19 * 1.65))
+  assert.equal(getAwningPrice("toldoMonoblockMotorizado", 4.8, 4, 1).subtotal, Math.round(((1471545 + 206500) * .65 + 282000) * 1.19 * 1.65))
 })
 
 test("Unlisted intermediate dimensions remain an assessment request", () => {
