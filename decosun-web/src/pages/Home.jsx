@@ -22,6 +22,7 @@ export default function Home() {
   const soluciones = [
     { title: "Motorización de cortinas roller", text: "Transforma tus cortinas existentes o encarga nuevas roller motorizadas. Compatibilidad sujeta a evaluación técnica.", image: "/img/motorizacion/4MT-640.jpg", to: "/motorizacion", cta: "Conocer motorización →" },
     { title: "Mantención y limpieza de roller", text: "Revisión de mecanismos y limpieza de telas sunscreen, con retiro y reinstalación según evaluación.", image: "/img/mantencion/3M-640.jpg", to: "/mantencion", cta: "Conocer mantención →" },
+    { title: "Cambio de tela de toldos", text: "Renueva la tela de tu toldo proyectante y cotiza por ancho y proyección. Atención para terrazas, departamentos y edificios.", image: "/img/toldos-renovacion/toldo-instalado-real.jpg", to: "/cambio-tela-toldos-proyectantes", cta: "Calcular cambio de tela →" },
     { title: "Roller blackout a medida", text: "Oscurecimiento y privacidad para dormitorios y espacios de descanso.", image: hero2, to: "/soluciones#roller-blackout" },
     { title: "Roller sunscreen a medida", text: "Control de luz y reflejos, con conexión visual al exterior.", image: rollerImg, to: "/soluciones#roller-sunscreen" },
     { title: "Cortinas roller DÚO", text: "Franjas translúcidas y opacas para regular la luz y la privacidad.", image: duoImg, to: "/soluciones#roller-duo" },

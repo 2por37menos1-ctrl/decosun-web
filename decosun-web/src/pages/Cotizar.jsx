@@ -12,6 +12,8 @@ import { getPleatedOption, pleatedOptions, PLEATED_PATH } from "../lib/pleatedSy
 import { getPleatedPrice } from "../lib/pleatedPricing"
 import { buildWhatsAppUrl, getQuoteWhatsAppZone } from "../lib/whatsappRouting"
 import quoteLogo from "../assets/images/seo/logo-horizontal.png"
+import { awningOptions, getAwningOption, getAwningPrice } from "../lib/awningPricing"
+import { AWNING_RENEWAL_PATH } from "../lib/awningRenewal"
 
 function formatCLP(value) {
   return new Intl.NumberFormat("es-CL", {
@@ -22,6 +24,7 @@ function formatCLP(value) {
 }
 
 const calculableProducts = {
+  ...Object.fromEntries(awningOptions.map(option => [option.key, option.name])),
   ...Object.fromEntries(pleatedOptions.map(option => [option.key, option.name])),
   rollerSimple: "Roller simple",
   blackout: "Black out",
@@ -179,18 +182,27 @@ export default function Cotizar() {
 
   const [measures, setMeasures] = useState(() => {
     const productKey = searchParams.get("producto")
-    return getPleatedOption(productKey) ? [createMeasureRow(productKey)] : []
+    return getQuoteFamily(productKey) ? [createMeasureRow(productKey)] : []
   })
 
   useEffect(() => {
-    if (!getPleatedOption(searchParams.get("producto"))) return
+    if (!getQuoteFamily(searchParams.get("producto"))) return
     const card = document.querySelector(".quote-config-card")
     card?.focus({ preventScroll: true })
     card?.scrollIntoView({ block: "start" })
   }, [searchParams])
 
   const vendedor = vendedores[form.sucursal]
-  const condicionesSucursal = condiciones[form.sucursal]
+  const condicionesSucursal = measures.some(item => getAwningOption(item.tipo))
+    ? [
+        condiciones[form.sucursal][0],
+        "Medidas, referencia de tela y compatibilidad del sistema se confirman mediante evaluación técnica.",
+        "Los valores de los toldos incluyen IVA y corresponden a la configuración seleccionada.",
+        "Acceso, instalación, reparación de mecanismos y trabajos adicionales se detallan al confirmar el alcance.",
+        "Plazo de entrega y garantía se especifican en la propuesta definitiva según producto y servicio.",
+        condiciones[form.sucursal].at(-1),
+      ]
+    : condiciones[form.sucursal]
 
   function handleFormChange(event) {
     if (pendingProject.current) return
@@ -306,6 +318,23 @@ export default function Cotizar() {
         discount: 0,
         total: 0,
         note: "",
+      }
+
+      const awningPrice = getAwningPrice(item.tipo, item.ancho, item.alto, cantidad)
+      if (awningPrice) {
+        if (!awningPrice.valid) return baseRow
+        const measuredRow = { ...baseRow, valid: true, ancho: awningPrice.width, alto: awningPrice.projection, cantidad }
+        if (awningPrice.requiresAssessment) {
+          return { ...measuredRow, category: "solicitud", note: "Medida sujeta a evaluación. Confirmaremos precio y configuración del toldo." }
+        }
+        return {
+          ...measuredRow,
+          subtotal: awningPrice.subtotal,
+          total: awningPrice.subtotal,
+          note: getAwningOption(item.tipo).renewal
+            ? "Cambio de tela a $28.000 netos/m². Proyección medida con el toldo extendido. IVA incluido en el total. Sujeto a revisión del sistema y acceso."
+            : "Sistema con tela confeccionada y accionamiento seleccionado. IVA incluido. Montaje y alcance final sujetos a evaluación.",
+        }
       }
 
       const pleatedPrice = getPleatedPrice(item.tipo, item.ancho, item.alto, cantidad)
@@ -442,7 +471,7 @@ export default function Cotizar() {
       .map((row, index) => {
         const locationText = row.ubicacion ? ` · Ubicación: ${row.ubicacion}` : ""
         const measureText =
-          (row.category === "calculable" || getPleatedOption(row.productKey))
+          (row.category === "calculable" || getPleatedOption(row.productKey) || getAwningOption(row.productKey))
             ? ` · ${row.ancho}m x ${row.alto}m`
             : ""
         const valueText =
@@ -532,7 +561,7 @@ export default function Cotizar() {
         .map((row) => {
           const locationText = row.ubicacion ? ` · Ubicación: ${row.ubicacion}` : ""
           const measureText =
-            row.category === "calculable" || row.productKey === "honeycomb" || getPleatedOption(row.productKey) ? ` · ${row.ancho}x${row.alto}` : ""
+            row.category === "calculable" || row.productKey === "honeycomb" || getPleatedOption(row.productKey) || getAwningOption(row.productKey) ? ` · ${row.ancho}x${row.alto}` : ""
           const valueText =
             row.category === "solicitud"
               ? " · Solicitar valores a DecoSun"
@@ -588,8 +617,8 @@ export default function Cotizar() {
       const measurementRows = validRows.map((row) => ({
         project_id: projectId,
         product_type: row.productKey,
-        width: row.category === "calculable" || row.productKey === "honeycomb" || getPleatedOption(row.productKey) ? Number(row.ancho) || null : null,
-        height: row.category === "calculable" || row.productKey === "honeycomb" || getPleatedOption(row.productKey) ? Number(row.alto) || null : null,
+        width: row.category === "calculable" || row.productKey === "honeycomb" || getPleatedOption(row.productKey) || getAwningOption(row.productKey) ? Number(row.ancho) || null : null,
+        height: row.category === "calculable" || row.productKey === "honeycomb" || getPleatedOption(row.productKey) || getAwningOption(row.productKey) ? Number(row.alto) || null : null,
         quantity: row.cantidad,
         fabric: row.ubicacion || null,
       }))
@@ -747,6 +776,7 @@ export default function Cotizar() {
                   const category = getProductCategory(item.tipo)
                   const family = getQuoteFamily(item.tipo)
                   const pleatedOption = getPleatedOption(item.tipo)
+                  const awningOption = getAwningOption(item.tipo)
 
                   return (
                     <div
@@ -759,11 +789,12 @@ export default function Cotizar() {
                         <figure><QuoteProductImage family={family} productKey={item.tipo} />{family.conceptual && <figcaption>Imagen conceptual generada con IA.</figcaption>}</figure>
                         <div>
                           <p className="quote-step-label">Producto {index + 1}</p>
-                          <h3>{pleatedOption?.name || family.name}</h3>
+                          <h3>{awningOption?.name || pleatedOption?.name || family.name}</h3>
                           <p>{pleatedOption?.description || family.description}</p>
                           {family.id.startsWith("honeycomb") || family.id === "mosquitero" ? <Link className="quote-product-guide" to={PLEATED_PATH}>Conocer sistemas y comparar opciones ↗</Link> : null}
+                          {awningOption && <Link className="quote-product-guide" to={AWNING_RENEWAL_PATH}>Cambio de tela y sistemas de toldos ↗</Link>}
                           <button type="button" className="quote-outline-button" disabled={saving || Boolean(pendingProject.current)} onClick={() => setGalleryTarget({ rowId: item.id })}>Cambiar producto</button>
-                          {category === "calculable" && !pleatedOption && <button type="button" className="quote-outline-button quote-add-motor" disabled={saving || Boolean(pendingProject.current)} onClick={() => setGalleryTarget({ familyId: "motor", ubicacion: item.ubicacion })}>+ Añadir motorización</button>}
+                          {category === "calculable" && !pleatedOption && !awningOption && <button type="button" className="quote-outline-button quote-add-motor" disabled={saving || Boolean(pendingProject.current)} onClick={() => setGalleryTarget({ familyId: "motor", ubicacion: item.ubicacion })}>+ Añadir motorización</button>}
                         </div>
                       </div>
                       <div className="quote-row-actions">
@@ -773,6 +804,7 @@ export default function Cotizar() {
                       {category === "solicitud" && <p className="quote-measure-note">Valor mediante evaluación técnica. Puedes indicar el ambiente y la cantidad.</p>}
                       {category === "motor" && <p className="quote-measure-note">Valor por unidad. Indica el ambiente para relacionarlo con tus cortinas. La compatibilidad y los accesorios se confirman con asesoría.</p>}
                       {pleatedOption && <p className="quote-measure-note">{result.rows[index].note || "Indica ancho y alto para ver el precio del sistema. La tarifa usa el tramo superior de la tabla e incluye IVA. Medidas sobre 3 m en cualquiera de sus lados requieren cotización asistida."}</p>}
+                      {awningOption && <p className="quote-measure-note">{result.rows[index].note || (awningOption.renewal ? "Indica ancho y proyección de la tela extendida. Valor base de $28.000 netos/m², más IVA. El estado del sistema y el acceso se revisan con el equipo." : "Indica ancho y proyección para consultar las medidas con valor disponible. El motor ya está incluido en las opciones motorizadas.")}</p>}
                       <div className="grid gap-4 md:grid-cols-3">
                         {family.variants.length > 1 && <div className="md:col-span-3">
                           <label htmlFor={`variant-${item.id}`} className="mb-2 block text-sm font-medium text-slate-700">{family.variantLabel}</label>
@@ -824,7 +856,7 @@ export default function Cotizar() {
 
                             <div>
                               <label htmlFor={`alto-${item.id}`} className="mb-2 block text-sm font-medium text-slate-700">
-                                Alto (m)
+                                {awningOption ? "Proyección / salida (m)" : "Alto (m)"}
                               </label>
                               <input
                                 type="number"
@@ -1093,7 +1125,7 @@ export default function Cotizar() {
                               )}
 
                               <p className="text-sm text-slate-600">
-                                {(row.category === "calculable" || getPleatedOption(row.productKey)) &&
+                                {(row.category === "calculable" || getPleatedOption(row.productKey) || getAwningOption(row.productKey)) &&
                                   `${row.ancho} m × ${row.alto} m · `}
                                 Cantidad: {row.cantidad}
                               </p>

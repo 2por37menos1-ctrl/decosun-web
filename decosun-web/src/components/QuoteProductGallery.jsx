@@ -11,6 +11,7 @@ import pergola from "../assets/images/pergola02.avif"
 import honeycomb from "../assets/images/systems/honeycomb-lateral-concept.jpg"
 import mosquitoMesh from "../assets/images/systems/mosquitero-plisado-concept.jpg"
 import { getPleatedOption, pleatedOptions } from "../lib/pleatedSystems"
+import { awningOptions } from "../lib/awningPricing"
 
 export const quoteFamilies = [
   {
@@ -50,9 +51,15 @@ export const quoteFamilies = [
     variants: [["motorizacionIndependiente", "Motorización independiente"], ["motorizacionDual", "Motorización dual"], ["motorizacionIntegrada", "Motorización integrada al producto"]],
   },
   {
-    id: "proyectante", name: "Toldo proyectante", image: "/img/toldos-renovacion/toldo-instalado-real.jpg", conceptual: false, assisted: true,
-    description: "Sombra que se proyecta hacia terrazas y otros espacios exteriores. Requiere evaluación técnica.",
-    variants: [["toldoProyectante", "Toldo proyectante"]],
+    id: "cambioTelaToldo", name: "Cambio de tela de toldo", image: "/img/toldos-renovacion/toldo-instalado-real.jpg", conceptual: false,
+    description: "Renueva la tela de tu toldo existente. Calcula el valor por ancho, proyección y cantidad, con IVA incluido en el resultado.",
+    variants: [["cambioTelaToldo", "Cambio de tela de toldo proyectante"]],
+  },
+  {
+    id: "proyectante", name: "Toldo proyectante nuevo", image: "/img/toldos-renovacion/toldo-instalado-real.jpg", conceptual: false,
+    description: "Compara Vinci y Monoblock, manuales o motorizados. Valores en medidas tabuladas; otras medidas requieren evaluación técnica.",
+    variantLabel: "Modelo y accionamiento",
+    variants: [...awningOptions.filter(option => !option.renewal).map(option => [option.key, option.name]), ["toldoProyectante", "Otro sistema · solicitar evaluación"]],
   },
   {
     id: "toldoVertical", name: "Toldo vertical", image: toldoVertical, conceptual: true, assisted: true,

@@ -6,7 +6,7 @@ export const SITE_URL = "https://www.decosun.cl"
 export const coverageCities = ["Iquique", "Región de Valparaíso", "Santiago", "Arica", "Copiapó", "Vallenar", "La Serena", "Concepción", "Temuco"]
 
 export const publicPages = {
-  [AWNING_RENEWAL_PATH]: { title: "Cambio de tela de toldos en Viña del Mar y V Región | DecoSun", description: "Renueva tu toldo proyectante con cambio de tela a medida y mantención según evaluación. Departamentos y edificios en Viña del Mar, Reñaca, Concón y V Región." },
+  [AWNING_RENEWAL_PATH]: { title: "Cambio de tela de toldos en Viña del Mar y Concón | DecoSun", description: "Cotiza cambio de tela de toldos desde $28.000 netos/m². Toldos Vinci y Monoblock a medida para terrazas y edificios en Viña del Mar, Reñaca, Concón y V Región." },
   ...fabricSeoPages,
   [PLEATED_PATH]: { title: "Cortinas Honeycomb y mosquiteros plisados | DecoSun", description: "Cortinas plisadas Honeycomb blackout, translúcidas, screen y mosquiteros a medida. Compara sistemas laterales y cotiza tu proyecto con DecoSun en Chile." },
   "/": { title: "Motorización y cortinas roller a medida | DecoSun", description: "Motorización de cortinas roller, confección a medida y servicio técnico DecoSun. Atención en Iquique, Región de Valparaíso, Santiago y red regional." },
@@ -41,6 +41,19 @@ export function getStructuredData(pathname) {
       url: webpage.url,
       provider: { "@id": organization["@id"] },
       areaServed: ["Región de Valparaíso", "Viña del Mar", "Reñaca", "Concón", "Valparaíso"].map(name => ({ "@type": "Place", name })),
+      image: `${SITE_URL}/img/toldos-renovacion/toldo-instalado-real.jpg`,
+      offers: {
+        "@type": "Offer",
+        url: `${SITE_URL}/cotizar?producto=cambioTelaToldo`,
+        name: "Cambio de tela de toldo proyectante por m², sujeto a evaluación",
+        priceSpecification: {
+          "@type": "UnitPriceSpecification",
+          price: 33320,
+          priceCurrency: "CLP",
+          valueAddedTaxIncluded: true,
+          referenceQuantity: { "@type": "QuantitativeValue", value: 1, unitCode: "MTK", unitText: "m²" },
+        },
+      },
     })
     graph.push({
       "@type": "FAQPage",
