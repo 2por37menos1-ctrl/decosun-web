@@ -73,5 +73,11 @@ test("HTTP routing serves robots, sitemap, public pages, private shells and real
     assert.match(await missing.text(), /No encontramos esta página/)
     const missingAsset = await fetch(`${base}/assets/no-existe.js`)
     assert.equal(missingAsset.status, 404)
+    const previousPdfModule = await fetch(`${base}/assets/quotePdf-DTCqwXgf.js`)
+    assert.equal(previousPdfModule.status, 200)
+    assert.match(previousPdfModule.headers.get("content-type"), /javascript/)
+    const compatibilityModule = await previousPdfModule.text()
+    assert.match(compatibilityModule, /createQuotePdf/)
+    assert.match(compatibilityModule, /loadQuotePdfImage/)
   } finally { await new Promise(resolve => server.close(resolve)) }
 })

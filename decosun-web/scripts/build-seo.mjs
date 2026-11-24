@@ -36,5 +36,21 @@ for (const path of Object.keys(publicPages)) {
 // SPA shell stays separate from the indexable home document.
 await writeFile("dist/app.html", htmlFor("/login"))
 await writeFile("dist/404.html", htmlFor("/404", renderPage("/404")))
+// Open quote tabs may still request a PDF chunk from an earlier deployment.
+// Keep a self-contained module with the same public exports for those requests.
+await build({
+  configFile: false,
+  build: {
+    outDir: "dist/assets",
+    emptyOutDir: false,
+    minify: true,
+    lib: {
+      entry: resolve("src/lib/quotePdf.js"),
+      formats: ["es"],
+      fileName: () => "quote-pdf-compat.js",
+    },
+    rollupOptions: { output: { inlineDynamicImports: true } },
+  },
+})
 const urls = Object.keys(publicPages).map(path => `  <url><loc>${SITE_URL}${path}</loc></url>`).join("\n")
 await writeFile("dist/sitemap.xml", `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`)

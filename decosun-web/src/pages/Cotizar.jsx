@@ -14,6 +14,7 @@ import { buildWhatsAppUrl, getQuoteWhatsAppZone } from "../lib/whatsappRouting"
 import quoteLogo from "../assets/images/seo/logo-horizontal.png"
 import { awningOptions, getAwningOption, getAwningPrice } from "../lib/awningPricing"
 import { AWNING_RENEWAL_PATH } from "../lib/awningRenewal"
+import { createQuotePdf, loadQuotePdfImage } from "../lib/quotePdf"
 
 function formatCLP(value) {
   return new Intl.NumberFormat("es-CL", {
@@ -715,7 +716,6 @@ export default function Cotizar() {
     setPreparingPdf(true)
     setPdfError("")
     try {
-      const { createQuotePdf, loadQuotePdfImage } = await import("../lib/quotePdf")
       const sources = { logo: quoteLogo }
       for (const row of result.validRows) sources[row.productKey] = getQuoteProductImage(getQuoteFamily(row.productKey), row.productKey)
       const images = Object.fromEntries(await Promise.all(Object.entries(sources).map(async ([key, src]) => [key, await loadQuotePdfImage(src)])))

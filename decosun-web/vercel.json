@@ -1,6 +1,13 @@
 {
   "routes": [
     {
+      "src": "/assets/quotePdf-[A-Za-z0-9_-]+\\.js",
+      "dest": "/assets/quote-pdf-compat.js",
+      "headers": {
+        "Cache-Control": "public, max-age=31536000, immutable"
+      }
+    },
+    {
       "src": "/cambio-tela-toldos-proyectantes/?",
       "dest": "/cambio-tela-toldos-proyectantes/index.html"
     },
