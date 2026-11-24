@@ -213,6 +213,7 @@ export default function Cotizar() {
 
     setForm((prev) => ({
       ...prev,
+      sucursal: name === "zona" ? (value === "iquique" ? "iquique" : "vina") : prev.sucursal,
       [name]: name === "promoCode" ? value.toUpperCase() : value,
     }))
   }
@@ -286,7 +287,7 @@ export default function Cotizar() {
         ? form.ciudadExtra || "Otra ciudad de Chile"
         : "-"
       : form.zona === "vina"
-      ? "Viña del Mar"
+      ? "V Región"
       : form.zona === "santiago"
       ? "Santiago"
       : form.zona === "otra"
@@ -901,7 +902,7 @@ export default function Cotizar() {
                 })}
               </div>
             </div>
-            <div className="quote-contact-heading"><p className="quote-step-label">02 · Ubicación y contacto</p><h2>¿Dónde está tu proyecto?</h2><p>La sucursal, la zona y el código promocional se reflejan en el valor estimado.</p></div>
+            <div className="quote-contact-heading"><p className="quote-step-label">02 · Ubicación y contacto</p><h2>¿Dónde está tu proyecto?</h2><p>Selecciona la ciudad o región del trabajo para asignar el equipo correspondiente.</p></div>
             <div className="grid gap-5 md:grid-cols-2">
               <div className="md:col-span-2">
                 <label htmlFor="quote-nombre" className="mb-2 block text-sm font-medium text-slate-700">
@@ -934,73 +935,21 @@ export default function Cotizar() {
               </div>
 
               <div>
-                <label htmlFor="quote-sucursal" className="mb-2 block text-sm font-medium text-slate-700">
-                  Sucursal
+                <label htmlFor="quote-zona" className="mb-2 block text-sm font-medium text-slate-700">
+                  Ciudad / zona
                 </label>
                 <select
-                  id="quote-sucursal" name="sucursal"
-                  value={form.sucursal}
+                  id="quote-zona" name="zona"
+                  value={form.zona}
                   onChange={handleFormChange}
                   className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-slate-400"
                 >
+                  <option value="">Selecciona una opción</option>
                   <option value="iquique">Iquique</option>
-                  <option value="vina">Viña del Mar</option>
+                  <option value="vina">V Región</option>
+                  <option value="santiago">Santiago</option>
                 </select>
               </div>
-
-              {form.sucursal === "iquique" && (
-                <div className="md:col-span-2">
-                  <label htmlFor="quote-zona" className="mb-2 block text-sm font-medium text-slate-700">
-                    Ciudad / zona
-                  </label>
-                  <select
-                    id="quote-zona" name="zona"
-                    value={form.zona}
-                    onChange={handleFormChange}
-                    className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-slate-400"
-                  >
-                    <option value="">Selecciona una opción</option>
-                    <option value="iquique">Iquique</option>
-                    <option value="segunda">Otra ciudad II Región</option>
-                    <option value="otra">Otra ciudad de Chile</option>
-                  </select>
-                </div>
-              )}
-
-              {form.sucursal === "vina" && (
-                <div className="md:col-span-2">
-                  <label htmlFor="quote-zona" className="mb-2 block text-sm font-medium text-slate-700">
-                    Ciudad / zona
-                  </label>
-                  <select
-                    id="quote-zona" name="zona"
-                    value={form.zona}
-                    onChange={handleFormChange}
-                    className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-slate-400"
-                  >
-                    <option value="">Selecciona una opción</option>
-                    <option value="vina">Viña del Mar</option>
-                    <option value="santiago">Santiago</option>
-                    <option value="otra">Otra ciudad</option>
-                  </select>
-                </div>
-              )}
-
-              {form.zona === "otra" && (
-                <div className="md:col-span-2">
-                  <label htmlFor="quote-ciudadExtra" className="mb-2 block text-sm font-medium text-slate-700">
-                    Escribe tu ciudad
-                  </label>
-                  <input
-                    id="quote-ciudadExtra" name="ciudadExtra"
-                    value={form.ciudadExtra}
-                    onChange={handleFormChange}
-                    type="text"
-                    placeholder="Ej. La Serena"
-                    className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-slate-400"
-                  />
-                </div>
-              )}
 
               <div className="md:col-span-2">
                 <label htmlFor="quote-promoCode" className="mb-2 block text-sm font-medium text-slate-700">
